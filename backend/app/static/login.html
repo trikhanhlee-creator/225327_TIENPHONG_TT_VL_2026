@@ -1,730 +1,257 @@
 ﻿<!DOCTYPE html>
-<html lang="vi">
+<html class="light" lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoFill AI System - Đăng nhập</title>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Đăng nhập | AutoFill AI</title>
     <script src="/static/js/theme-manager.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        background: "#f7f9fb",
+                        surface: "#f7f9fb",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-low": "#f2f4f6",
+                        "surface-container-high": "#e6e8ea",
+                        "surface-container-highest": "#e0e3e5",
+                        outline: "#737686",
+                        "outline-variant": "#c3c6d7",
+                        primary: "#004ac6",
+                        "primary-container": "#2563eb",
+                        "on-primary": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "on-surface-variant": "#434655"
+                    },
+                    fontFamily: {
+                        "body-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        button: ["Inter"],
+                        h2: ["Manrope"],
+                        h3: ["Manrope"],
+                        "label-bold": ["Inter"]
+                    },
+                    fontSize: {
+                        "body-md": ["16px", { lineHeight: "1.5", fontWeight: "400" }],
+                        "body-sm": ["14px", { lineHeight: "1.5", fontWeight: "400" }],
+                        button: ["15px", { lineHeight: "1", fontWeight: "500" }],
+                        h2: ["32px", { lineHeight: "1.3", letterSpacing: "-0.01em", fontWeight: "700" }],
+                        h3: ["24px", { lineHeight: "1.4", letterSpacing: "-0.01em", fontWeight: "600" }],
+                        "label-bold": ["14px", { lineHeight: "1", letterSpacing: "0.05em", fontWeight: "600" }]
+                    }
+                }
+            }
+        };
+    </script>
     <style>
-        :root {
-            --blue-1: #1f5fdd;
-            --blue-2: #0f4fd4;
-            --text: #1f2937;
-            --muted: #6b7280;
-            --border: #d1d5db;
+        .material-symbols-outlined {
+            font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
         }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        .bg-auth-pattern {
+            background-color: #f7f9fb;
+            background-image: radial-gradient(#004ac608 1px, transparent 1px);
+            background-size: 20px 20px;
         }
-
-        body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            color: var(--text);
-            background:
-                radial-gradient(1200px 620px at 20% -8%, rgba(120, 168, 255, 0.4), transparent),
-                linear-gradient(145deg, var(--blue-1) 0%, var(--blue-2) 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-        }
-
-        .auth-card {
-            width: 100%;
-            max-width: 430px;
-            background: #ffffff;
-            border-radius: 24px;
-            box-shadow: 0 18px 36px rgba(12, 31, 82, 0.28);
-            padding: 24px 22px 20px;
-            max-height: calc(100vh - 48px);
-            overflow: auto;
-        }
-
-        .brand-icon {
-            font-size: 42px;
-            text-align: center;
-            margin-bottom: 6px;
-        }
-
-        .auth-title {
-            text-align: center;
-            font-size: 44px;
-            font-weight: 800;
-            letter-spacing: 0.3px;
-            margin-bottom: 4px;
-            color: #111827;
-        }
-
-        .auth-subtitle {
-            text-align: center;
-            color: var(--muted);
-            font-size: 18px;
-            margin-bottom: 18px;
-        }
-
-        .form-group {
-            margin-bottom: 14px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 18px;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 8px;
-        }
-
-        .input {
-            width: 100%;
-            height: 52px;
-            border: 2px solid var(--border);
-            border-radius: 12px;
-            padding: 0 14px;
-            font-size: 20px;
-            font-weight: 500;
-            line-height: 1.2;
-            color: #111827;
-            outline: none;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .input::placeholder {
-            color: #9ca3af;
-            font-size: 20px;
-        }
-
-        .input:focus {
-            font-size: 20px;
-            border-color: #60a5fa;
-            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.22);
-        }
-
-        .input:-webkit-autofill,
-        .input:-webkit-autofill:hover,
-        .input:-webkit-autofill:focus {
-            -webkit-text-fill-color: #111827;
-            -webkit-box-shadow: 0 0 0 1000px #ffffff inset;
-            font-size: 20px !important;
-            transition: background-color 9999s ease-in-out 0s;
-        }
-
-        .check-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 2px 0 14px;
-            color: #6b7280;
-            font-size: 16px;
-        }
-
-        .check-row input {
-            width: 22px;
-            height: 22px;
-        }
-
-        .action-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-top: 8px;
-        }
-
-        .btn {
-            height: 48px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: transform 0.16s ease, box-shadow 0.2s ease;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-        }
-
-        .btn-primary {
-            background: linear-gradient(90deg, #1f57d3, #2a4ecc);
-            color: #ffffff;
-            box-shadow: 0 10px 20px rgba(41, 92, 207, 0.28);
-        }
-
-        .btn-secondary {
-            background: #ffffff;
-            border-color: #60a5fa;
-            color: #60a5fa;
-        }
-
-        .footnote {
-            text-align: center;
-            margin-top: 16px;
-            color: #9ca3af;
-            font-size: 14px;
-        }
-
-        .message {
+        .toast-message {
             display: none;
-            margin-bottom: 12px;
-            border-radius: 12px;
-            padding: 10px 12px;
-            font-size: 14px;
-            font-weight: 600;
         }
-
-        .message.show {
+        .toast-message.show {
             display: block;
-        }
-
-        .message.error {
-            background: #fee2e2;
-            color: #b91c1c;
-            border: 1px solid #fecaca;
-        }
-
-        .message.success {
-            background: #dcfce7;
-            color: #166534;
-            border: 1px solid #bbf7d0;
-        }
-
-        .signup-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 20;
-        }
-
-        .signup-modal.show {
-            display: flex;
-        }
-
-        .modal-card {
-            width: 100%;
-            max-width: 500px;
-            background: #ffffff;
-            border-radius: 24px;
-            padding: 22px 20px 18px;
-            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.32);
-            max-height: calc(100vh - 56px);
-            overflow: auto;
-        }
-
-        .modal-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 10px;
-        }
-
-        .modal-title {
-            font-size: 32px;
-            font-weight: 800;
-            color: #111827;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .close-btn {
-            background: transparent;
-            border: 0;
-            font-size: 42px;
-            line-height: 1;
-            color: #9ca3af;
-            cursor: pointer;
-        }
-
-        .divider {
-            margin: 14px 0 18px;
-            border: 0;
-            border-top: 2px solid #e5e7eb;
-        }
-
-        .modal-switch {
-            margin-top: 12px;
-            text-align: center;
-            font-size: 15px;
-            color: #9ca3af;
-        }
-
-        .modal-switch button {
-            border: 0;
-            background: transparent;
-            color: #5b74ea;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            padding: 0;
-        }
-
-        @media (max-width: 900px) {
-            .auth-card {
-                max-width: 420px;
-                padding: 22px 16px 16px;
-            }
-
-            .auth-title {
-                font-size: 38px;
-            }
-
-            .auth-subtitle {
-                font-size: 17px;
-                margin-bottom: 14px;
-            }
-
-            .form-group label {
-                font-size: 17px;
-            }
-
-            .input {
-                height: 50px;
-                font-size: 18px;
-            }
-
-            .input::placeholder {
-                font-size: 18px;
-            }
-
-            .input:focus,
-            .input:-webkit-autofill,
-            .input:-webkit-autofill:hover,
-            .input:-webkit-autofill:focus {
-                font-size: 18px !important;
-            }
-
-            .check-row {
-                font-size: 15px;
-            }
-
-            .btn {
-                height: 46px;
-                font-size: 15px;
-            }
-
-            .footnote {
-                font-size: 13px;
-            }
-
-            .message {
-                font-size: 13px;
-            }
-
-            .modal-title {
-                font-size: 26px;
-            }
-
-            .close-btn {
-                font-size: 36px;
-            }
-
-            .modal-switch,
-            .modal-switch button {
-                font-size: 14px;
-            }
-        }
-
-        @media (max-width: 560px) {
-            body {
-                padding: 12px;
-            }
-
-            .action-row {
-                grid-template-columns: 1fr;
-            }
-
-            .auth-title {
-                font-size: 32px;
-            }
-
-            .auth-subtitle {
-                font-size: 16px;
-            }
-
-            .form-group label {
-                font-size: 16px;
-            }
-
-            .input {
-                height: 46px;
-                font-size: 16px;
-            }
-
-            .input::placeholder {
-                font-size: 16px;
-            }
-
-            .input:focus,
-            .input:-webkit-autofill,
-            .input:-webkit-autofill:hover,
-            .input:-webkit-autofill:focus {
-                font-size: 16px !important;
-            }
-
-            .check-row {
-                font-size: 14px;
-            }
-
-            .btn {
-                height: 44px;
-                font-size: 14px;
-            }
-
-            .modal-card {
-                border-radius: 16px;
-                padding: 16px;
-            }
-
-            .modal-title {
-                font-size: 22px;
-            }
         }
     </style>
 </head>
-<body>
-    <div class="auth-card">
-        <div class="brand-icon">🔐</div>
-        <h1 class="auth-title">Đăng Nhập</h1>
-        <p class="auth-subtitle">AutoFill AI System</p>
-
-        <div id="loginMessage" class="message"></div>
-
-        <form id="loginForm" novalidate>
-            <div class="form-group">
-                <label for="username">Tên Đăng Nhập / Email</label>
-                <input id="username" class="input" type="text" name="login_identifier" autocomplete="off" placeholder="Nhập tên đăng nhập hoặc email" required />
-            </div>
-
-            <div class="form-group">
-                <label for="password">Mật Khẩu</label>
-                <input id="password" class="input" type="password" name="login_password" autocomplete="off" placeholder="Nhập mật khẩu" required />
-            </div>
-
-            <label class="check-row">
-                <input id="rememberMe" type="checkbox" />
-                <span>Ghi nhớ tôi</span>
-            </label>
-
-            <div class="action-row">
-                <button class="btn btn-primary" id="loginBtn" type="button">Đăng Nhập</button>
-                <button class="btn btn-secondary" id="openSignupBtn" type="button">Đăng Ký</button>
-            </div>
-        </form>
-
-        <p class="footnote">Mỗi phiên trình duyệt sẽ bắt đầu ở Trang chủ chưa đăng nhập. © 2026 AutoFill AI System.</p>
-    </div>
-
-    <div class="signup-modal" id="signupModal" aria-hidden="true">
-        <div class="modal-card">
-            <div class="modal-head">
-                <h2 class="modal-title">📝 Đăng Ký Tài Khoản</h2>
-                <button class="close-btn" id="closeSignupBtn" type="button">×</button>
-            </div>
-
-            <div id="signupMessage" class="message"></div>
-
-            <form id="signupForm" novalidate>
-                <div class="form-group">
-                    <label for="signupUsername">Tên Đăng Nhập</label>
-                    <input id="signupUsername" class="input" type="text" name="signup_username" autocomplete="off" maxlength="20" placeholder="Nhập tên đăng nhập (3-20 ký tự)" required />
+<body class="bg-auth-pattern text-on-surface font-body-md min-h-screen flex flex-col">
+    <main class="flex-grow flex items-center justify-center px-6 py-12">
+        <div class="relative z-10 w-full max-w-2xl">
+            <div class="bg-white rounded-xl shadow-xl shadow-primary/10 p-8 md:p-12 border border-surface-container-high flex flex-col">
+                <div class="flex flex-col items-center mb-8">
+                    <div class="flex items-center gap-1 mb-6">
+                        <span class="material-symbols-outlined text-primary text-[40px]">auto_awesome</span>
+                        <span class="font-h3 text-h3 font-extrabold text-primary">AutoFill AI</span>
+                    </div>
+                    <h1 class="font-h2 text-h2 text-on-surface text-center mb-1">Đăng nhập</h1>
+                    <p class="font-body-md text-on-surface-variant text-center">Chào mừng bạn quay trở lại với AutoFill AI</p>
                 </div>
 
-                <div class="form-group">
-                    <label for="signupEmail">Email</label>
-                    <input id="signupEmail" class="input" type="email" name="signup_email" autocomplete="off" placeholder="Nhập địa chỉ email" required />
+                <div id="loginMessage" class="toast-message mb-5 rounded-lg px-4 py-3 text-sm font-medium"></div>
+
+                <form id="loginForm" class="space-y-6" novalidate>
+                    <div class="space-y-1">
+                        <label class="font-label-bold text-label-bold text-on-surface-variant block" for="loginUsername">Tên đăng nhập</label>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <span class="material-symbols-outlined text-outline text-[20px]">person</span>
+                            </div>
+                            <input id="loginUsername" name="username" autocomplete="username" class="w-full pl-[52px] pr-4 py-3 bg-[#F1F5F9] border-transparent rounded-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-body-md outline-none" placeholder="Nhập tên đăng nhập hoặc email" type="text" required />
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex justify-between items-center">
+                            <label class="font-label-bold text-label-bold text-on-surface-variant" for="loginPassword">Mật khẩu</label>
+                            <button id="forgotPasswordBtn" class="font-body-sm text-primary hover:underline transition-all bg-transparent border-0 p-0 cursor-pointer" type="button">Quên mật khẩu?</button>
+                        </div>
+                        <div class="relative group">
+                            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <span class="material-symbols-outlined text-outline text-[20px]">lock</span>
+                            </div>
+                            <input id="loginPassword" name="password" autocomplete="new-password" class="w-full pl-[52px] pr-4 py-3 bg-[#F1F5F9] border-transparent rounded-lg focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-body-md outline-none" placeholder="••••••••" type="password" required />
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 py-1">
+                        <input id="remember" class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20 transition-all" type="checkbox" />
+                        <label class="font-body-sm text-on-surface-variant cursor-pointer select-none" for="remember">Ghi nhớ tôi</label>
+                    </div>
+
+                    <button id="loginBtn" class="w-full py-3 px-4 bg-gradient-to-r from-primary to-primary-container text-on-primary font-button text-button rounded-lg shadow-md hover:shadow-lg active:scale-[0.98] transition-all duration-200" type="submit">
+                        Đăng nhập
+                    </button>
+                </form>
+
+                <div class="mt-8">
+                    <p class="text-center font-body-md text-on-surface-variant">
+                        Chưa có tài khoản?
+                        <a id="registerLink" class="text-primary font-bold hover:underline" href="/register">Đăng ký ngay</a>
+                    </p>
                 </div>
-
-                <div class="form-group">
-                    <label for="signupPassword">Mật Khẩu</label>
-                    <input id="signupPassword" class="input" type="password" name="signup_password" autocomplete="new-password" minlength="6" placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" required />
-                </div>
-
-                <hr class="divider" />
-
-                <div class="form-group">
-                    <label for="signupPasswordConfirm">Xác Nhận Mật Khẩu</label>
-                    <input id="signupPasswordConfirm" class="input" type="password" name="signup_password_confirm" autocomplete="new-password" placeholder="Nhập lại mật khẩu" required />
-                </div>
-
-                <label class="check-row">
-                    <input id="agreeTerms" type="checkbox" />
-                    <span>Tôi đã đọc và đồng ý với Điều khoản sử dụng</span>
-                </label>
-
-                <button class="btn btn-primary" id="signupBtn" type="button" style="width: 100%;">Tạo Tài Khoản</button>
-
-                <p class="modal-switch">
-                    Đã có tài khoản?
-                    <button id="switchToLoginBtn" type="button">Đăng nhập</button>
-                </p>
-            </form>
+            </div>
         </div>
-    </div>
+    </main>
+
+    <footer class="w-full py-6 bg-surface-container-low border-t border-outline-variant/30">
+        <div class="max-w-[1280px] mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p class="font-body-sm text-on-surface-variant">© 2026 AutoFill AI System. Mọi quyền được bảo lưu.</p>
+            <div class="flex gap-8">
+                <a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+                <a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+                <a class="font-body-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Contact Support</a>
+            </div>
+        </div>
+    </footer>
 
     <script>
-        const loginForm = document.getElementById('loginForm');
-        const signupForm = document.getElementById('signupForm');
-        const loginMessage = document.getElementById('loginMessage');
-        const signupMessage = document.getElementById('signupMessage');
-        const signupModal = document.getElementById('signupModal');
-        const openSignupBtn = document.getElementById('openSignupBtn');
-        const closeSignupBtn = document.getElementById('closeSignupBtn');
-        const switchToLoginBtn = document.getElementById('switchToLoginBtn');
-        const loginBtn = document.getElementById('loginBtn');
-        const signupBtn = document.getElementById('signupBtn');
-        const rememberMe = document.getElementById('rememberMe');
-        const REMEMBER_LOGIN_KEY = 'autofill-remember-login';
-        const REMEMBER_USERNAME_KEY = 'autofill-remember-username';
+        const REMEMBER_LOGIN_KEY = "autofill-remember-login";
+        const REMEMBER_USERNAME_KEY = "autofill-remember-username";
+        const loginMessage = document.getElementById("loginMessage");
+        const rememberCheckbox = document.getElementById("remember");
+        const loginForm = document.getElementById("loginForm");
+        const loginBtn = document.getElementById("loginBtn");
+        const registerLink = document.getElementById("registerLink");
 
-        function showMessage(target, text, type) {
+        function setMessage(target, text, type) {
             target.textContent = text;
-            target.className = 'message show ' + type;
+            target.className = "toast-message show mb-5 rounded-lg px-4 py-3 text-sm font-medium";
+            if (type === "error") {
+                target.classList.add("bg-red-50", "text-red-700", "border", "border-red-200");
+            } else {
+                target.classList.add("bg-green-50", "text-green-700", "border", "border-green-200");
+            }
+        }
+
+        function clearMessage(target) {
+            target.textContent = "";
+            target.className = "toast-message mb-5 rounded-lg px-4 py-3 text-sm font-medium";
+        }
+
+        function getQueryParam(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
         }
 
         function getNextUrl() {
-            const params = new URLSearchParams(window.location.search);
-            const next = params.get('next');
-            return next || '/';
+            return "/home";
         }
 
-        function getAuthMode() {
-            const params = new URLSearchParams(window.location.search);
-            return (params.get('mode') || '').toLowerCase();
-        }
-
-        function clearAllAuthInputs() {
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('signupUsername').value = '';
-            document.getElementById('signupEmail').value = '';
-            document.getElementById('signupPassword').value = '';
-            document.getElementById('signupPasswordConfirm').value = '';
-        }
-
-        function loadRememberedLogin() {
-            const rememberEnabled = localStorage.getItem(REMEMBER_LOGIN_KEY) === '1';
-            const rememberedUsername = localStorage.getItem(REMEMBER_USERNAME_KEY) || '';
-
-            // Prevent browser autofill from persisting when user did not opt-in.
-            if (!rememberEnabled) {
-                clearAllAuthInputs();
-                rememberMe.checked = false;
+        function loadRememberedUsername() {
+            const enabled = localStorage.getItem(REMEMBER_LOGIN_KEY) === "1";
+            const username = localStorage.getItem(REMEMBER_USERNAME_KEY) || "";
+            document.getElementById("loginPassword").value = "";
+            if (!enabled) {
+                rememberCheckbox.checked = false;
+                document.getElementById("loginUsername").value = "";
                 return;
             }
-
-            document.getElementById('username').value = rememberedUsername;
-            document.getElementById('password').value = '';
-            rememberMe.checked = true;
+            document.getElementById("loginUsername").value = username;
+            rememberCheckbox.checked = true;
         }
 
-        function persistRememberedLogin(username) {
-            if (rememberMe.checked) {
-                localStorage.setItem(REMEMBER_LOGIN_KEY, '1');
-                localStorage.setItem(REMEMBER_USERNAME_KEY, username || '');
+        function persistRememberedUsername(username) {
+            if (!rememberCheckbox.checked) {
+                localStorage.removeItem(REMEMBER_LOGIN_KEY);
+                localStorage.removeItem(REMEMBER_USERNAME_KEY);
                 return;
             }
-
-            localStorage.removeItem(REMEMBER_LOGIN_KEY);
-            localStorage.removeItem(REMEMBER_USERNAME_KEY);
-        }
-
-        function openSignup() {
-            signupModal.classList.add('show');
-            signupModal.setAttribute('aria-hidden', 'false');
-        }
-
-        function closeSignup() {
-            signupModal.classList.remove('show');
-            signupModal.setAttribute('aria-hidden', 'true');
-            signupMessage.className = 'message';
-            signupMessage.textContent = '';
+            localStorage.setItem(REMEMBER_LOGIN_KEY, "1");
+            localStorage.setItem(REMEMBER_USERNAME_KEY, username || "");
         }
 
         async function parseApiResponse(response) {
-            const rawText = await response.text();
-            let data = null;
+            const raw = await response.text();
+            let data = {};
             try {
-                data = rawText ? JSON.parse(rawText) : {};
-            } catch (e) {
-                data = null;
+                data = raw ? JSON.parse(raw) : {};
+            } catch {
+                data = {};
             }
-
             if (!response.ok) {
-                const message = (data && (data.error || data.detail || data.message))
-                    ? (data.error || data.detail || data.message)
-                    : (rawText || `HTTP ${response.status}`);
-                throw new Error(message);
+                throw new Error(data.error || data.detail || data.message || ("HTTP " + response.status));
             }
-
-            return data || {};
+            return data;
         }
 
-        openSignupBtn.addEventListener('click', (event) => {
+        async function handleLoginSubmit(event) {
             event.preventDefault();
-            event.stopPropagation();
-            openSignup();
-        });
-        closeSignupBtn.addEventListener('click', closeSignup);
-        switchToLoginBtn.addEventListener('click', closeSignup);
-        signupModal.addEventListener('click', (event) => {
-            if (event.target === signupModal) {
-                closeSignup();
-            }
-        });
+            clearMessage(loginMessage);
 
-        async function handleLogin() {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-
+            const username = document.getElementById("loginUsername").value.trim();
+            const password = document.getElementById("loginPassword").value.trim();
             if (!username || !password) {
-                showMessage(loginMessage, 'Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.', 'error');
-                return false;
+                setMessage(loginMessage, "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.", "error");
+                return;
             }
 
             loginBtn.disabled = true;
-            loginBtn.textContent = 'Đang đăng nhập...';
-
+            const originalLabel = loginBtn.textContent;
+            loginBtn.textContent = "Đang đăng nhập...";
             try {
-                const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                const response = await fetch("/api/auth/login", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ username, password })
                 });
                 await parseApiResponse(response);
-                persistRememberedLogin(username);
-
-                showMessage(loginMessage, 'Đăng nhập thành công. Đang chuyển hướng...', 'success');
-                window.location.href = getNextUrl();
-                return true;
+                persistRememberedUsername(username);
+                setMessage(loginMessage, "Đăng nhập thành công. Đang chuyển hướng...", "success");
+                window.location.replace(getNextUrl());
             } catch (error) {
-                const message = (error && error.message === 'Failed to fetch')
-                    ? 'Không thể kết nối máy chủ. Vui lòng kiểm tra server và thử lại.'
-                    : (error.message || 'Đăng nhập thất bại.');
-                showMessage(loginMessage, message, 'error');
-                return false;
+                const msg = error && error.message === "Failed to fetch"
+                    ? "Không thể kết nối máy chủ. Vui lòng kiểm tra server và thử lại."
+                    : (error.message || "Đăng nhập thất bại.");
+                setMessage(loginMessage, msg, "error");
             } finally {
                 loginBtn.disabled = false;
-                loginBtn.textContent = 'Đăng Nhập';
+                loginBtn.textContent = originalLabel;
             }
         }
 
-        // Prevent browser default form submit side effects.
-        loginForm.addEventListener('submit', (e) => {
-            e.preventDefault();
+        document.getElementById("forgotPasswordBtn").addEventListener("click", () => {
+            setMessage(loginMessage, "Tính năng quên mật khẩu đang được cập nhật. Vui lòng liên hệ quản trị viên.", "error");
         });
 
-        loginBtn.addEventListener('click', () => {
-            handleLogin();
-        });
+        loginForm.addEventListener("submit", handleLoginSubmit);
 
-        async function handleSignup() {
-            const username = document.getElementById('signupUsername').value.trim();
-            const email = document.getElementById('signupEmail').value.trim();
-            const password = document.getElementById('signupPassword').value;
-            const confirmPassword = document.getElementById('signupPasswordConfirm').value;
-            const agree = document.getElementById('agreeTerms').checked;
-
-            if (username.length < 3 || username.length > 20) {
-                showMessage(signupMessage, 'Tên đăng nhập phải từ 3 đến 20 ký tự.', 'error');
-                return false;
-            }
-
-            if (!email) {
-                showMessage(signupMessage, 'Vui lòng nhập email hợp lệ.', 'error');
-                return false;
-            }
-
-            if (password.length < 6) {
-                showMessage(signupMessage, 'Mật khẩu phải có tối thiểu 6 ký tự.', 'error');
-                return false;
-            }
-
-            if (password !== confirmPassword) {
-                showMessage(signupMessage, 'Mật khẩu xác nhận không khớp.', 'error');
-                return false;
-            }
-
-            if (!agree) {
-                showMessage(signupMessage, 'Bạn cần đồng ý điều khoản sử dụng.', 'error');
-                return false;
-            }
-
-            signupBtn.disabled = true;
-            signupBtn.textContent = 'Đang tạo tài khoản...';
-
-            try {
-                const response = await fetch('/api/auth/signup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, email, password })
-                });
-                await parseApiResponse(response);
-
-                showMessage(signupMessage, 'Tạo tài khoản thành công. Bạn có thể đăng nhập ngay.', 'success');
-                document.getElementById('username').value = username;
-                document.getElementById('password').value = '';
-                setTimeout(closeSignup, 900);
-                return true;
-            } catch (error) {
-                const message = (error && error.message === 'Failed to fetch')
-                    ? 'Không thể kết nối máy chủ. Vui lòng kiểm tra server và thử lại.'
-                    : (error.message || 'Đăng ký thất bại.');
-                showMessage(signupMessage, message, 'error');
-                return false;
-            } finally {
-                signupBtn.disabled = false;
-                signupBtn.textContent = 'Tạo Tài Khoản';
-            }
-        }
-
-        // Prevent browser default form submit side effects.
-        signupForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-        });
-
-        signupBtn.addEventListener('click', () => {
-            handleSignup();
-        });
-
-        // Enter key support for login fields
-        ['username', 'password'].forEach((id) => {
-            document.getElementById(id).addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleLogin();
-                }
-            });
-        });
-
-        // Enter key support for signup fields
-        ['signupUsername', 'signupEmail', 'signupPassword', 'signupPasswordConfirm'].forEach((id) => {
-            document.getElementById(id).addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleSignup();
-                }
-            });
-        });
-
-        // Open signup modal directly when visiting /login?mode=signup
-        window.addEventListener('load', () => {
-            loadRememberedLogin();
-
-            if (getAuthMode() === 'signup') {
-                openSignup();
+        window.addEventListener("load", () => {
+            loadRememberedUsername();
+            const next = getQueryParam("next");
+            if (next) {
+                registerLink.href = "/register?next=" + encodeURIComponent(next);
             }
         });
-
-        // Keep login page visible even when a session already exists.
-        // Redirect only after explicit login action so users can switch account.
     </script>
 </body>
 </html>

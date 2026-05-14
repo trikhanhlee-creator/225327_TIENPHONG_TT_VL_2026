@@ -373,7 +373,9 @@
                 <button id="prevRowBtn" type="button" class="btn">◀ Dòng trước</button>
                 <button id="nextRowBtn" type="button" class="btn">Dòng tiếp ▶</button>
                 <button id="addPageBtn" type="button" class="btn primary">📄 Lưu + Trang mới</button>
+                <button id="deletePageBtn" type="button" class="btn danger">🗑 Xóa trang hiện tại</button>
                 <button id="saveRowBtn" type="button" class="btn success">💾 Lưu</button>
+                <button id="exportExcelBtn" type="button" class="btn">⬇ Xuất Excel</button>
             </div>
             <div class="toolbar-row">
                 <button id="uploadReferenceBtn" type="button" class="btn warning">📤 Upload Excel tham chiếu</button>
@@ -841,7 +843,9 @@ function updateRowIndicator() {
     document.getElementById('prevRowBtn').disabled = total <= 1 || state.currentRowIndex === 0;
     document.getElementById('nextRowBtn').disabled = total <= 1 || state.currentRowIndex >= total - 1;
     document.getElementById('addPageBtn').disabled = state.headers.length === 0;
+    document.getElementById('deletePageBtn').disabled = total === 0;
     document.getElementById('saveRowBtn').disabled = total === 0;
+    document.getElementById('exportExcelBtn').disabled = state.headers.length === 0;
 }
 
 function getCurrentRowData() {
@@ -924,6 +928,38 @@ async function saveCurrentRow() {
     window.location.href = '/excel';
 }
 
+async function saveCurrentRowSnapshot() {
+    if (!state.rows.length) {
+        return;
+    }
+    const rowData = collectFormData();
+    const response = await fetch(`/api/excel/save/${encodeURIComponent(state.sessionId)}/${state.currentRowIndex}`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ row_data: rowData })
+    });
+    await parseApiResponse(response);
+    state.rows[state.currentRowIndex] = rowData;
+}
+
+async function downloadCurrentSessionExcel() {
+    if (!state.sessionId) {
+        showMessage('error', 'Không tìm thấy session để xuất file Excel.');
+        return;
+    }
+
+    try {
+        await saveCurrentRowSnapshot();
+    } catch (error) {
+        showMessage('error', error.message || 'Không thể lưu dữ liệu hiện tại trước khi xuất Excel.');
+        return;
+    }
+
+    const url = `/api/excel/export/${encodeURIComponent(state.sessionId)}?format=xlsx`;
+    window.location.href = url;
+}
+
 async function addNewPage() {
     if (!state.sessionId) {
         showMessage('error', 'Không tìm thấy session để thêm trang mới.');
@@ -968,6 +1004,45 @@ async function addNewPage() {
         : '✅ Đã tạo trang mới, bạn có thể tiếp tục nhập.');
 }
 
+async function deleteCurrentPage() {
+    if (!state.sessionId) {
+        showMessage('error', 'Không tìm thấy session để xóa trang.');
+        return;
+    }
+
+    if (!state.rows.length) {
+        showMessage('error', 'Không có trang để xóa.');
+        return;
+    }
+
+    const current = state.currentRowIndex + 1;
+    const total = state.rows.length;
+    const confirmed = window.confirm(`Bạn có chắc muốn xóa trang hiện tại (${current}/${total})?`);
+    if (!confirmed) {
+        return;
+    }
+
+    const response = await fetch(`/api/excel/page/${encodeURIComponent(state.sessionId)}/${state.currentRowIndex}`, {
+        method: 'DELETE',
+        credentials: 'same-origin'
+    });
+    const result = await parseApiResponse(response);
+
+    state.rows = state.rows.filter((_, index) => index !== state.currentRowIndex);
+    if (state.rows.length === 0) {
+        state.currentRowIndex = 0;
+        fillFormWithData(buildEmptyRow());
+    } else {
+        state.currentRowIndex = Math.min(Number(result.next_row_index || 0), state.rows.length - 1);
+        fillFormFromCurrentRow();
+    }
+
+    updateMeta();
+    updateRowIndicator();
+    refreshReferenceOptionControls();
+    showMessage('success', result.message || '✅ Đã xóa trang hiện tại.');
+}
+
 function bindEvents() {
     document.getElementById('prevRowBtn').addEventListener('click', () => goToRow(state.currentRowIndex - 1));
     document.getElementById('nextRowBtn').addEventListener('click', () => goToRow(state.currentRowIndex + 1));
@@ -1004,6 +1079,13 @@ function bindEvents() {
             showMessage('error', error.message || 'Không thể thêm trang mới.');
         }
     });
+    document.getElementById('deletePageBtn').addEventListener('click', async () => {
+        try {
+            await deleteCurrentPage();
+        } catch (error) {
+            showMessage('error', error.message || 'Không thể xóa trang hiện tại.');
+        }
+    });
 
     document.getElementById('saveRowBtn').addEventListener('click', async () => {
         try {
@@ -1011,6 +1093,9 @@ function bindEvents() {
         } catch (error) {
             showMessage('error', error.message || 'Không thể lưu dòng hiện tại.');
         }
+    });
+    document.getElementById('exportExcelBtn').addEventListener('click', async () => {
+        await downloadCurrentSessionExcel();
     });
 }
 

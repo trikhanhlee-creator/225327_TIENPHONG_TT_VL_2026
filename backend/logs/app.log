@@ -5489,3 +5489,421 @@ WHERE documents.user_id = %(user_id_1)s ORDER BY documents.updated_at DESC
 2026-04-19 18:28:02,914 - autofill_ai - INFO - Processing field: mssv
 2026-04-19 18:28:02,914 - autofill_ai - INFO -   Field mssv has no value, skipping
 2026-04-19 18:28:02,940 - autofill_ai - INFO - Submit completed for submission 17
+2026-04-19 19:33:58,779 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-04-19 19:33:58,791 - autofill_ai - WARNING - OpenAI API key is missing
+2026-04-19 19:33:58,792 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-04-19 19:33:59,106 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-04-19 19:33:59,106 - autofill_ai - WARNING - OpenAI API key is missing
+2026-04-19 19:33:59,106 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-04-19 19:33:59,450 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-04-25 19:49:22,012 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-04-25 19:49:22,013 - autofill_ai - WARNING - OpenAI API key is missing
+2026-04-25 19:49:22,014 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-04-25 19:49:22,336 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-04-25 19:49:22,336 - autofill_ai - WARNING - OpenAI API key is missing
+2026-04-25 19:49:22,337 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-04-25 19:49:22,676 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-04-25 19:50:33,273 - autofill_ai - INFO - Listing documents for user 1006
+2026-04-25 19:51:50,196 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-04-25 19:51:50,196 - autofill_ai - WARNING - OpenAI API key is missing
+2026-04-25 19:51:50,197 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-04-25 19:51:50,515 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-04-25 19:51:50,515 - autofill_ai - WARNING - OpenAI API key is missing
+2026-04-25 19:51:50,516 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-04-25 19:51:50,798 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-05 15:36:13,419 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-05 15:36:13,420 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-05 15:36:13,420 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-05 15:36:13,735 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-05 15:36:13,735 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-05 15:36:13,735 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-05 15:36:14,092 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-05 16:55:06,776 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-05 16:55:06,777 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-05 16:55:06,777 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-05 16:55:07,230 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-05 16:55:07,231 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-05 16:55:07,231 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-05 16:55:07,675 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-05 17:09:01,764 - autofill_ai - INFO - Listing documents for user 1006
+2026-05-05 17:27:46,620 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-05 17:27:46,621 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-05 17:27:46,622 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-05 17:27:46,933 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-05 17:27:46,934 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-05 17:27:46,934 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-05 17:27:47,230 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-05 17:52:42,622 - autofill_ai - INFO - Listing documents for user 1006
+2026-05-06 10:25:20,314 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 10:25:20,315 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 10:25:20,316 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 10:25:20,627 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 10:25:20,628 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 10:25:20,628 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 10:25:20,935 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 14:19:15,570 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 14:19:15,571 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 14:19:15,571 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 14:19:15,890 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 14:19:15,891 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 14:19:15,891 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 14:19:16,202 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 14:22:07,073 - autofill_ai - INFO - Listing documents for user 1006
+2026-05-06 14:27:54,127 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 14:27:54,127 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 14:27:54,128 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 14:27:54,438 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 14:27:54,438 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 14:27:54,438 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 14:27:54,722 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 14:36:13,442 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 14:36:13,443 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 14:36:13,443 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 14:36:13,750 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 14:36:13,750 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 14:36:13,750 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 14:36:14,018 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 14:45:39,449 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 14:45:39,449 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 14:45:39,449 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 14:45:39,782 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 14:45:39,783 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 14:45:39,783 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 14:45:40,381 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 15:05:44,534 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 15:05:44,534 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 15:05:44,535 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 15:05:44,856 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 15:05:44,856 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 15:05:44,857 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 15:05:45,232 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 15:10:44,943 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 15:10:44,943 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 15:10:44,944 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 15:10:45,245 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 15:10:45,246 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 15:10:45,246 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 15:10:45,674 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 15:14:27,496 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 15:14:27,496 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 15:14:27,497 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 15:14:27,814 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 15:14:27,815 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 15:14:27,815 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 15:14:28,212 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 15:18:16,095 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 15:18:16,096 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 15:18:16,096 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 15:18:16,411 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 15:18:16,411 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 15:18:16,411 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 15:18:16,803 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 15:25:18,080 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 15:25:18,081 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 15:25:18,081 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 15:25:18,395 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 15:25:18,395 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 15:25:18,396 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 15:25:18,877 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 15:27:30,387 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-06 15:30:17,645 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 15:30:17,646 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 15:30:17,646 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 15:30:17,948 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 15:30:17,949 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 15:30:17,949 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 15:30:18,309 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 15:59:22,063 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-06 16:35:01,782 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 16:35:01,782 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 16:35:01,783 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 16:35:02,166 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 16:35:02,166 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 16:35:02,166 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 16:35:02,514 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 16:51:10,035 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 16:51:10,035 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 16:51:10,035 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 16:51:10,340 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 16:51:10,340 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 16:51:10,340 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 16:51:10,761 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 16:57:52,463 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 16:57:52,464 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 16:57:52,464 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 16:57:52,772 - autofill_ai - INFO - OpenRouter client initialized with model: google/gemma-3-4b-it:free
+2026-05-06 16:57:52,773 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 16:57:52,773 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 16:57:53,219 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 17:49:31,973 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 17:49:31,973 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 17:49:31,974 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 17:49:32,351 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 17:49:32,351 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 17:49:32,351 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 17:49:32,750 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 17:51:28,290 - autofill_ai - INFO - submit_form called: template_id=68, user_id=1001, form_id=7
+2026-05-06 17:51:28,576 - autofill_ai - INFO - Submission saved: 18
+2026-05-06 17:51:28,580 - autofill_ai - INFO - Template has 9 fields
+2026-05-06 17:51:28,613 - autofill_ai - INFO - Processing field: ngày_sinh
+2026-05-06 17:51:28,613 - autofill_ai - INFO -   Field ngày_sinh value: '2004-03-24'
+2026-05-06 17:51:28,700 - autofill_ai - INFO - Saved 9 entries for submission 18
+2026-05-06 17:51:28,700 - autofill_ai - INFO - Submit completed for submission 18
+2026-05-06 19:51:49,099 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 19:51:49,111 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 19:51:49,112 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 19:51:49,422 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 19:51:49,422 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 19:51:49,423 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 19:51:49,919 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 20:13:53,262 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 20:13:53,262 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 20:13:53,262 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 20:13:53,602 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 20:13:53,602 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 20:13:53,602 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 20:13:53,989 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 20:17:46,986 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 20:17:46,987 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 20:17:46,987 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 20:17:47,305 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 20:17:47,305 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 20:17:47,306 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 20:17:47,687 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 20:19:06,519 - autofill_ai - INFO - Session deleted: demoexcel_20260406142401115149
+2026-05-06 20:19:12,766 - autofill_ai - INFO - Upload started: demoex.xlsx (.xlsx)
+2026-05-06 20:19:12,766 - autofill_ai - INFO - File size: 9062 bytes
+2026-05-06 20:19:12,774 - autofill_ai - INFO - Attempting to parse .xlsx with openpyxl...
+2026-05-06 20:19:27,226 - autofill_ai - INFO - Upload started: demoexcel.xlsx (.xlsx)
+2026-05-06 20:19:27,227 - autofill_ai - INFO - File size: 14179 bytes
+2026-05-06 20:19:27,227 - autofill_ai - INFO - Attempting to parse .xlsx with openpyxl...
+2026-05-06 20:34:53,987 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 20:34:53,988 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 20:34:53,988 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 20:34:54,292 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 20:34:54,293 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 20:34:54,293 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 20:34:54,671 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 21:48:17,094 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 21:48:17,095 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 21:48:17,095 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 21:48:17,418 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 21:48:17,418 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 21:48:17,419 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 21:48:17,897 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 22:02:31,255 - autofill_ai - INFO - submit_form called: template_id=49, user_id=1001, form_id=7
+2026-05-06 22:02:31,613 - autofill_ai - INFO - Submission saved: 19
+2026-05-06 22:02:31,617 - autofill_ai - INFO - Template has 4 fields
+2026-05-06 22:02:31,647 - autofill_ai - INFO - Processing field: mssv
+2026-05-06 22:02:31,647 - autofill_ai - INFO -   Field mssv has no value, skipping
+2026-05-06 22:02:31,675 - autofill_ai - INFO - Submit completed for submission 19
+2026-05-06 22:07:55,649 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 22:07:55,649 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 22:07:55,650 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 22:07:55,966 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 22:07:55,967 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 22:07:55,967 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 22:07:56,342 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 22:08:00,915 - autofill_ai - WARNING - Template-preserving export failed, fallback to plain export: Template has no usable placeholders, fallback to auto-formatted export
+2026-05-06 22:21:26,112 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 22:21:26,113 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 22:21:26,113 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 22:21:26,424 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 22:21:26,424 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 22:21:26,424 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 22:21:26,781 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 22:23:36,399 - autofill_ai - INFO - submit_form called: template_id=49, user_id=1001, form_id=7
+2026-05-06 22:23:36,422 - autofill_ai - INFO - Submission saved: 20
+2026-05-06 22:23:36,425 - autofill_ai - INFO - Template has 4 fields
+2026-05-06 22:23:36,446 - autofill_ai - INFO - Processing field: mssv
+2026-05-06 22:23:36,446 - autofill_ai - INFO -   Field mssv has no value, skipping
+2026-05-06 22:23:36,466 - autofill_ai - INFO - Submit completed for submission 20
+2026-05-06 22:28:26,068 - autofill_ai - INFO - submit_form called: template_id=49, user_id=1001, form_id=7
+2026-05-06 22:28:26,085 - autofill_ai - INFO - Submission saved: 21
+2026-05-06 22:28:26,087 - autofill_ai - INFO - Template has 4 fields
+2026-05-06 22:28:26,110 - autofill_ai - INFO - Processing field: mssv
+2026-05-06 22:28:26,110 - autofill_ai - INFO -   Field mssv has no value, skipping
+2026-05-06 22:28:26,132 - autofill_ai - INFO - Submit completed for submission 21
+2026-05-06 22:38:29,949 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 22:38:29,950 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 22:38:29,950 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 22:38:30,252 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 22:38:30,252 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 22:38:30,253 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 22:38:30,614 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 22:58:25,430 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 22:58:25,431 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 22:58:25,431 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 22:58:25,837 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 22:58:25,838 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 22:58:25,838 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 22:58:26,296 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 23:03:22,070 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-06 23:03:23,118 - autofill_ai - INFO - Getting document 3 for user 1001
+2026-05-06 23:03:47,404 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-06 23:03:48,750 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-06 23:03:49,212 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-06 23:03:49,670 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-06 23:03:52,277 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-06 23:03:53,823 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-06 23:04:15,091 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:04:15,093 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:04:15,131 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-06 23:04:15,176 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-06 23:04:15,234 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-06 23:04:23,343 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:04:23,343 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:04:27,522 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:04:27,522 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:04:35,793 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:04:35,794 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:04:39,993 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:04:39,993 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:04:40,783 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:04:40,783 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:04:41,284 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:04:41,285 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:04:54,247 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:04:54,248 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:08:26,470 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 23:08:26,470 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 23:08:26,471 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 23:08:26,857 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-06 23:08:26,857 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-06 23:08:26,857 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-06 23:08:27,316 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-06 23:23:09,143 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-06 23:23:14,736 - autofill_ai - INFO - Getting document 3 for user 1001
+2026-05-06 23:23:39,430 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-06 23:23:40,339 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-06 23:23:42,992 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-06 23:23:43,061 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-06 23:23:53,765 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:23:53,766 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:23:56,116 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:23:56,117 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:24:08,357 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:24:08,358 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:24:11,379 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:24:11,380 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:53:28,891 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-06 23:53:34,871 - autofill_ai - INFO - Getting document 3 for user 1001
+2026-05-06 23:58:56,341 - autofill_ai - INFO - Getting suggestions for user 1006
+2026-05-06 23:58:56,341 - autofill_ai - INFO - Getting suggestions for context: Xin chao, toi muon viet tiep doan van nay.... provider order=['openrouter']
+2026-05-06 23:59:09,778 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:59:09,779 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-06 23:59:29,553 - autofill_ai - INFO - Getting suggestions for user 1006
+2026-05-06 23:59:29,554 - autofill_ai - INFO - Getting suggestions for context: Noi dung thu nghiem de lay goi y AI.... provider order=['openrouter']
+2026-05-06 23:59:40,859 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-06 23:59:40,859 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-07 00:02:49,378 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 00:02:52,867 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 00:02:53,675 - autofill_ai - INFO - Getting document 3 for user 1001
+2026-05-07 00:03:32,376 - autofill_ai - INFO - Getting suggestions for user 1001
+2026-05-07 00:04:07,954 - autofill_ai - INFO - Composer AI succeeded with model: openai/gpt-oss-120b:free
+2026-05-07 00:04:07,955 - autofill_ai - INFO - Got 3 suggestions via provider=openrouter
+2026-05-07 12:43:10,533 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 12:43:10,534 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 12:43:10,534 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 12:43:10,843 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 12:43:10,843 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 12:43:10,844 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 12:43:11,453 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-07 12:51:03,005 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 12:51:03,005 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 12:51:03,006 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 12:51:03,319 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 12:51:03,319 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 12:51:03,320 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 12:51:03,697 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-07 12:53:08,868 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 12:53:08,869 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 12:53:08,869 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 12:53:09,181 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 12:53:09,182 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 12:53:09,182 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 12:53:09,558 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-07 13:01:52,464 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 13:01:52,464 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 13:01:52,465 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 13:01:52,772 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 13:01:52,773 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 13:01:52,773 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 13:01:53,151 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-07 13:11:53,239 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 13:11:53,239 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 13:11:53,240 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 13:11:53,545 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 13:11:53,546 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 13:11:53,546 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 13:11:53,909 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-07 13:15:29,439 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 13:15:29,439 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 13:15:29,439 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 13:15:29,747 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 13:15:29,748 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 13:15:29,748 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 13:42:53,042 - autofill_ai - INFO - Listing documents for user 1009
+2026-05-07 13:50:39,931 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 13:50:39,932 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 13:50:39,932 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 13:50:40,282 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 13:50:40,282 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 13:50:40,283 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 13:50:40,699 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-07 14:44:55,491 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 14:45:36,065 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 14:48:29,917 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 14:49:15,019 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 14:49:31,340 - autofill_ai - INFO - Getting document 3 for user 1001
+2026-05-07 14:49:45,325 - autofill_ai - INFO - Getting document 3 for user 1001
+2026-05-07 14:52:31,281 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 15:09:55,957 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 15:09:55,958 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 15:09:55,958 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 15:09:56,288 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 15:09:56,288 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 15:09:56,289 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 15:09:56,696 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-07 15:15:15,773 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 15:15:15,773 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 15:15:15,774 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 15:15:16,091 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 15:15:16,092 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 15:15:16,092 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 15:15:16,498 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-07 15:16:15,722 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 15:16:15,723 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 15:16:15,723 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 15:16:16,042 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 15:16:16,043 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 15:16:16,043 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 15:16:16,441 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-07 15:17:15,691 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 15:17:15,691 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 15:17:15,692 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 15:17:16,103 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 15:17:16,103 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 15:17:16,104 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 15:17:16,481 - autofill_ai - INFO - Default admin check completed with user: admin
+2026-05-07 15:27:03,020 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 15:41:07,041 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 15:44:42,711 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 15:51:47,441 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 16:02:24,895 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 17:15:08,532 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 17:27:17,061 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 17:27:25,843 - autofill_ai - INFO - Listing documents for user 1001
+2026-05-07 17:59:55,242 - autofill_ai - INFO - submit_form called: template_id=49, user_id=1001, form_id=7
+2026-05-07 17:59:55,507 - autofill_ai - INFO - Submission saved: 22
+2026-05-07 17:59:55,511 - autofill_ai - INFO - Template has 4 fields
+2026-05-07 17:59:55,534 - autofill_ai - INFO - Processing field: mssv
+2026-05-07 17:59:55,534 - autofill_ai - INFO -   Field mssv has no value, skipping
+2026-05-07 17:59:55,552 - autofill_ai - INFO - Submit completed for submission 22
+2026-05-07 23:21:44,470 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 23:21:44,471 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 23:21:44,472 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 23:21:44,808 - autofill_ai - INFO - OpenRouter client initialized with model: openai/gpt-oss-120b:free
+2026-05-07 23:21:44,809 - autofill_ai - WARNING - OpenAI API key is missing
+2026-05-07 23:21:44,809 - autofill_ai - INFO - Composer AI profile=auto, failover=True, active provider=openrouter, order=['openrouter']
+2026-05-07 23:21:45,450 - autofill_ai - INFO - Default admin check completed with user: admin

@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text, inspect
 import openpyxl
 from io import BytesIO
+from copy import copy
 import csv
 import os
 import zipfile
@@ -441,10 +442,112 @@ def _can_access_session(current_user: User, session_owner_id: int) -> bool:
 
 
 SESSION_TEMPLATE_PREFIX = "excel_session::"
+SESSION_TEMPLATE_UPLOAD_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "..", "uploads", "excel_sessions")
+)
 
 
 def _session_template_name(filename: str) -> str:
     return f"{SESSION_TEMPLATE_PREFIX}{filename}"
+
+
+def _safe_filename_fragment(filename: str) -> str:
+    name = os.path.basename(filename or "excel_template.xlsx")
+    return re.sub(r"[^A-Za-z0-9._-]+", "_", name) or "excel_template.xlsx"
+
+
+def _save_uploaded_template_file(session_id: str, filename: str, content: bytes) -> str:
+    os.makedirs(SESSION_TEMPLATE_UPLOAD_DIR, exist_ok=True)
+    safe_name = _safe_filename_fragment(filename)
+    output_path = os.path.join(SESSION_TEMPLATE_UPLOAD_DIR, f"{session_id}_{safe_name}")
+    with open(output_path, "wb") as f:
+        f.write(content)
+    return output_path
+
+
+def _build_column_map(headers: list[str]) -> dict[str, int]:
+    return {
+        str(header): idx + 1
+        for idx, header in enumerate(headers)
+        if str(header or "").strip()
+    }
+
+
+def _copy_row_style(worksheet, source_row: int, target_row: int, max_column: int) -> None:
+    for col_idx in range(1, max_column + 1):
+        src_cell = worksheet.cell(row=source_row, column=col_idx)
+        dst_cell = worksheet.cell(row=target_row, column=col_idx)
+        if src_cell.has_style:
+            dst_cell._style = copy(src_cell._style)
+        if src_cell.comment is not None:
+            dst_cell.comment = copy(src_cell.comment)
+        if src_cell.hyperlink is not None:
+            dst_cell._hyperlink = copy(src_cell.hyperlink)
+
+    src_dim = worksheet.row_dimensions.get(source_row)
+    if src_dim and src_dim.height is not None:
+        worksheet.row_dimensions[target_row].height = src_dim.height
+
+
+def _export_xlsx_with_original_format(
+    template_path: str,
+    headers: list[str],
+    rows: list[dict],
+    export_meta: dict | None = None,
+) -> BytesIO:
+    workbook = openpyxl.load_workbook(template_path)
+    meta = export_meta if isinstance(export_meta, dict) else {}
+
+    sheet_name = str(meta.get("sheet_name") or "").strip()
+    if sheet_name and sheet_name in workbook.sheetnames:
+        worksheet = workbook[sheet_name]
+    else:
+        worksheet = workbook.active
+
+    data_start_row = int(meta.get("data_start_row") or 2)
+    if data_start_row < 1:
+        data_start_row = 2
+
+    raw_column_map = meta.get("column_map")
+    if isinstance(raw_column_map, dict):
+        column_map = {}
+        for key, value in raw_column_map.items():
+            try:
+                col_idx = int(value)
+            except Exception:
+                continue
+            if col_idx > 0:
+                column_map[str(key)] = col_idx
+    else:
+        column_map = {}
+    if not column_map:
+        column_map = _build_column_map(headers)
+
+    max_column = max([len(headers)] + list(column_map.values() or [1]))
+    style_source_row = data_start_row if data_start_row <= worksheet.max_row else max(data_start_row - 1, 1)
+
+    if worksheet.max_row >= data_start_row:
+        for row_idx in range(data_start_row, worksheet.max_row + 1):
+            for col_idx in range(1, max_column + 1):
+                worksheet.cell(row=row_idx, column=col_idx).value = None
+
+    for row_offset, row in enumerate(rows):
+        row_dict = row if isinstance(row, dict) else {}
+        target_row = data_start_row + row_offset
+
+        if target_row > worksheet.max_row:
+            _copy_row_style(worksheet, style_source_row, target_row, max_column)
+
+        for header in headers:
+            col_idx = column_map.get(header)
+            if not col_idx:
+                continue
+            worksheet.cell(row=target_row, column=col_idx).value = row_dict.get(header, "")
+
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+    return output
 
 
 def _normalize_history_items(history: Any) -> list[dict]:
@@ -501,6 +604,9 @@ def _persist_session_to_db(
     rows: list,
     created_at: str,
     history: list | None = None,
+    file_ext: str | None = None,
+    template_file_path: str | None = None,
+    export_meta: dict | None = None,
 ) -> None:
     normalized_history = _normalize_history_items(history)
     persisted_payload = {
@@ -508,6 +614,9 @@ def _persist_session_to_db(
         "field_metadata": extract_field_metadata(headers),
         "created_at": created_at,
         "history": normalized_history,
+        "file_ext": str(file_ext or ""),
+        "template_file_path": str(template_file_path or ""),
+        "export_meta": export_meta if isinstance(export_meta, dict) else {},
     }
 
     record = db.query(ExcelTemplate).filter(
@@ -562,6 +671,9 @@ def _load_session_from_db(db: Session, session_id: str) -> dict | None:
     field_metadata = persisted_payload.get("field_metadata") if isinstance(persisted_payload, dict) else None
     created_at = persisted_payload.get("created_at") if isinstance(persisted_payload, dict) else None
     history = persisted_payload.get("history") if isinstance(persisted_payload, dict) else []
+    file_ext = persisted_payload.get("file_ext") if isinstance(persisted_payload, dict) else ""
+    template_file_path = persisted_payload.get("template_file_path") if isinstance(persisted_payload, dict) else ""
+    export_meta = persisted_payload.get("export_meta") if isinstance(persisted_payload, dict) else {}
 
     if not isinstance(rows, list):
         rows = []
@@ -570,6 +682,12 @@ def _load_session_from_db(db: Session, session_id: str) -> dict | None:
     if not created_at:
         created_at = record.created_at.isoformat() if record.created_at else datetime.utcnow().isoformat()
     history = _normalize_history_items(history)
+    if not isinstance(export_meta, dict):
+        export_meta = {}
+    if not isinstance(file_ext, str):
+        file_ext = ""
+    if not isinstance(template_file_path, str):
+        template_file_path = ""
 
     return {
         "user_id": int(record.user_id),
@@ -580,6 +698,9 @@ def _load_session_from_db(db: Session, session_id: str) -> dict | None:
         "created_at": str(created_at),
         "field_metadata": field_metadata,
         "history": history,
+        "file_ext": file_ext,
+        "template_file_path": template_file_path,
+        "export_meta": export_meta,
     }
 
 
@@ -825,7 +946,7 @@ def is_valid_xlsx(file_content: bytes) -> tuple[bool, str]:
     except Exception as e:
         return False, f"ZIP validation error: {str(e)}"
 
-def parse_excel_with_openpyxl(excel_file: BytesIO) -> tuple[list, list, str]:
+def parse_excel_with_openpyxl(excel_file: BytesIO) -> tuple[list, list, str, dict]:
     """Parse Excel file with openpyxl - extract ALL columns"""
     try:
         workbook = openpyxl.load_workbook(excel_file, data_only=True, read_only=False)
@@ -964,7 +1085,14 @@ def parse_excel_with_openpyxl(excel_file: BytesIO) -> tuple[list, list, str]:
             raise ValueError("Không tìm thấy dữ liệu trong file. Vui lòng kiểm tra file Excel.")
         
         msg = f"Tải file thành công! Tìm thấy {len(rows)} dòng dữ liệu"
-        return headers, rows, msg
+        metadata = {
+            "sheet_name": worksheet.title,
+            "header_row_index": header_row_idx,
+            "data_start_row": start_row,
+            "column_map": _build_column_map(headers),
+            "max_column": worksheet.max_column,
+        }
+        return headers, rows, msg, metadata
     except Exception as e:
         error_msg = str(e)
         # Provide helpful Vietnamese messages
@@ -973,7 +1101,7 @@ def parse_excel_with_openpyxl(excel_file: BytesIO) -> tuple[list, list, str]:
         else:
             raise Exception(f"Lỗi: Không thể đọc file Excel: {error_msg}")
 
-def parse_xls_file(file_content: bytes) -> tuple[list, list, str]:
+def parse_xls_file(file_content: bytes) -> tuple[list, list, str, dict]:
     """Parse .xls file using xlrd - extract ALL columns"""
     try:
         # Open XLS file
@@ -1118,7 +1246,14 @@ def parse_xls_file(file_content: bytes) -> tuple[list, list, str]:
             raise ValueError("Không tìm thấy dữ liệu trong file. Vui lòng kiểm tra file Excel.")
         
         msg = f"Tải file thành công! Tìm thấy {len(rows)} dòng dữ liệu"
-        return headers, rows, msg
+        metadata = {
+            "sheet_name": worksheet.name,
+            "header_row_index": header_row_idx + 1,
+            "data_start_row": start_row + 1,
+            "column_map": _build_column_map(headers),
+            "max_column": worksheet.ncols,
+        }
+        return headers, rows, msg, metadata
     except Exception as e:
         error_msg = str(e)
         if "Không tìm thấy" in error_msg:
@@ -1171,9 +1306,9 @@ async def get_reference_field_options(
             })
 
         if file_ext == '.xlsx':
-            headers, rows, _ = parse_excel_with_openpyxl(BytesIO(raw_content))
+            headers, rows, _, _ = parse_excel_with_openpyxl(BytesIO(raw_content))
         else:
-            headers, rows, _ = parse_xls_file(raw_content)
+            headers, rows, _, _ = parse_xls_file(raw_content)
 
         matches: dict[str, dict[str, Any]] = {}
         unmatched_keys: list[str] = []
@@ -1322,12 +1457,13 @@ async def upload_excel(
         error_messages = []
         headers = None
         rows = None
+        export_meta = None
         
         # For .xlsx files: try openpyxl
         if file_ext == '.xlsx':
             try:
                 logger.info("Attempting to parse .xlsx with openpyxl...")
-                headers, rows, msg = parse_excel_with_openpyxl(excel_file)
+                headers, rows, msg, export_meta = parse_excel_with_openpyxl(excel_file)
             except Exception as e:
                 error_msg = str(e)
                 error_messages.append(f"openpyxl: {error_msg}")
@@ -1345,7 +1481,7 @@ async def upload_excel(
         elif file_ext == '.xls':
             try:
                 logger.info("Attempting to parse .xls with xlrd...")
-                headers, rows, msg = parse_xls_file(contents)
+                headers, rows, msg, export_meta = parse_xls_file(contents)
             except Exception as e:
                 error_msg = str(e)
                 logger.error(f"XLS parsing failed: {error_msg}")
@@ -1358,6 +1494,9 @@ async def upload_excel(
         if headers and rows:
             base_session_id = filename.replace('.xlsx', '').replace('.xls', '').replace(' ', '_')
             session_id = f"{base_session_id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"
+            template_file_path = None
+            if file_ext == '.xlsx':
+                template_file_path = _save_uploaded_template_file(session_id, filename, contents)
             
             # Extract field metadata for better grouping
             field_metadata = extract_field_metadata(headers)
@@ -1370,7 +1509,10 @@ async def upload_excel(
                 'filename': filename,
                 'field_metadata': field_metadata,
                 'created_at': datetime.utcnow().isoformat(),
-                'history': []
+                'history': [],
+                'file_ext': file_ext,
+                'template_file_path': template_file_path,
+                'export_meta': export_meta if isinstance(export_meta, dict) else {}
             }
 
             # Ensure form + fields are available immediately after upload.
@@ -1492,6 +1634,9 @@ async def add_excel_page(
             rows=rows,
             created_at=session_data.get('created_at') or datetime.utcnow().isoformat(),
             history=session_data.get('history', []),
+            file_ext=session_data.get('file_ext'),
+            template_file_path=session_data.get('template_file_path'),
+            export_meta=session_data.get('export_meta'),
         )
 
         return JSONResponse({
@@ -1509,6 +1654,71 @@ async def add_excel_page(
         raise HTTPException(status_code=500, detail=f"Lỗi thêm trang mới: {str(e)}")
 
 
+@router.delete("/page/{session_id}/{row_index}")
+async def delete_excel_page(
+    session_id: str,
+    row_index: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Delete current row(page) from an Excel session."""
+    try:
+        session_data = _get_session_data_or_404(session_id, current_user, db)
+        rows = session_data.get('rows')
+        if not isinstance(rows, list):
+            rows = []
+            session_data['rows'] = rows
+
+        if row_index < 0 or row_index >= len(rows):
+            raise HTTPException(status_code=400, detail=f"Row index out of range. Valid range: 0-{max(len(rows) - 1, 0)}")
+
+        rows.pop(row_index)
+        session_data['total_rows'] = len(rows)
+
+        history = _normalize_history_items(session_data.get('history'))
+        adjusted_history: list[dict] = []
+        for item in history:
+            item_row_index = int(item.get("row_index", -1))
+            if item_row_index == row_index:
+                continue
+            if item_row_index > row_index:
+                item["row_index"] = item_row_index - 1
+            adjusted_history.append(item)
+        session_data['history'] = adjusted_history
+
+        _persist_session_to_db(
+            db=db,
+            session_id=session_id,
+            user_id=current_user.id,
+            filename=session_data.get('filename', ''),
+            headers=session_data.get('headers', []),
+            rows=rows,
+            created_at=session_data.get('created_at') or datetime.utcnow().isoformat(),
+            history=adjusted_history,
+            file_ext=session_data.get('file_ext'),
+            template_file_path=session_data.get('template_file_path'),
+            export_meta=session_data.get('export_meta'),
+        )
+
+        next_row_index = 0
+        if rows:
+            next_row_index = min(row_index, len(rows) - 1)
+
+        return JSONResponse({
+            "status": "success",
+            "deleted_row_index": row_index,
+            "next_row_index": next_row_index,
+            "total_rows": len(rows),
+            "message": "Đã xóa trang hiện tại"
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error deleting excel page: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Lỗi xóa trang hiện tại: {str(e)}")
+
+
 @router.delete("/session/{session_id}")
 async def delete_session(
     session_id: str,
@@ -1517,13 +1727,20 @@ async def delete_session(
 ):
     """Delete a session"""
     try:
-        _ = _get_session_data_or_404(session_id, current_user, db)
+        session_data = _get_session_data_or_404(session_id, current_user, db)
 
         db.query(ExcelTemplate).filter(
             ExcelTemplate.file_path == session_id,
             ExcelTemplate.template_name.like(f"{SESSION_TEMPLATE_PREFIX}%")
         ).delete(synchronize_session=False)
         db.commit()
+
+        template_path = str(session_data.get("template_file_path") or "").strip()
+        if template_path and os.path.exists(template_path):
+            try:
+                os.remove(template_path)
+            except Exception:
+                logger.warning(f"Unable to remove session template file: {template_path}")
         
         del excel_data_store[session_id]
         logger.info(f"Session deleted: {session_id}")
@@ -1681,6 +1898,9 @@ async def save_excel_row(
             rows=session_data.get('rows', []),
             created_at=session_data.get('created_at') or datetime.utcnow().isoformat(),
             history=session_data.get('history', []),
+            file_ext=session_data.get('file_ext'),
+            template_file_path=session_data.get('template_file_path'),
+            export_meta=session_data.get('export_meta'),
         )
 
         return JSONResponse({
@@ -1764,6 +1984,9 @@ async def update_session_history_item(
             rows=session_data.get("rows", []),
             created_at=session_data.get("created_at") or datetime.utcnow().isoformat(),
             history=history,
+            file_ext=session_data.get('file_ext'),
+            template_file_path=session_data.get('template_file_path'),
+            export_meta=session_data.get('export_meta'),
         )
 
         return JSONResponse({
@@ -1805,6 +2028,9 @@ async def delete_session_history_item(
             rows=session_data.get("rows", []),
             created_at=session_data.get("created_at") or datetime.utcnow().isoformat(),
             history=history,
+            file_ext=session_data.get('file_ext'),
+            template_file_path=session_data.get('template_file_path'),
+            export_meta=session_data.get('export_meta'),
         )
 
         return JSONResponse({
@@ -1838,17 +2064,29 @@ async def export_session_data(
 
         fmt = (export_format or "xlsx").strip().lower()
         if fmt == "xlsx":
-            workbook = openpyxl.Workbook()
-            worksheet = workbook.active
-            worksheet.title = "Export"
-            worksheet.append(headers)
-            for row in rows:
-                row_dict = row if isinstance(row, dict) else {}
-                worksheet.append([row_dict.get(header, "") for header in headers])
+            template_path = str(session_data.get("template_file_path") or "").strip()
+            export_meta = session_data.get("export_meta") if isinstance(session_data.get("export_meta"), dict) else {}
 
-            output = BytesIO()
-            workbook.save(output)
-            output.seek(0)
+            if template_path and os.path.exists(template_path):
+                output = _export_xlsx_with_original_format(
+                    template_path=template_path,
+                    headers=headers,
+                    rows=rows,
+                    export_meta=export_meta,
+                )
+            else:
+                workbook = openpyxl.Workbook()
+                worksheet = workbook.active
+                worksheet.title = "Export"
+                worksheet.append(headers)
+                for row in rows:
+                    row_dict = row if isinstance(row, dict) else {}
+                    worksheet.append([row_dict.get(header, "") for header in headers])
+
+                output = BytesIO()
+                workbook.save(output)
+                output.seek(0)
+
             export_name = f"{filename_root}_{timestamp}.xlsx"
             return StreamingResponse(
                 output,

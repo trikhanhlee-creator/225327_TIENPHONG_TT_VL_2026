@@ -4,12 +4,17 @@ API Routes cho xử lý upload và submit form từ file Word/Document
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Query
 from fastapi.requests import Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import text, inspect
-from typing import List, Dict
+from typing import List, Dict, Iterable
 import os
 import json
+import io
+from urllib.parse import quote
 from datetime import datetime
+from pydantic import BaseModel
+from docx import Document
 
 from app.db.session import get_db
 from app.db.models import WordTemplate, WordSubmission, Entry, Field, User, Form
@@ -21,6 +26,172 @@ import re
 
 router = APIRouter(prefix="/api/word", tags=["word"])
 
+SUBMISSION_META_KEY = "__autofill_meta__"
+
+PLACEHOLDER_RE = re.compile(r'(\.{3,}|_{3,}|…{2,}|-{3,}|─{3,}|‒{3,}|–{3,}|—{3,}|\u2026{2,})')
+DATE_TEMPLATE_RE = re.compile(
+    r'ngày\s*[.\-_/…_‒–—]{1,}\s*tháng\s*[.\-_/…_‒–—]{1,}\s*năm\s*[.\-_/…_‒–—]{1,}',
+    re.IGNORECASE
+)
+
+class WordDocxExportRequest(BaseModel):
+    submission_ids: list[int]
+    file_name: str | None = None
+    user_id: int | None = None
+
+
+def _iter_doc_paragraphs(doc: Document) -> Iterable:
+    """Yield paragraph objects from body and tables in display order."""
+    for paragraph in doc.paragraphs:
+        yield paragraph
+
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    yield paragraph
+
+
+def _normalize_export_value(value: object) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    return str(value).strip()
+
+
+def _split_submission_payload(raw_payload: object) -> tuple[dict, dict]:
+    if not isinstance(raw_payload, dict):
+        return {}, {}
+
+    meta = raw_payload.get(SUBMISSION_META_KEY)
+    if not isinstance(meta, dict):
+        meta = {}
+
+    visible_data: dict = {}
+    for key, value in raw_payload.items():
+        key_text = str(key)
+        if key_text.startswith("__"):
+            continue
+        visible_data[key_text] = value
+
+    return visible_data, meta
+
+
+def _load_submission_payload(raw_json: str | None) -> tuple[dict, dict]:
+    if not raw_json:
+        return {}, {}
+
+    try:
+        parsed = json.loads(raw_json)
+    except Exception:
+        return {}, {}
+
+    return _split_submission_payload(parsed)
+
+
+def _compose_submission_payload(visible_data: dict, meta: dict | None = None) -> dict:
+    payload: dict = dict(visible_data or {})
+    if isinstance(meta, dict) and meta:
+        payload[SUBMISSION_META_KEY] = meta
+    return payload
+
+
+def _parse_date_parts(raw_value: str) -> tuple[str, str, str] | None:
+    raw = (raw_value or "").strip()
+    if not raw:
+        return None
+
+    candidates: list[datetime] = []
+    for date_fmt in ("%Y-%m-%d", "%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d"):
+        try:
+            candidates.append(datetime.strptime(raw, date_fmt))
+            break
+        except ValueError:
+            continue
+
+    if not candidates:
+        try:
+            candidates.append(datetime.fromisoformat(raw))
+        except ValueError:
+            return None
+
+    dt = candidates[0]
+    return (f"{dt.day:02d}", f"{dt.month:02d}", f"{dt.year:04d}")
+
+
+def _is_signature_date_line(text: str) -> bool:
+    normalized = re.sub(r'\s+', ' ', (text or '').strip()).lower()
+    if not normalized or not DATE_TEMPLATE_RE.search(normalized):
+        return False
+    if ":" in normalized or "：" in normalized:
+        return False
+    return not any(keyword in normalized for keyword in ("ngày nộp", "ngày ký", "ngày lập"))
+
+
+def _pick_submission_date_value(data_map: dict, ordered_field_names: list[str]) -> str:
+    for field_name in ordered_field_names:
+        lowered = field_name.lower()
+        if "ngay" in lowered and ("nop" in lowered or "don" in lowered or "ky" in lowered or "lap" in lowered):
+            value = _normalize_export_value(data_map.get(field_name))
+            if value:
+                return value
+
+    for key, value in data_map.items():
+        lowered = str(key).lower()
+        if "ngay" in lowered and ("nop" in lowered or "don" in lowered or "ky" in lowered or "lap" in lowered):
+            cleaned = _normalize_export_value(value)
+            if cleaned:
+                return cleaned
+    return ""
+
+
+def _fill_submission_into_template_docx(template_path: str, data_map: dict, template_fields: list[dict]) -> tuple[Document, int]:
+    """Fill values into uploaded .docx template and return replacement count."""
+    doc = Document(template_path)
+    ordered_field_names = [str(field.get("name", "")).strip() for field in template_fields if field.get("name")]
+    values_in_order = [_normalize_export_value(data_map.get(name, "")) for name in ordered_field_names]
+    value_idx = 0
+    replaced_count = 0
+    date_value = _pick_submission_date_value(data_map, ordered_field_names)
+
+    for paragraph in _iter_doc_paragraphs(doc):
+        original_text = paragraph.text or ""
+        if not original_text:
+            continue
+
+        new_text = original_text
+
+        # Keep signature footer date template stable, only replace if user has explicit date value.
+        if _is_signature_date_line(original_text):
+            parts = _parse_date_parts(date_value)
+            if parts:
+                dd, mm, yyyy = parts
+                new_text = DATE_TEMPLATE_RE.sub(f"ngày {dd} tháng {mm} năm {yyyy}", new_text, count=1)
+            if new_text != original_text:
+                paragraph.text = new_text
+                replaced_count += 1
+            continue
+
+        if not PLACEHOLDER_RE.search(new_text):
+            continue
+
+        def _replace_placeholder(match: re.Match) -> str:
+            nonlocal value_idx
+            if value_idx >= len(values_in_order):
+                return match.group(0)
+            value = values_in_order[value_idx]
+            value_idx += 1
+            return value if value else match.group(0)
+
+        replaced_text = PLACEHOLDER_RE.sub(_replace_placeholder, new_text)
+        if replaced_text != original_text:
+            paragraph.text = replaced_text
+            replaced_count += 1
+
+    return doc, replaced_count
+
+
 # Thư mục lưu file upload
 UPLOAD_DIR = "uploads"
 if not os.path.exists(UPLOAD_DIR):
@@ -30,8 +201,14 @@ if not os.path.exists(UPLOAD_DIR):
 def _sanitize_field_label(text: str) -> str:
     """Normalize legacy label text into a clean display label."""
     value = (text or "").strip()
-    value = re.sub(r'\s*([\.:,;\-_()\[\]{}])+\s*$', '', value)
-    return value.strip()
+    # Convert technical separators to spaces, remove punctuation/symbols,
+    # then normalize to "Title Case" for clean UI/Word export display.
+    value = re.sub(r'[_\-]+', ' ', value)
+    value = re.sub(r'[^\w\s]', ' ', value)
+    value = re.sub(r'\s+', ' ', value).strip()
+    if not value:
+        return ""
+    return " ".join(word[:1].upper() + word[1:].lower() for word in value.split())
 
 
 def _to_field_name(label: str) -> str:
@@ -68,7 +245,7 @@ def parse_template_fields(fields_json_raw: str | None) -> list[dict]:
         if isinstance(item, dict):
             raw_label = item.get("label") or item.get("name") or f"Field {idx + 1}"
             label = _sanitize_field_label(str(raw_label)) or f"Field {idx + 1}"
-            name = item.get("name") or _to_field_name(label)
+            name = _to_field_name(str(item.get("name") or label))
             field_type = item.get("field_type") or "text"
             order = item.get("order", idx)
         elif isinstance(item, str):
@@ -511,21 +688,23 @@ async def submit_form(
     
     # Get JSON data from request body
     try:
-        data = await request.json()
-        if not isinstance(data, dict):
-            data = {}
+        request_data = await request.json()
+        if not isinstance(request_data, dict):
+            request_data = {}
     except Exception as e:
         logger.error(f"Error parsing JSON: {str(e)}", exc_info=True)
-        data = {}
-    
+        request_data = {}
+
+    data, submission_meta = _split_submission_payload(request_data)
     logger.info(f"Received form data: {data}")
     
     try:
         # Lưu submission
+        payload_to_store = _compose_submission_payload(data, submission_meta)
         submission = WordSubmission(
             template_id=template_id,
             user_id=effective_user_id,
-            submission_data=json.dumps(data or {})
+            submission_data=json.dumps(payload_to_store or {}, ensure_ascii=False)
         )
         db.add(submission)
         db.commit()
@@ -579,6 +758,7 @@ async def submit_form(
         return {
             "status": "success",
             "submission_id": submission.id,
+            "history_group_id": str(submission_meta.get("group_id") or "").strip() or None,
             "message": "Submit thành công"
         }
     
@@ -604,18 +784,21 @@ async def get_submissions(
     
     submissions = query.all()
     
-    return {
-        "submissions": [
+    normalized_items = []
+    for s in submissions:
+        data_map, meta = _load_submission_payload(s.submission_data)
+        normalized_items.append(
             {
                 "id": s.id,
                 "template_id": s.template_id,
                 "template_name": s.template.template_name,
-                "data": json.loads(s.submission_data) if s.submission_data else {},
+                "data": data_map,
+                "history_group_id": str(meta.get("group_id") or "").strip() or None,
                 "created_at": s.created_at.isoformat()
             }
-            for s in submissions
-        ]
-    }
+        )
+
+    return {"submissions": normalized_items}
 
 
 @router.get("/submission/{submission_id}")
@@ -635,14 +818,141 @@ async def get_submission_detail(
     if not submission:
         raise HTTPException(status_code=404, detail="Submission không tồn tại")
     
+    data_map, meta = _load_submission_payload(submission.submission_data)
+
     return {
         "id": submission.id,
         "template_id": submission.template_id,
         "template_name": submission.template.template_name,
-        "data": json.loads(submission.submission_data) if submission.submission_data else {},
+        "data": data_map,
+        "history_group_id": str(meta.get("group_id") or "").strip() or None,
         "created_at": submission.created_at.isoformat(),
         "updated_at": submission.created_at.isoformat()
     }
+
+
+@router.post("/export-docx")
+@router.post("/export_docx")
+async def export_submissions_docx(
+    payload: WordDocxExportRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Export .docx, ưu tiên giữ nguyên layout template gốc khi có thể."""
+    if not payload.submission_ids:
+        raise HTTPException(status_code=400, detail="Vui lòng chọn ít nhất một submission để xuất")
+
+    effective_user_id = resolve_effective_user_id(current_user, payload.user_id)
+    normalized_ids = sorted({sid for sid in payload.submission_ids if isinstance(sid, int) and sid > 0})
+    if not normalized_ids:
+        raise HTTPException(status_code=400, detail="Danh sách submission không hợp lệ")
+
+    submissions = db.query(WordSubmission).filter(
+        WordSubmission.user_id == effective_user_id,
+        WordSubmission.id.in_(normalized_ids)
+    ).all()
+
+    if not submissions:
+        raise HTTPException(status_code=404, detail="Không tìm thấy submission phù hợp để xuất")
+
+    submissions_by_id = {int(item.id): item for item in submissions}
+    ordered_submissions = [submissions_by_id[sid] for sid in normalized_ids if sid in submissions_by_id]
+
+    # Best-effort: nếu export 1 submission từ template .docx gốc thì điền trực tiếp vào template,
+    # nhờ đó giữ nguyên định dạng giống file người dùng đã upload.
+    if len(ordered_submissions) == 1:
+        submission = ordered_submissions[0]
+        template = submission.template
+        template_path = (template.file_path or "") if template else ""
+        if template and template_path.lower().endswith(".docx") and os.path.exists(template_path):
+            data_map, _ = _load_submission_payload(submission.submission_data)
+            template_fields = parse_template_fields(template.fields_json if template else None)
+
+            try:
+                rendered_doc, replaced_count = _fill_submission_into_template_docx(
+                    template_path=template_path,
+                    data_map=data_map,
+                    template_fields=template_fields
+                )
+                if replaced_count <= 0:
+                    raise ValueError("Template has no usable placeholders, fallback to auto-formatted export")
+                buffer = io.BytesIO()
+                rendered_doc.save(buffer)
+                buffer.seek(0)
+
+                requested_name = (payload.file_name or template.original_filename or "word_form_export").strip()
+                safe_name = re.sub(r'[\\/:*?"<>|]+', "_", requested_name) or "word_form_export"
+                if not safe_name.lower().endswith(".docx"):
+                    safe_name = f"{safe_name}.docx"
+
+                encoded_name = quote(safe_name)
+                headers = {
+                    "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_name}"
+                }
+                return StreamingResponse(
+                    buffer,
+                    media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    headers=headers
+                )
+            except Exception as render_error:
+                logger.warning(f"Template-preserving export failed, fallback to plain export: {render_error}")
+
+    doc = Document()
+
+    for idx, submission in enumerate(ordered_submissions):
+        data_map, _ = _load_submission_payload(submission.submission_data)
+        template_fields = parse_template_fields(submission.template.fields_json if submission.template else None)
+        ordered_field_names = [str(field.get("name", "")).strip() for field in template_fields if field.get("name")]
+        label_by_name = {
+            str(field.get("name", "")).strip(): _sanitize_field_label(str(field.get("label", "")).strip())
+            for field in template_fields
+            if field.get("name")
+        }
+
+        emitted_fields: set[str] = set()
+        for field_name in ordered_field_names:
+            if field_name not in data_map:
+                continue
+            value = str(data_map.get(field_name, "")).strip()
+            if value == "":
+                continue
+
+            clean_label = label_by_name.get(field_name) or _sanitize_field_label(field_name) or field_name
+            doc.add_paragraph(f"{clean_label}: {value}")
+            emitted_fields.add(field_name)
+
+        for extra_key, extra_value in data_map.items():
+            field_name = str(extra_key).strip()
+            if not field_name or field_name in emitted_fields:
+                continue
+            value = str(extra_value or "").strip()
+            if value == "":
+                continue
+
+            clean_label = _sanitize_field_label(field_name) or field_name
+            doc.add_paragraph(f"{clean_label}: {value}")
+
+        if idx < len(ordered_submissions) - 1:
+            doc.add_paragraph("")
+
+    buffer = io.BytesIO()
+    doc.save(buffer)
+    buffer.seek(0)
+
+    requested_name = (payload.file_name or "word_form_export").strip()
+    safe_name = re.sub(r'[\\/:*?"<>|]+', "_", requested_name) or "word_form_export"
+    if not safe_name.lower().endswith(".docx"):
+        safe_name = f"{safe_name}.docx"
+
+    encoded_name = quote(safe_name)
+    headers = {
+        "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_name}"
+    }
+    return StreamingResponse(
+        buffer,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers=headers
+    )
 
 
 @router.put("/submission/{submission_id}")
@@ -666,11 +976,18 @@ async def update_submission(
     
     try:
         # Đọc JSON body từ request
-        data = await request.json()
-        if data is None:
-            data = {}
-        
-        submission.submission_data = json.dumps(data)
+        incoming_payload = await request.json()
+        if incoming_payload is None or not isinstance(incoming_payload, dict):
+            incoming_payload = {}
+
+        _, current_meta = _load_submission_payload(submission.submission_data)
+        incoming_data_map, incoming_meta = _split_submission_payload(incoming_payload)
+        effective_meta = incoming_meta if incoming_meta else current_meta
+
+        submission.submission_data = json.dumps(
+            _compose_submission_payload(incoming_data_map, effective_meta),
+            ensure_ascii=False
+        )
         db.commit()
         db.refresh(submission)
         
@@ -678,7 +995,8 @@ async def update_submission(
             "status": "success",
             "message": "Cập nhật submission thành công",
             "id": submission.id,
-            "data": json.loads(submission.submission_data)
+            "data": incoming_data_map,
+            "history_group_id": str(effective_meta.get("group_id") or "").strip() or None
         }
     except Exception as e:
         db.rollback()

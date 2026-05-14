@@ -1,37 +1,37 @@
 :root {
-	--bg-main: #edf3fb;
-	--surface: #f3f7ff;
-	--surface-strong: #e6eefc;
-	--surface-elevated: #ffffff;
-	--border-soft: #c7d7f4;
-	--border-strong: #a9c2f2;
-	--text-main: #2f3c56;
-	--text-muted: #6f809f;
-	--brand: #2463de;
-	--brand-soft: #4f76df;
-	--brand-deep: #2747a6;
+	--bg-main: #f4fbff;
+	--surface: rgba(255, 255, 255, 0.88);
+	--surface-strong: rgba(255, 255, 255, 0.95);
+	--surface-elevated: rgba(255, 255, 255, 0.95);
+	--border-soft: rgba(16, 70, 112, 0.18);
+	--border-strong: rgba(16, 70, 112, 0.4);
+	--text-main: #08243c;
+	--text-muted: #355b80;
+	--brand: #0ea5e9;
+	--brand-soft: #47d9ff;
+	--brand-deep: #0b7db4;
 	--button-text: #ffffff;
-	--bg-highlight: #f8fbff;
-	--glow: rgba(36, 99, 222, 0.18);
-	--shadow-hero: 0 16px 35px rgba(57, 97, 188, 0.16);
-	--shadow-card: 0 10px 22px rgba(43, 81, 160, 0.08);
+	--bg-highlight: #f4fbff;
+	--glow: rgba(14, 165, 233, 0.16);
+	--shadow-hero: 0 14px 32px rgba(8, 17, 31, 0.16);
+	--shadow-card: 0 8px 18px rgba(8, 17, 31, 0.12);
 }
 
 body.dark-mode {
-	--bg-main: #111b2d;
-	--surface: #1a2942;
-	--surface-strong: #203250;
-	--surface-elevated: #233757;
-	--border-soft: #2f4f82;
-	--border-strong: #3f639d;
-	--text-main: #e6efff;
-	--text-muted: #9fb5dc;
-	--brand: #7ba4ff;
-	--brand-soft: #8aaeff;
-	--brand-deep: #b5cbff;
-	--button-text: #102448;
-	--bg-highlight: #1a2740;
-	--glow: rgba(123, 164, 255, 0.16);
+	--bg-main: #061323;
+	--surface: rgba(10, 31, 52, 0.8);
+	--surface-strong: rgba(8, 24, 41, 0.86);
+	--surface-elevated: rgba(8, 24, 41, 0.92);
+	--border-soft: rgba(128, 196, 255, 0.24);
+	--border-strong: rgba(128, 196, 255, 0.48);
+	--text-main: #e8f4ff;
+	--text-muted: #98b2cb;
+	--brand: #47d9ff;
+	--brand-soft: #76d0ff;
+	--brand-deep: #b8ddff;
+	--button-text: #05263a;
+	--bg-highlight: #061323;
+	--glow: rgba(71, 217, 255, 0.16);
 	--shadow-hero: 0 16px 35px rgba(0, 0, 0, 0.28);
 	--shadow-card: 0 10px 22px rgba(0, 0, 0, 0.22);
 }
@@ -43,8 +43,38 @@ body.dark-mode {
 body {
 	margin: 0;
 	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-	background: radial-gradient(circle at 15% 0%, var(--bg-highlight) 0%, var(--bg-main) 42%, var(--bg-main) 100%);
+	background: var(--bg-main);
 	color: var(--text-main);
+	position: relative;
+	overflow-x: hidden;
+}
+
+body::before,
+body::after {
+	content: "";
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+}
+
+body::before {
+	z-index: -2;
+	background:
+		radial-gradient(38% 44% at 10% 14%, rgba(71, 217, 255, 0.34), transparent 70%),
+		radial-gradient(36% 42% at 90% 14%, rgba(245, 158, 11, 0.3), transparent 72%);
+}
+
+body.light-mode::before {
+	background:
+		radial-gradient(40% 45% at 10% 14%, rgba(14, 165, 233, 0.22), transparent 70%),
+		radial-gradient(36% 40% at 90% 14%, rgba(245, 158, 11, 0.18), transparent 72%);
+}
+
+body::after {
+	z-index: -1;
+	opacity: 0.08;
+	background-image: radial-gradient(rgba(255, 255, 255, 0.55) 0.7px, transparent 0.8px);
+	background-size: 4px 4px;
 }
 
 a {
@@ -58,34 +88,57 @@ a {
 
 .topbar {
 	position: sticky;
-	top: 0;
+	top: 10px;
 	z-index: 20;
-	display: grid;
-	grid-template-columns: auto 1fr auto;
+	width: min(1280px, calc(100% - 32px));
+	margin: 10px auto 0;
+	display: flex;
 	align-items: center;
-	gap: 24px;
-	padding: 12px 30px;
-	border-bottom: 1px solid var(--border-strong);
-	background: rgba(241, 246, 255, 0.95);
-	backdrop-filter: blur(6px);
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 14px;
+	border: 1px solid var(--border-strong);
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--surface-elevated) 90%, transparent);
+	backdrop-filter: blur(10px);
+	box-shadow: 0 6px 18px rgba(15, 38, 75, 0.08);
 }
 
 body.dark-mode .topbar {
-	background: rgba(20, 33, 56, 0.95);
+	background: color-mix(in srgb, var(--surface-elevated) 88%, transparent);
 }
 
 .brand {
-	font-size: 32px;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 20px;
 	font-weight: 800;
-	letter-spacing: 0.2px;
-	color: var(--brand);
+	letter-spacing: 0;
+	color: var(--text-main);
+	white-space: nowrap;
+}
+
+.brand-dot {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: linear-gradient(130deg, #7ed9c3, #efb24a);
+	color: #0f3550;
+	font-size: 12px;
+	font-weight: 800;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .main-nav {
 	display: flex;
 	justify-content: center;
 	gap: 8px;
+	align-items: center;
 	flex-wrap: wrap;
+	flex: 1;
 }
 
 .nav-dropdown {
@@ -133,26 +186,30 @@ body.dark-mode .topbar {
 	border-color: var(--border-soft);
 }
 
-.nav-link {
-	font-size: 18px;
+.main-nav .nav-link {
+	font-size: 15px;
 	font-weight: 600;
 	color: var(--text-main);
 	opacity: 0.9;
-	padding: 10px 14px;
-	border-radius: 10px;
-	transition: background-color 0.2s ease, color 0.2s ease;
+	padding: 8px 10px;
+	border-radius: 8px;
+	transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+	border-bottom: 2px solid transparent;
 }
 
-.nav-link:hover,
-.nav-link.active {
+.main-nav .nav-link:hover,
+.main-nav .nav-link.active {
 	color: var(--brand);
-	background: rgba(80, 117, 211, 0.12);
+	background: transparent;
+	border-bottom-color: var(--brand);
 }
 
 .topbar-actions {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 8px;
+	flex-wrap: wrap;
+	justify-content: flex-end;
 }
 
 .account-dropdown {
@@ -207,9 +264,9 @@ body.dark-mode .account-menu-item.danger {
 
 .btn {
 	border: 1px solid transparent;
-	border-radius: 10px;
-	padding: 10px 16px;
-	font-size: 15px;
+	border-radius: 999px;
+	padding: 8px 14px;
+	font-size: 14px;
 	font-weight: 700;
 	cursor: pointer;
 	display: inline-flex;
@@ -225,7 +282,7 @@ body.dark-mode .account-menu-item.danger {
 .btn.secondary {
 	background: var(--surface);
 	border-color: var(--border-strong);
-	color: var(--brand);
+	color: var(--text-main);
 }
 
 .btn.primary,
@@ -236,7 +293,7 @@ body.dark-mode .account-menu-item.danger {
 }
 
 .btn.accent {
-	background: linear-gradient(145deg, #365fd1, #2747a6);
+	background: linear-gradient(145deg, #0b7db4, #1b4ddb);
 }
 
 .theme-dot {
@@ -659,12 +716,13 @@ body.dark-mode .account-menu-item.danger {
 
 @media (max-width: 1200px) {
 	.topbar {
-		grid-template-columns: 1fr;
-		justify-items: center;
+		width: calc(100% - 20px);
+		border-radius: 16px;
+		position: static;
 	}
 
 	.brand {
-		font-size: 28px;
+		font-size: 18px;
 	}
 
 	.hero {
@@ -715,7 +773,7 @@ body.dark-mode .account-menu-item.danger {
 		max-width: 95%;
 	}
 
-	.nav-link {
+	.main-nav .nav-link {
 		font-size: 16px;
 		padding: 8px 10px;
 	}

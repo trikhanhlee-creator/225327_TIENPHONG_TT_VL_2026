@@ -7,7 +7,7 @@ from app.db.session import get_db
 from app.db.models import User
 from app.core.logger import logger
 from app.core.security import get_password_hash
-from app.api.routes.auth import verify_session_token
+from app.api.routes.auth import decode_session_token, get_authenticated_user_from_request
 
 
 GUEST_EMAIL = "guest@autofill.local"
@@ -46,22 +46,26 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     """
     try:
         session_id = request.cookies.get("session_id")
-        user_id = verify_session_token(session_id)
-        if not user_id:
+        session_payload = decode_session_token(session_id)
+        if not session_payload:
             return _get_or_create_guest_user(db)
 
-        user = db.query(User).filter(User.id == user_id).first()
-        
-        if not user:
-            return _get_or_create_guest_user(db)
+        user = get_authenticated_user_from_request(request, db)
+        if user:
+            return user
 
-        if not user.is_active:
+        user_id, _issued_at = session_payload
+        db_user = db.query(User).filter(User.id == user_id).first()
+        if db_user and not db_user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="User account is inactive"
             )
-        
-        return user
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session expired, please log in again"
+        )
     except HTTPException:
         raise
     except Exception as e:

@@ -76,7 +76,7 @@ class AdminService:
         search: Optional[str] = None,
         role: Optional[str] = None,
         status: Optional[str] = None
-    ) -> tuple[List[User], int]:
+    ) -> tuple[List[User], int, Dict[str, int]]:
         """
         Lấy danh sách người dùng với filter
         
@@ -108,7 +108,14 @@ class AdminService:
         total_count = query.count()
         users = query.order_by(desc(User.created_at)).offset(skip).limit(limit).all()
 
-        return users, total_count
+        summary = {
+            "total_users": db.query(User).count(),
+            "active_users": db.query(User).filter(User.is_active == True).count(),
+            "inactive_users": db.query(User).filter(User.is_active == False).count(),
+            "admin_users": db.query(User).filter(User.is_admin == True).count(),
+        }
+
+        return users, total_count, summary
 
     @staticmethod
     def get_user_detail(db: Session, user_id: int) -> Optional[User]:
@@ -129,9 +136,12 @@ class AdminService:
         """
         try:
             # Kiểm tra email đã tồn tại
-            existing_user = db.query(User).filter(User.email == email).first()
-            if existing_user:
+            existing_email = db.query(User).filter(func.lower(User.email) == email.lower()).first()
+            if existing_email:
                 raise ValueError(f"Email {email} đã tồn tại")
+            existing_username = db.query(User).filter(func.lower(User.username) == username.lower()).first()
+            if existing_username:
+                raise ValueError(f"Tên đăng nhập {username} đã tồn tại")
 
             # Tạo user mới
             new_user = User(
@@ -159,6 +169,9 @@ class AdminService:
             )
 
             return new_user
+        except ValueError:
+            db.rollback()
+            raise
         except Exception as e:
             db.rollback()
             raise Exception(f"Error creating user: {str(e)}")
@@ -188,6 +201,12 @@ class AdminService:
 
             changes = {}
             if username is not None and username != user.username:
+                existing_username = db.query(User).filter(
+                    func.lower(User.username) == username.lower(),
+                    User.id != user_id
+                ).first()
+                if existing_username:
+                    raise ValueError(f"Tên đăng nhập {username} đã tồn tại")
                 user.username = username
                 changes["username"] = username
             
@@ -226,6 +245,9 @@ class AdminService:
             )
 
             return user
+        except ValueError:
+            db.rollback()
+            raise
         except Exception as e:
             db.rollback()
             raise Exception(f"Error updating user: {str(e)}")
@@ -237,7 +259,7 @@ class AdminService:
         admin_id: int = None
     ) -> bool:
         """
-        Xóa user (soft delete - set is_active = False)
+        Xóa user (hard delete)
         """
         try:
             user = db.query(User).filter(User.id == user_id).first()
@@ -251,9 +273,9 @@ class AdminService:
             if user.is_admin and user.is_active and AdminService._count_active_admins(db) <= 1:
                 raise ValueError("Không thể vô hiệu hóa admin cuối cùng của hệ thống")
 
-            # Soft delete
-            user.is_active = False
-            user.updated_at = datetime.utcnow()
+            username = user.username
+            target_id = user.id
+            db.delete(user)
             db.commit()
 
             # Ghi log
@@ -262,15 +284,67 @@ class AdminService:
                 admin_id=admin_id,
                 action="user_deleted",
                 object_type="user",
-                object_id=user.id,
-                object_name=user.username,
-                description=f"Xóa user: {user.username}"
+                object_id=target_id,
+                object_name=username,
+                description=f"Xóa user: {username}"
             )
 
             return True
+        except ValueError:
+            db.rollback()
+            raise
         except Exception as e:
             db.rollback()
             raise Exception(f"Error deleting user: {str(e)}")
+
+    @staticmethod
+    def set_user_lock_status(
+        db: Session,
+        user_id: int,
+        is_locked: bool,
+        admin_id: int = None
+    ) -> Optional[User]:
+        """
+        Khóa hoặc mở khóa user thông qua is_active.
+        """
+        try:
+            user = db.query(User).filter(User.id == user_id).first()
+            if not user:
+                raise ValueError(f"User ID {user_id} không tồn tại")
+
+            target_is_active = not is_locked
+            if user.is_active == target_is_active:
+                return user
+
+            if is_locked and user.is_admin and user.is_active and AdminService._count_active_admins(db) <= 1:
+                raise ValueError("Không thể khóa admin cuối cùng của hệ thống")
+
+            old_status = user.is_active
+            user.is_active = target_is_active
+            user.updated_at = datetime.utcnow()
+            db.commit()
+            db.refresh(user)
+
+            action = "user_locked" if is_locked else "user_unlocked"
+            description = f"{'Khóa' if is_locked else 'Mở khóa'} user: {user.username}"
+            AdminService.create_audit_log(
+                db=db,
+                admin_id=admin_id,
+                action=action,
+                object_type="user",
+                object_id=user.id,
+                object_name=user.username,
+                old_value=json.dumps({"is_active": old_status}),
+                new_value=json.dumps({"is_active": user.is_active}),
+                description=description
+            )
+            return user
+        except ValueError:
+            db.rollback()
+            raise
+        except Exception as e:
+            db.rollback()
+            raise Exception(f"Error setting lock status: {str(e)}")
 
     @staticmethod
     def toggle_user_admin_role(
@@ -309,6 +383,9 @@ class AdminService:
             )
 
             return True
+        except ValueError:
+            db.rollback()
+            raise
         except Exception as e:
             db.rollback()
             raise Exception(f"Error toggling admin role: {str(e)}")

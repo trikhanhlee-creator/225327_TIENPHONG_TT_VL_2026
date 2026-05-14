@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 import re
 import unicodedata
 import json
 from collections import defaultdict
 
 from app.db.session import get_db
-from app.db.models import Field, Entry, Suggestion, User, WordSubmission
+from app.db.models import Field, Entry, Suggestion, User, WordSubmission, Form
 from app.services.suggestion_service import SuggestionService
 from app.schemas.suggestion import (
     SuggestionsListResponse,
@@ -63,7 +64,116 @@ def _field_similarity_score(target_key: str, candidate_key: str) -> float:
     if overlap == 0:
         return 0.0
 
-    return overlap / max(1, len(target_tokens))
+    recall = overlap / max(1, len(target_tokens))
+    precision = overlap / max(1, len(candidate_tokens))
+    union = len(target_tokens.union(candidate_tokens))
+    jaccard = overlap / max(1, union)
+    return (0.55 * recall) + (0.35 * precision) + (0.10 * jaccard)
+
+
+def _is_date_field_key(field_key: str) -> bool:
+    key = f" {field_key or ''} "
+    tokens = set((field_key or "").split())
+    if " date " in key or " dob " in key or " birth " in key:
+        return True
+    if " ngay " in key and (" sinh " in key or " thang " in key or " nam " in key):
+        return True
+    return "ngaysinh" in key.replace(" ", "")
+
+
+def _is_email_field_key(field_key: str) -> bool:
+    key = f" {field_key or ''} "
+    return " email " in key or " e mail " in key
+
+
+def _is_phone_field_key(field_key: str) -> bool:
+    key = f" {field_key or ''} "
+    markers = (" sdt ", " so dien thoai ", " dien thoai ", " phone ", " mobile ", " tel ")
+    return any(marker in key for marker in markers)
+
+
+def _is_identifier_field_key(field_key: str) -> bool:
+    key = f" {field_key or ''} "
+    tokens = set((field_key or "").split())
+    explicit_markers = (" mssv ", " cccd ", " cmnd ", " ma so ", " student id ", " employee id ", " user id ")
+    if any(marker in key for marker in explicit_markers):
+        return True
+    if "id" in tokens or "code" in tokens:
+        return True
+    return "ma" in tokens and not _is_date_field_key(field_key)
+
+
+def _infer_field_category(field_key: str, is_name_related: bool = False) -> str:
+    if _is_date_field_key(field_key):
+        return "date"
+    if _is_email_field_key(field_key):
+        return "email"
+    if _is_phone_field_key(field_key):
+        return "phone"
+    if _is_identifier_field_key(field_key):
+        return "identifier"
+    if is_name_related:
+        return "name"
+    return "general"
+
+
+def _is_date_like_value(value: str) -> bool:
+    text = (value or "").strip()
+    if not text:
+        return False
+    if re.match(r"^\d{4}[-/]\d{1,2}[-/]\d{1,2}$", text):
+        return True
+    if re.match(r"^\d{1,2}[-/]\d{1,2}[-/]\d{4}$", text):
+        return True
+    return False
+
+
+def _is_email_like_value(value: str) -> bool:
+    text = (value or "").strip()
+    return bool(re.match(r"^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$", text))
+
+
+def _is_phone_like_value(value: str) -> bool:
+    text = re.sub(r"\s+", "", (value or "").strip())
+    if not text:
+        return False
+    if text.startswith("+"):
+        text = text[1:]
+    return bool(re.match(r"^\d{9,12}$", text))
+
+
+def _is_identifier_like_value(value: str) -> bool:
+    text = (value or "").strip()
+    if not text:
+        return False
+    compact = re.sub(r"\s+", "", text)
+    if re.match(r"^[A-Za-z]{0,4}\d{4,}$", compact):
+        return True
+    if re.match(r"^\d{5,}$", compact):
+        return True
+    return bool(re.match(r"^[A-Za-z0-9._-]{6,}$", compact))
+
+
+def _value_matches_target_category(value: str, category: str, is_name_related: bool) -> bool:
+    text = (value or "").strip()
+    if not text:
+        return False
+
+    if category == "date":
+        return _is_date_like_value(text)
+    if category == "email":
+        return _is_email_like_value(text)
+    if category == "phone":
+        return _is_phone_like_value(text)
+    if category == "identifier":
+        return _is_identifier_like_value(text)
+    if category == "name" or is_name_related:
+        return _is_name_like_value(text, min_tokens=1, max_tokens=6)
+
+    # Generic text fields should not be polluted by long numeric IDs.
+    if re.match(r"^\d{5,}$", text):
+        return False
+    return True
 
 
 PERSONA_KEYWORDS: dict[str, tuple[str, ...]] = {
@@ -310,6 +420,7 @@ async def get_cross_field_suggestions(
         target_is_given_name = _is_given_name_key(target_key)
         target_is_family_name = _is_family_name_key(target_key)
         target_is_name_related = target_is_fullname or target_is_given_name or target_is_family_name
+        target_category = _infer_field_category(target_key, target_is_name_related)
 
         form_persona_tags: set[str] = set()
         if current_form_id and current_form_id > 0:
@@ -321,6 +432,14 @@ async def get_cross_field_suggestions(
 
         rows = db.query(Entry.value, Entry.created_at, Field.field_name, Entry.user_id, Entry.form_id).join(
             Field, Entry.field_id == Field.id
+        ).join(
+            Form, Entry.form_id == Form.id
+        ).filter(
+            Entry.user_id == effective_user_id
+        ).filter(
+            or_(Form.form_type.is_(None), Form.form_type != "excel")
+        ).filter(
+            or_(Form.form_name.is_(None), Form.form_name != "Excel Smart Form")
         ).all()
 
         stats: dict[str, dict] = defaultdict(lambda: {
@@ -352,13 +471,29 @@ async def get_cross_field_suggestions(
                     continue
 
                 for submitted_key, submitted_value in submission_data.items():
-                    similarity = _field_similarity_score(target_key, _normalize_field_key(str(submitted_key)))
+                    submitted_key_text = str(submitted_key or "")
+                    if submitted_key_text.startswith("__"):
+                        continue
+
+                    submitted_key_normalized = _normalize_field_key(submitted_key_text)
+                    similarity = _field_similarity_score(target_key, submitted_key_normalized)
                     if similarity < 0.9:
+                        continue
+
+                    source_category = _infer_field_category(
+                        submitted_key_normalized,
+                        _is_fullname_key(submitted_key_normalized) or _is_given_name_key(submitted_key_normalized) or _is_family_name_key(submitted_key_normalized),
+                    )
+                    if target_category == "date" and source_category != "date":
+                        continue
+                    if target_category in {"email", "phone"} and source_category != target_category:
                         continue
 
                     value = (submitted_value or "") if isinstance(submitted_value, str) else str(submitted_value or "")
                     value = value.strip()
                     if not value or _is_noise_suggestion_value(value):
+                        continue
+                    if not _value_matches_target_category(value, target_category, target_is_name_related):
                         continue
                     if _value_conflicts_with_target_persona(value, effective_target_persona, target_key):
                         continue
@@ -381,6 +516,8 @@ async def get_cross_field_suggestions(
             source_is_fullname = _is_fullname_key(source_key)
             source_is_given = _is_given_name_key(source_key)
             source_is_family = _is_family_name_key(source_key)
+            source_is_name_related = source_is_fullname or source_is_given or source_is_family
+            source_category = _infer_field_category(source_key, source_is_name_related)
             source_persona_tags = _extract_persona_tags_from_key(source_key)
 
             if _is_persona_conflict(effective_target_persona, source_persona_tags):
@@ -398,9 +535,20 @@ async def get_cross_field_suggestions(
             elif (target_is_given_name or target_is_family_name) and source_is_fullname:
                 similarity = max(similarity, 0.9)
 
-            min_similarity = 0.45
+            min_similarity = 0.55
             if target_is_name_related:
-                min_similarity = 0.3
+                min_similarity = 0.38
+            if target_category in {"date", "email", "phone", "identifier"}:
+                min_similarity = max(min_similarity, 0.62)
+
+            if target_category == "date" and source_category != "date" and similarity < 0.9:
+                continue
+            if target_category in {"email", "phone"} and source_category != target_category and similarity < 0.9:
+                continue
+            if target_category == "identifier" and source_category in {"date", "name"} and similarity < 0.9:
+                continue
+            if target_category == "name" and source_category == "identifier" and similarity < 0.9:
+                continue
 
             # only keep reasonably similar fields to avoid noisy suggestions
             if similarity < min_similarity:
@@ -410,6 +558,8 @@ async def get_cross_field_suggestions(
             if not suggestion_value:
                 continue
             if _is_noise_suggestion_value(suggestion_value):
+                continue
+            if not _value_matches_target_category(suggestion_value, target_category, target_is_name_related):
                 continue
             if _value_conflicts_with_target_persona(suggestion_value, effective_target_persona, target_key):
                 continue

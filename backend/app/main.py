@@ -1,14 +1,14 @@
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, Response
 from sqlalchemy.orm import Session
 import os
-from urllib.parse import quote
+import re
 
 from app.core.config import settings
 from app.core.logger import logger
-from app.api.routes import suggestions, word, form_replacement, excel, composer, auth, form_edit, admin
+from app.api.routes import suggestions, word, form_replacement, excel, composer, auth, form_edit, admin, payment
 from app.db.session import engine, Base, SessionLocal, get_db
 from app.db.models import User, UserActivity
 
@@ -49,6 +49,156 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+STATIC_PAGE_REDIRECTS = {
+    "/static/login.html": "/login",
+    "/static/register.html": "/register",
+    "/static/menu.html": "/home",
+    "/static/form.html": "/form",
+    "/static/excel-upload.html": "/excel",
+    "/static/word-upload.html": "/word-upload",
+    "/static/composer.html": "/composer",
+    "/static/payment.html": "/payment",
+    "/static/user-account.html": "/user-account",
+    "/static/admin-dashboard.html": "/admin-dashboard",
+    "/static/admin-users.html": "/admin-users",
+    "/static/admin-forms.html": "/admin-forms",
+    "/static/admin-reports.html": "/admin-reports",
+    "/static/admin-audit-log.html": "/admin-audit-log",
+    "/static/admin-account.html": "/admin-account",
+}
+
+GLOBAL_SYSTEM_FOOTER_STYLE = """
+<style id="global-system-footer-style">
+.global-system-footer{
+    background:#ececec;
+    border-top:1px solid #dfdfdf;
+    margin-top:24px;
+}
+.global-system-footer__inner{
+    max-width:1280px;
+    margin:0 auto;
+    padding:14px 32px 12px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+}
+.global-system-footer__brand{
+    color:#0f172a;
+    font-size:14px;
+    font-weight:700;
+    margin:0;
+}
+.global-system-footer__meta{
+    color:#1f2937;
+    font-size:12px;
+    margin:3px 0 0;
+}
+.global-system-footer__links{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:18px;
+}
+.global-system-footer__link{
+    color:#1f2937;
+    font-size:12px;
+    text-decoration:none;
+}
+.global-system-footer__link:hover{
+    text-decoration:underline;
+}
+@media (max-width: 840px){
+    .global-system-footer__inner{
+        justify-content:center;
+        text-align:center;
+        padding:12px 16px;
+    }
+}
+</style>
+"""
+
+GLOBAL_SYSTEM_FOOTER_HTML = """
+<footer class="global-system-footer" data-global-system-footer>
+    <div class="global-system-footer__inner">
+        <div>
+            <p class="global-system-footer__brand">AutoFill AI</p>
+            <p class="global-system-footer__meta">© 2026 AutoFill AI. All rights reserved. Precision automation for enterprise.</p>
+        </div>
+        <nav class="global-system-footer__links" aria-label="Footer links">
+            <a class="global-system-footer__link" href="#">Privacy Policy</a>
+            <a class="global-system-footer__link" href="#">Terms of Service</a>
+            <a class="global-system-footer__link" href="#">Security</a>
+            <a class="global-system-footer__link" href="#">Status</a>
+            <a class="global-system-footer__link" href="#">Contact</a>
+        </nav>
+    </div>
+</footer>
+"""
+
+
+def _apply_no_store_headers(response: Response) -> None:
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
+
+def _inject_global_system_footer(html_content: str) -> str:
+    if not html_content or "data-global-system-footer" in html_content:
+        return html_content
+
+    content = re.sub(r"<footer[\s\S]*?</footer>", "", html_content, flags=re.IGNORECASE)
+    if "global-system-footer-style" not in content and "</head>" in content:
+        content = content.replace("</head>", f"{GLOBAL_SYSTEM_FOOTER_STYLE}\n</head>", 1)
+    if "</body>" in content:
+        return content.replace("</body>", f"{GLOBAL_SYSTEM_FOOTER_HTML}\n</body>", 1)
+    return f"{content}\n{GLOBAL_SYSTEM_FOOTER_HTML}"
+
+
+@app.middleware("http")
+async def apply_global_footer_middleware(request: Request, call_next):
+    if request.method == "GET":
+        redirect_target = STATIC_PAGE_REDIRECTS.get(request.url.path)
+        if redirect_target:
+            redirect_response = RedirectResponse(url=redirect_target, status_code=307)
+            _apply_no_store_headers(redirect_response)
+            return redirect_response
+
+    response = await call_next(request)
+
+    if request.url.path.startswith("/api/"):
+        return response
+    if request.url.path.startswith("/static/"):
+        return response
+
+    _apply_no_store_headers(response)
+
+    content_type = response.headers.get("content-type", "")
+    if "text/html" not in content_type.lower():
+        return response
+
+    body = b""
+    async for chunk in response.body_iterator:
+        body += chunk
+
+    try:
+        html_content = body.decode("utf-8")
+    except UnicodeDecodeError:
+        return Response(
+            content=body,
+            status_code=response.status_code,
+            media_type=response.media_type,
+            headers={k: v for k, v in response.headers.items() if k.lower() != "content-length"},
+        )
+
+    updated_html = _inject_global_system_footer(html_content)
+    return HTMLResponse(
+        content=updated_html,
+        status_code=response.status_code,
+        headers={k: v for k, v in response.headers.items() if k.lower() != "content-length"},
+    )
+
 # Include routers
 app.include_router(auth.router)
 app.include_router(suggestions.router)
@@ -58,6 +208,7 @@ app.include_router(excel.router)
 app.include_router(composer.router)
 app.include_router(form_edit.router)
 app.include_router(admin.router)
+app.include_router(payment.router)
 
 # Mount static files from backend/app/static
 static_dir = os.path.join(os.path.dirname(__file__), "static")
@@ -70,9 +221,8 @@ if os.path.exists(ui_dir):
     app.mount("/ui", StaticFiles(directory=ui_dir), name="ui")
 
 
-def _redirect_to_login(request: Request):
-    next_path = quote(request.url.path, safe="")
-    return RedirectResponse(url=f"/login?mode=login&next={next_path}", status_code=303)
+def _redirect_to_login(_request: Request):
+    return RedirectResponse(url="/", status_code=303)
 
 
 def _resolve_feature_name(path: str) -> str:
@@ -92,6 +242,8 @@ def _resolve_feature_name(path: str) -> str:
         return "form"
     if path.startswith("/user-account"):
         return "user_account"
+    if path.startswith("/payment"):
+        return "payment"
     if path.startswith("/admin-dashboard"):
         return "admin_dashboard"
     if path.startswith("/admin-users"):
@@ -166,6 +318,18 @@ async def login_page():
         return HTMLResponse(content="<h1>Login page not found</h1>", status_code=404)
 
 
+@app.get("/register", tags=["ui"])
+async def register_page():
+    """Serve the register page"""
+    from fastapi.responses import HTMLResponse
+    try:
+        with open(os.path.join(static_dir, "register.html"), "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except Exception as e:
+        logger.error(f"Error loading register.html: {e}")
+        return HTMLResponse(content="<h1>Register page not found</h1>", status_code=404)
+
+
 @app.get("/user-account", tags=["ui"])
 async def user_account_page(request: Request, db: Session = Depends(get_db)):
     """Serve the user account management page"""
@@ -190,9 +354,11 @@ async def form_page(request: Request, db: Session = Depends(get_db)):
     """Serve the form HTML page"""
     from fastapi.responses import HTMLResponse
 
-    user = _get_optional_authenticated_user(request, db)
-    if user:
-        _record_user_activity(db, user.id, request, description="Opened form page")
+    user, auth_response = _authorize_user_ui(request, db)
+    if auth_response:
+        return auth_response
+
+    _record_user_activity(db, user.id, request, description="Opened form page")
 
     with open(os.path.join(static_dir, "form.html"), "r", encoding="utf-8") as f:
         return HTMLResponse(content=f.read())
@@ -203,9 +369,11 @@ async def excel_page(request: Request, db: Session = Depends(get_db)):
     """Serve the Excel upload page"""
     from fastapi.responses import HTMLResponse
 
-    user = _get_optional_authenticated_user(request, db)
-    if user:
-        _record_user_activity(db, user.id, request, description="Opened Excel upload page")
+    user, auth_response = _authorize_user_ui(request, db)
+    if auth_response:
+        return auth_response
+
+    _record_user_activity(db, user.id, request, description="Opened Excel upload page")
 
     try:
         with open(os.path.join(static_dir, "excel-upload.html"), "r", encoding="utf-8") as f:
@@ -220,9 +388,11 @@ async def word_upload_page(request: Request, db: Session = Depends(get_db)):
     """Serve the Word upload page"""
     from fastapi.responses import HTMLResponse
 
-    user = _get_optional_authenticated_user(request, db)
-    if user:
-        _record_user_activity(db, user.id, request, description="Opened Word upload page")
+    user, auth_response = _authorize_user_ui(request, db)
+    if auth_response:
+        return auth_response
+
+    _record_user_activity(db, user.id, request, description="Opened Word upload page")
 
     try:
         with open(os.path.join(static_dir, "word-upload.html"), "r", encoding="utf-8") as f:
@@ -237,9 +407,11 @@ async def excel_form_page(session_id: str, request: Request, db: Session = Depen
     """Serve the Excel form page"""
     from fastapi.responses import HTMLResponse
 
-    user = _get_optional_authenticated_user(request, db)
-    if user:
-        _record_user_activity(db, user.id, request, description=f"Opened Excel form session {session_id}")
+    user, auth_response = _authorize_user_ui(request, db)
+    if auth_response:
+        return auth_response
+
+    _record_user_activity(db, user.id, request, description=f"Opened Excel form session {session_id}")
 
     try:
         with open(os.path.join(static_dir, "excel-form.html"), "r", encoding="utf-8") as f:
@@ -257,9 +429,11 @@ async def excel_data_form_page(session_id: str, request: Request, db: Session = 
     """Serve the Excel data auto-fill form page"""
     from fastapi.responses import HTMLResponse
 
-    user = _get_optional_authenticated_user(request, db)
-    if user:
-        _record_user_activity(db, user.id, request, description=f"Opened Excel data form session {session_id}")
+    user, auth_response = _authorize_user_ui(request, db)
+    if auth_response:
+        return auth_response
+
+    _record_user_activity(db, user.id, request, description=f"Opened Excel data form session {session_id}")
 
     try:
         with open(os.path.join(static_dir, "excel-data-form.html"), "r", encoding="utf-8") as f:
@@ -269,14 +443,32 @@ async def excel_data_form_page(session_id: str, request: Request, db: Session = 
         raise
 
 
-def _load_homepage_html():
+def _load_homepage_html(is_authenticated: bool = False):
     from fastapi.responses import HTMLResponse
 
+    landing_v2_path = os.path.join(static_dir, "interfaces", "zephyr-landing", "index.html")
+    menu_path = os.path.join(static_dir, "menu.html")
+
+    # Authenticated users land on the full feature menu.
+    if is_authenticated:
+        try:
+            with open(menu_path, "r", encoding="utf-8") as f:
+                return HTMLResponse(content=f.read())
+        except Exception as e:
+            logger.error(f"Error loading authenticated menu.html: {e}")
+
     try:
-        with open(os.path.join(static_dir, "menu.html"), "r", encoding="utf-8") as f:
+        with open(landing_v2_path, "r", encoding="utf-8") as f:
             return HTMLResponse(content=f.read())
     except Exception as e:
-        logger.error(f"Error loading menu.html: {e}")
+        logger.error(f"Error loading landing v2 index.html: {e}")
+
+    # Fallback to legacy homepage if the new landing is not available.
+    try:
+        with open(menu_path, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except Exception as e:
+        logger.error(f"Error loading fallback menu.html: {e}")
         return {
             "message": "AutoFill AI System API",
             "version": "1.0.0",
@@ -286,24 +478,28 @@ def _load_homepage_html():
 
 
 @app.get("/", tags=["ui"])
-async def root():
-    """Root endpoint - always show homepage."""
-    return _load_homepage_html()
+async def root(request: Request, db: Session = Depends(get_db)):
+    """Root endpoint - landing for guests, full menu for authenticated users."""
+    user = _get_optional_authenticated_user(request, db)
+    return _load_homepage_html(is_authenticated=bool(user))
 
 
 @app.get("/home", tags=["ui"])
-async def home_page():
-    """Alias homepage route for explicit navigation."""
-    return _load_homepage_html()
+async def home_page(request: Request, db: Session = Depends(get_db)):
+    """Homepage alias with auth-aware UI."""
+    user = _get_optional_authenticated_user(request, db)
+    return _load_homepage_html(is_authenticated=bool(user))
 
 @app.get("/composer", tags=["ui"])
 async def composer_page(request: Request, db: Session = Depends(get_db)):
     """Serve the document composer page"""
     from fastapi.responses import HTMLResponse
 
-    user = _get_optional_authenticated_user(request, db)
-    if user:
-        _record_user_activity(db, user.id, request, description="Opened document composer")
+    user, auth_response = _authorize_user_ui(request, db)
+    if auth_response:
+        return auth_response
+
+    _record_user_activity(db, user.id, request, description="Opened document composer")
 
     try:
         with open(os.path.join(static_dir, "composer.html"), "r", encoding="utf-8") as f:
@@ -311,6 +507,25 @@ async def composer_page(request: Request, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error loading composer.html: {e}")
         raise
+
+
+@app.get("/payment", tags=["ui"])
+async def payment_page(request: Request, db: Session = Depends(get_db)):
+    """Serve the payment and upgrade plans page"""
+    from fastapi.responses import HTMLResponse
+
+    user, auth_response = _authorize_user_ui(request, db)
+    if auth_response:
+        return auth_response
+
+    _record_user_activity(db, user.id, request, description="Opened payment page")
+
+    try:
+        with open(os.path.join(static_dir, "payment.html"), "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except Exception as e:
+        logger.error(f"Error loading payment.html: {e}")
+        return HTMLResponse(content="<h1>Payment page not found</h1>", status_code=404)
 
 
 # ==================== ADMIN PAGES ====================

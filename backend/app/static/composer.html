@@ -7,13 +7,13 @@
     <script src="/static/js/theme-manager.js?v=20260401-2"></script>
     <style>
         :root {
-            --bg: #eef2f7;
-            --surface: #f4f7fb;
+            --bg: #eef3fb;
+            --surface: #f8fbff;
             --surface-2: #ffffff;
-            --line: #5e84ea;
-            --text: #22406f;
-            --muted: #7187a9;
-            --shadow: 0 14px 34px rgba(46, 78, 135, 0.16);
+            --line: #0b7db4;
+            --text: #1a1c20;
+            --muted: #5f6672;
+            --shadow: 0 12px 28px rgba(16, 45, 88, 0.11);
         }
 
         * {
@@ -24,58 +24,77 @@
 
         body {
             font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg);
+            background: radial-gradient(circle at 12% 0%, rgba(72, 198, 188, 0.12), transparent 36%), var(--bg);
             color: var(--text);
             min-height: 100vh;
         }
 
         body.dark-mode {
             --bg: #0f172a;
-            --surface: #18243f;
-            --surface-2: #111a2e;
-            --line: #6d93ff;
-            --text: #dbeafe;
-            --muted: #94a9c9;
-            --shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+            --surface: #1a2a44;
+            --surface-2: #243a58;
+            --line: #47b6ec;
+            --text: #e8f1ff;
+            --muted: #a3b8da;
+            --shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
         }
 
         .header {
-            height: 72px;
+            position: sticky;
+            top: 10px;
+            z-index: 30;
+            width: min(1280px, calc(100% - 24px));
+            margin: 10px auto 14px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 16px 0 20px;
-            border-bottom: 2px solid var(--line);
+            padding: 10px 14px;
+            border: 1px solid color-mix(in srgb, var(--line) 26%, #d7e1f0);
             background: var(--surface);
-            box-shadow: 0 5px 16px rgba(58, 97, 170, 0.12);
+            box-shadow: var(--shadow);
+            border-radius: 999px;
+            backdrop-filter: blur(10px);
         }
 
         .header h1 {
-            font-size: 36px;
-            font-weight: 800;
-            color: #2a61d0;
+            font-size: clamp(26px, 2.3vw, 34px);
+            font-weight: 600;
+            color: var(--text);
             letter-spacing: 0.3px;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
         }
 
-        body.dark-mode .header h1 {
-            color: #8eb0ff;
+        .title-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(130deg, #7ed9c3, #efb24a);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
         }
 
         .top-actions {
             display: flex;
             align-items: center;
             gap: 10px;
+            margin-left: auto;
+            justify-content: flex-end;
+            flex-wrap: wrap;
         }
 
         .btn {
-            border: 1.4px solid var(--line);
-            background: rgba(255, 255, 255, 0.42);
-            color: #2a61d0;
-            border-radius: 10px;
+            border: 1px solid #d7e1f0;
+            background: var(--surface-2);
+            color: var(--text);
+            border-radius: 999px;
             font-weight: 700;
-            font-size: 14px;
-            height: 42px;
-            padding: 0 16px;
+            font-size: 13px;
+            height: 40px;
+            padding: 0 14px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -86,37 +105,113 @@
 
         .btn:hover {
             transform: translateY(-1px);
-            background: rgba(255, 255, 255, 0.75);
-            box-shadow: 0 8px 16px rgba(48, 84, 156, 0.2);
+            background: color-mix(in srgb, var(--line) 8%, var(--surface-2));
+            box-shadow: 0 8px 16px rgba(16, 45, 88, 0.12);
         }
 
         body.dark-mode .btn {
-            color: #9fc0ff;
-            background: rgba(17, 26, 46, 0.72);
+            background: color-mix(in srgb, var(--line) 12%, var(--surface-2));
+            color: var(--text);
+            border-color: color-mix(in srgb, var(--line) 30%, #3a5680);
+        }
+
+        .header-btn {
+            height: 40px;
+            min-height: 40px;
+            padding: 0 15px;
+            font-weight: 600;
+        }
+
+        .header-theme-btn {
+            width: 132px;
+            min-width: 132px;
+            gap: 9px;
+        }
+
+        .header-theme-btn .theme-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(90deg, #5cb5e6 0%, #e9c44d 100%);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6), 0 1px 3px rgba(16, 45, 88, 0.2);
+            flex-shrink: 0;
+        }
+
+        .header-theme-btn .theme-label {
+            width: 4.3ch;
+            text-align: left;
+            line-height: 1;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        #saveBtn {
+            background: linear-gradient(140deg, #f2fcf8 0%, #e2f8f2 100%);
+            color: #11806b;
+            border-color: #b7e8dc;
+        }
+
+        #exportBtn {
+            background: linear-gradient(140deg, color-mix(in srgb, var(--line) 14%, #ffffff), color-mix(in srgb, var(--line) 6%, var(--surface-2)));
+            color: color-mix(in srgb, var(--line) 82%, #0f3f56);
+            border-color: color-mix(in srgb, var(--line) 34%, #d7e1f0);
+        }
+
+        #settingsBtn {
+            background: linear-gradient(140deg, #f7f9fd 0%, #eef3fb 100%);
+            color: #415979;
+            border-color: #d3dceb;
+        }
+
+        body.dark-mode #saveBtn {
+            background: linear-gradient(140deg, rgba(72, 198, 188, 0.28), rgba(72, 198, 188, 0.2));
+            color: #95f2e2;
+            border-color: rgba(146, 236, 220, 0.55);
+        }
+
+        body.dark-mode #exportBtn {
+            color: #b7dcff;
+            border-color: rgba(146, 184, 255, 0.45);
+        }
+
+        body.dark-mode #settingsBtn {
+            background: rgba(255, 255, 255, 0.09);
+            color: #dce9ff;
+            border-color: rgba(146, 184, 255, 0.35);
         }
 
         .workspace {
-            height: calc(100vh - 72px);
+            height: calc(100vh - 96px);
             display: grid;
             grid-template-columns: 260px 1fr;
+            width: min(1320px, calc(100% - 24px));
+            margin: 0 auto 10px;
         }
 
         .sidebar {
-            border-right: 1px solid color-mix(in srgb, var(--line) 45%, transparent);
+            border-right: 1px solid #d7e1f0;
             background: var(--surface);
             padding: 12px;
             overflow: auto;
         }
 
+        body.dark-mode .sidebar {
+            border-right-color: #3a5680;
+        }
+
         .new-doc-btn {
             width: 100%;
             height: 44px;
-            border: 0;
-            border-radius: 8px;
-            background: linear-gradient(90deg, #2957c5, #2f68de);
-            color: #fff;
+            border: 1px solid color-mix(in srgb, var(--line) 32%, #d7e1f0);
+            border-radius: 999px;
+            background: linear-gradient(140deg, color-mix(in srgb, var(--line) 14%, #ffffff), color-mix(in srgb, var(--line) 7%, var(--surface-2)));
+            color: color-mix(in srgb, var(--line) 82%, #0f3f56);
             font-weight: 700;
             cursor: pointer;
+        }
+
+        .new-doc-btn:hover {
+            background: linear-gradient(140deg, color-mix(in srgb, var(--line) 20%, #ffffff), color-mix(in srgb, var(--line) 10%, var(--surface-2)));
         }
 
         .new-doc-panel {
@@ -168,7 +263,7 @@
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            color: #7ea3e2;
+            color: var(--muted);
             font-weight: 700;
         }
 
@@ -212,24 +307,48 @@
         }
 
         .doc-action-btn {
-            border: 1px solid color-mix(in srgb, var(--line) 40%, transparent);
-            background: var(--surface-2);
-            color: var(--text);
-            border-radius: 6px;
-            padding: 3px 8px;
-            font-size: 11px;
-            font-weight: 700;
+            border-radius: 999px;
+            min-height: 30px;
+            padding: 4px 11px;
+            font-size: 12px;
+            font-weight: 800;
             cursor: pointer;
         }
 
-        .doc-action-btn:hover {
-            border-color: var(--line);
-            background: color-mix(in srgb, var(--line) 10%, var(--surface-2));
+        .doc-action-btn.export {
+            background: linear-gradient(140deg, #f2fcf8 0%, #e2f8f2 100%);
+            color: #11806b;
+            border: 1px solid #b7e8dc;
         }
 
         .doc-action-btn.delete {
-            color: #c62828;
-            border-color: color-mix(in srgb, #c62828 35%, transparent);
+            background: linear-gradient(140deg, #fff4f7 0%, #ffe9ef 100%);
+            color: #d75473;
+            border: 1px solid #f4c5d2;
+        }
+
+        .doc-action-btn.export:hover {
+            background: linear-gradient(140deg, #e6f8f2 0%, #d4f1e8 100%);
+            border-color: #8ad7c6;
+            color: #0f6c5a;
+        }
+
+        .doc-action-btn.delete:hover {
+            background: linear-gradient(140deg, #ffe9ef 0%, #ffdde6 100%);
+            border-color: #ee9fb5;
+            color: #c13f5f;
+        }
+
+        body.dark-mode .doc-action-btn.export {
+            background: linear-gradient(140deg, rgba(72, 198, 188, 0.28), rgba(72, 198, 188, 0.2));
+            color: #95f2e2;
+            border-color: rgba(146, 236, 220, 0.55);
+        }
+
+        body.dark-mode .doc-action-btn.delete {
+            background: linear-gradient(140deg, rgba(230, 111, 135, 0.26), rgba(230, 111, 135, 0.18));
+            color: #ff9fba;
+            border-color: rgba(255, 159, 186, 0.5);
         }
 
         .doc-time {
@@ -279,9 +398,10 @@
 
         .tool.ai {
             color: #fff;
-            background: linear-gradient(90deg, #6d28d9, #7e22ce);
-            border: 0;
+            background: linear-gradient(140deg, #3b82f6, #2563eb);
+            border: 1px solid #2d6de1;
             padding: 0 12px;
+            border-radius: 999px;
         }
 
         .tool-select {
@@ -381,7 +501,7 @@
             padding: 12px;
             font-weight: 700;
             font-size: 13px;
-            color: #f59e0b;
+            color: var(--line);
             border-bottom: 1px solid color-mix(in srgb, var(--line) 18%, transparent);
         }
 
@@ -466,6 +586,15 @@
             margin-top: 12px;
         }
 
+        .suggestion-actions .btn,
+        .ai-body .btn {
+            height: 34px;
+            min-height: 34px;
+            font-size: 12px;
+            padding: 0 12px;
+            font-weight: 800;
+        }
+
         .toast {
             position: fixed;
             bottom: 18px;
@@ -489,9 +618,21 @@
         }
 
         @media (max-width: 900px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .top-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+
             .workspace {
                 grid-template-columns: 1fr;
                 grid-template-rows: 240px 1fr;
+                height: calc(100vh - 120px);
             }
 
             .sidebar {
@@ -513,6 +654,10 @@
                 border-bottom: 1px solid color-mix(in srgb, var(--line) 20%, transparent);
             }
 
+            .header {
+                border-radius: 18px;
+            }
+
             .header h1 {
                 font-size: 22px;
             }
@@ -521,13 +666,13 @@
 </head>
 <body>
 <header class="header">
-    <h1>AI Document Composer - Soạn Thảo Tài Liệu</h1>
+    <h1><span class="title-icon">📝</span><span>AI Document Composer - Soạn Thảo Tài Liệu</span></h1>
     <div class="top-actions">
-        <a class="btn" href="/">← Quay lại</a>
-        <button class="btn" data-theme-toggle><span data-theme-icon>☀️</span><span data-theme-label>Sáng</span></button>
-        <button class="btn" id="saveBtn">Lưu</button>
-        <button class="btn" id="exportBtn">Xuất</button>
-        <button class="btn" id="settingsBtn">Cài đặt</button>
+        <a class="btn header-btn" href="/">← Quay lại</a>
+        <button class="btn header-btn header-theme-btn" data-theme-toggle><span class="theme-dot" aria-hidden="true"></span><span class="theme-label" data-theme-label>Sáng</span></button>
+        <button class="btn header-btn" id="saveBtn">Lưu</button>
+        <button class="btn header-btn" id="exportBtn">Xuất</button>
+        <button class="btn header-btn" id="settingsBtn">Cài đặt</button>
     </div>
 </header>
 
@@ -636,6 +781,7 @@
     let pendingRewriteScope = 'sentence';
     let lastEditorRange = null;
     let aiPanelCollapsed = false;
+    let aiRequestInFlight = false;
 
     const AI_PANEL_MIN_WIDTH = 260;
     const AI_PANEL_MAX_WIDTH = 560;
@@ -888,6 +1034,32 @@
         setTimeout(() => toast.classList.remove('show'), 1800);
     }
 
+    function setAiLoadingState(isLoading) {
+        if (askAiBtn) {
+            askAiBtn.disabled = isLoading;
+            askAiBtn.textContent = isLoading ? 'Đang tạo gợi ý...' : 'Nhận gợi ý';
+        }
+        if (aiEditBtn) {
+            aiEditBtn.disabled = isLoading;
+        }
+    }
+
+    function extractSuggestionsFromResult(result) {
+        if (Array.isArray(result?.data)) {
+            return result.data;
+        }
+        if (Array.isArray(result?.data?.suggestions)) {
+            return result.data.suggestions;
+        }
+        if (Array.isArray(result?.suggestions)) {
+            return result.suggestions;
+        }
+        if (typeof result?.data === 'string' && result.data.trim()) {
+            return [{ text: result.data.trim() }];
+        }
+        return [];
+    }
+
     async function ensureAuthenticated() {
         try {
             await fetch('/api/auth/check-auth');
@@ -899,11 +1071,22 @@
 
     async function parseApiResponse(response) {
         const rawText = await response.text();
+        const contentType = (response.headers.get('content-type') || '').toLowerCase();
         let data = null;
         try {
             data = rawText ? JSON.parse(rawText) : {};
         } catch (e) {
             data = null;
+        }
+
+        if (
+            response.ok &&
+            !data &&
+            rawText &&
+            contentType.includes('text/html') &&
+            rawText.trim().startsWith('<')
+        ) {
+            throw new Error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại');
         }
 
         if (!response.ok) {
@@ -1078,6 +1261,11 @@
     }
 
     async function askAi() {
+        if (aiRequestInFlight) {
+            showToast('AI đang xử lý yêu cầu trước đó...');
+            return;
+        }
+
         const contextText = editor.innerText.trim();
         const globalInstruction = aiInstruction ? aiInstruction.value.trim() : '';
         const selectedInstruction = selectionInstruction ? selectionInstruction.value.trim() : '';
@@ -1111,6 +1299,8 @@
             return;
         }
 
+        aiRequestInFlight = true;
+        setAiLoadingState(true);
         pendingSuggestionMode = mode;
         pendingRewriteRange = (mode === 'rewrite' && hasSelectedText) ? selectedRange : null;
         pendingRewriteScope = mode === 'rewrite' ? rewriteScope : 'sentence';
@@ -1147,14 +1337,31 @@
             payload.rewrite_scope = rewriteScope;
         }
 
-        const response = await fetch(`${API_BASE}/api/composer/suggestions`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-        const result = await parseApiResponse(response);
-        const suggestions = Array.isArray(result.data) ? result.data : [];
+        let suggestions = [];
+        try {
+            const response = await fetch(`${API_BASE}/api/composer/suggestions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                signal: controller.signal,
+                body: JSON.stringify(payload)
+            });
+
+            const result = await parseApiResponse(response);
+            suggestions = extractSuggestionsFromResult(result);
+        } catch (error) {
+            if (error.name === 'AbortError') {
+                throw new Error('Yêu cầu AI quá thời gian, vui lòng thử lại');
+            }
+            throw error;
+        } finally {
+            clearTimeout(timeoutId);
+            aiRequestInFlight = false;
+            setAiLoadingState(false);
+        }
 
         if (!suggestions.length) {
             aiSuggestionsEl.innerHTML = '';

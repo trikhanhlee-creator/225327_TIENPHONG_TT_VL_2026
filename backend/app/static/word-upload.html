@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Word Form Uploader - Upload & Fill Form</title>
     <link rel="stylesheet" href="/static/css/buttons.css">
+    <link rel="stylesheet" href="/static/css/site.css">
     <script src="/static/js/theme-manager.js"></script>
     <!-- Export Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * {
@@ -910,14 +909,16 @@
             position: absolute;
             right: 8px;
             bottom: 8px;
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
-            border: 1px solid rgba(90, 103, 216, 0.65);
-            background: rgba(90, 103, 216, 0.2);
+            width: 36px;
+            height: 34px;
+            border-radius: 10px;
+            border: 1px solid color-mix(in srgb, var(--wu-brand) 45%, var(--wu-border));
+            background: color-mix(in srgb, var(--wu-surface-strong) 90%, var(--wu-brand-soft) 10%);
             align-items: center;
             justify-content: center;
-            color: #dbe6ff;
+            color: var(--wu-brand);
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--wu-brand) 15%, transparent);
+            transition: all 0.2s ease;
         }
 
         .excel-reference-inline.active {
@@ -925,10 +926,16 @@
         }
 
         .excel-reference-inline::after {
-            content: "▼";
-            font-size: 11px;
-            font-weight: 800;
+            content: "▾";
+            font-size: 14px;
+            font-weight: 700;
+            line-height: 1;
             pointer-events: none;
+        }
+
+        .excel-reference-inline:hover {
+            border-color: color-mix(in srgb, var(--wu-brand) 60%, var(--wu-border));
+            background: color-mix(in srgb, var(--wu-surface-strong) 84%, var(--wu-brand-soft) 16%);
         }
 
         .excel-reference-select {
@@ -936,8 +943,20 @@
             inset: 0;
             width: 100%;
             height: 100%;
-            opacity: 0;
+            opacity: 0.01;
             cursor: pointer;
+            border: none;
+            appearance: none;
+            -webkit-appearance: none;
+            color-scheme: light dark;
+        }
+
+        .excel-reference-select option {
+            font-size: 14px;
+            padding: 8px 10px;
+            line-height: 1.5;
+            background: var(--wu-surface-strong);
+            color: var(--wu-text-main);
         }
 
         .excel-reference-meta {
@@ -1558,6 +1577,27 @@
             color: #1e3a8a;
         }
 
+        body.light-mode .excel-reference-select option {
+            background: #ffffff;
+            color: #1e293b;
+        }
+
+        body.dark-mode .excel-reference-inline {
+            border-color: color-mix(in srgb, var(--wu-brand-soft) 55%, var(--wu-border));
+            background: color-mix(in srgb, var(--wu-surface-strong) 90%, var(--wu-brand-soft) 10%);
+            color: #b9dbff;
+        }
+
+        body.dark-mode .excel-reference-inline:hover {
+            background: color-mix(in srgb, var(--wu-surface-strong) 82%, var(--wu-brand-soft) 18%);
+            border-color: color-mix(in srgb, var(--wu-brand-soft) 70%, var(--wu-border));
+        }
+
+        body.dark-mode .excel-reference-select option {
+            background: #15263d;
+            color: #e8f1ff;
+        }
+
         body.light-mode .excel-reference-meta {
             color: #1d4ed8;
         }
@@ -1841,20 +1881,568 @@
             font-size: 12px;
             opacity: 0.9;
         }
+
+        /* Word upload layout refresh */
+        body.light-mode {
+            --wu-bg-page: #eef3fb;
+            --wu-surface: #f8fbff;
+            --wu-surface-strong: #ffffff;
+            --wu-border: #d7e1f0;
+            --wu-text-main: #1a1c20;
+            --wu-text-muted: #5f6672;
+            --wu-brand: #0b7db4;
+            --wu-brand-soft: #48c6bc;
+            --wu-accent: #e7c85b;
+            --wu-danger: #e66f87;
+            --wu-danger-bg: #fff2f5;
+            --wu-success-bg: #e8faf4;
+            --wu-shadow: 0 10px 24px rgba(16, 45, 88, 0.1);
+        }
+
+        body.dark-mode {
+            --wu-bg-page: #0f1a2b;
+            --wu-surface: #1a2a44;
+            --wu-surface-strong: #243a58;
+            --wu-border: #3a5680;
+            --wu-text-main: #e8f1ff;
+            --wu-text-muted: #a3b8da;
+            --wu-brand: #47b6ec;
+            --wu-brand-soft: #76d0ff;
+            --wu-accent: #ddbe57;
+            --wu-danger: #ff8da4;
+            --wu-danger-bg: rgba(230, 111, 135, 0.15);
+            --wu-success-bg: rgba(72, 198, 188, 0.15);
+            --wu-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
+        }
+
+        body {
+            background: radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--wu-brand-soft) 18%, transparent), var(--wu-bg-page) 42%);
+            color: var(--wu-text-main);
+            padding: 16px;
+        }
+
+        .container {
+            max-width: 1320px;
+        }
+
+        .word-topbar {
+            position: sticky;
+            top: 10px;
+            z-index: 30;
+            width: min(1280px, calc(100% - 24px));
+            margin: 10px auto 18px;
+            background: linear-gradient(145deg, var(--wu-surface), var(--wu-surface-strong));
+            border: 1px solid var(--wu-border);
+            border-radius: 999px;
+            padding: 10px 14px;
+            box-shadow: var(--wu-shadow);
+            backdrop-filter: blur(10px);
+        }
+
+        .word-topbar .brand {
+            color: var(--wu-text-main);
+            font-size: clamp(24px, 2.4vw, 34px);
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+
+        .word-topbar .brand-dot {
+            width: 34px;
+            height: 34px;
+            font-size: 15px;
+            background: linear-gradient(130deg, #7ed9c3, #efb24a);
+            color: #0f3550;
+        }
+
+        .word-topbar .topbar-actions {
+            gap: 10px;
+            margin-left: auto;
+            justify-content: flex-end;
+        }
+
+        .word-topbar .btn.secondary {
+            height: 40px;
+            min-height: 40px;
+            border-radius: 999px;
+            border-width: 1px !important;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--wu-surface-strong);
+            border-color: var(--wu-border) !important;
+            color: var(--wu-text-main) !important;
+            box-shadow: none;
+        }
+
+        .word-topbar .btn.secondary:hover {
+            background: color-mix(in srgb, var(--wu-brand-soft) 10%, var(--wu-surface-strong));
+            border-color: color-mix(in srgb, var(--wu-brand-soft) 45%, var(--wu-border)) !important;
+        }
+
+        .word-topbar .btn.secondary.word-theme-btn {
+            width: 132px;
+            min-width: 132px;
+            justify-content: center;
+            white-space: nowrap;
+            gap: 9px;
+            padding: 8px 16px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(16, 45, 88, 0.08);
+        }
+
+        .word-topbar .word-theme-btn .theme-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(90deg, #5cb5e6 0%, #e9c44d 100%);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6), 0 1px 3px rgba(16, 45, 88, 0.2);
+        }
+
+        .theme-toggle-icon {
+            width: 16px;
+            display: inline-flex;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+
+        .theme-toggle-label {
+            width: 4.3ch;
+            text-align: left;
+            display: inline-block;
+            line-height: 1;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        #mainView.main-grid {
+            grid-template-columns: minmax(292px, 352px) minmax(0, 1fr);
+            gap: 18px;
+            align-items: start;
+        }
+
+        #mainView .panel {
+            background: linear-gradient(150deg, var(--wu-surface), var(--wu-surface-strong));
+            border: 1px solid var(--wu-border);
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: var(--wu-shadow);
+        }
+
+        #mainView .panel h2 {
+            margin-bottom: 14px;
+            font-size: 29px;
+            color: var(--wu-text-main);
+            font-weight: 600;
+            gap: 9px;
+            letter-spacing: 0;
+        }
+
+        #mainView .panel h2::before {
+            content: "";
+            width: 4px;
+            height: 22px;
+            border-radius: 999px;
+            background: linear-gradient(170deg, var(--wu-brand-soft), var(--wu-accent));
+        }
+
+        .upload-area {
+            border: 2px dashed color-mix(in srgb, var(--wu-brand-soft) 72%, var(--wu-brand));
+            background: color-mix(in srgb, var(--wu-brand-soft) 13%, var(--wu-surface-strong));
+            border-radius: 14px;
+            padding: 30px 20px;
+        }
+
+        .upload-area:hover {
+            border-color: var(--wu-brand);
+            background: color-mix(in srgb, var(--wu-brand-soft) 18%, var(--wu-surface-strong));
+        }
+
+        .upload-area.dragover {
+            transform: scale(1.01);
+            border-color: var(--wu-brand);
+            background: color-mix(in srgb, var(--wu-brand-soft) 24%, var(--wu-surface-strong));
+        }
+
+        .upload-text,
+        .upload-hint {
+            color: var(--wu-text-muted);
+        }
+
+        .upload-text strong {
+            color: var(--wu-text-main);
+        }
+
+        .template-bulk-actions,
+        .history-bulk-actions {
+            border-radius: 12px;
+            border: 1px solid var(--wu-border);
+            background: var(--wu-surface-strong);
+            margin-top: 14px;
+        }
+
+        .template-select-all,
+        .history-select-all {
+            color: var(--wu-text-main);
+        }
+
+        .template-selected-count,
+        .history-selected-count {
+            color: var(--wu-text-muted);
+        }
+
+        .templates-list {
+            margin-top: 14px;
+            max-height: 510px;
+        }
+
+        .template-item {
+            background: color-mix(in srgb, var(--wu-brand-soft) 8%, var(--wu-surface-strong));
+            border: 1px solid var(--wu-border);
+            border-radius: 12px;
+            padding: 12px 12px;
+            margin-bottom: 10px;
+            gap: 8px;
+            box-shadow: none;
+        }
+
+        .template-item:hover {
+            border-color: color-mix(in srgb, var(--wu-brand-soft) 65%, var(--wu-brand));
+            background: color-mix(in srgb, var(--wu-brand-soft) 13%, var(--wu-surface-strong));
+            box-shadow: 0 8px 18px rgba(16, 45, 88, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .template-item.selected {
+            border-color: color-mix(in srgb, var(--wu-brand-soft) 75%, var(--wu-brand));
+            background: color-mix(in srgb, var(--wu-brand-soft) 20%, var(--wu-surface-strong));
+        }
+
+        .template-name-row {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .template-file-icon {
+            width: 18px;
+            text-align: center;
+            opacity: 0.95;
+            font-size: 13px;
+        }
+
+        .template-name {
+            color: var(--wu-text-main);
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .template-meta {
+            color: var(--wu-text-muted);
+            font-size: 12px;
+            gap: 7px;
+            flex-wrap: wrap;
+        }
+
+        .stats {
+            margin-top: 2px;
+            margin-bottom: 14px;
+            gap: 10px;
+        }
+
+        .stat-box {
+            border-radius: 12px;
+            padding: 12px 10px;
+            border: 1px solid var(--wu-border);
+            background: color-mix(in srgb, var(--wu-surface-strong) 96%, transparent);
+            color: var(--wu-text-main);
+            box-shadow: 0 6px 12px rgba(21, 50, 92, 0.08);
+        }
+
+        .stat-value {
+            font-size: 34px;
+            line-height: 1;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--wu-text-main);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            letter-spacing: 0.4px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--wu-text-muted);
+        }
+
+        #lastUpdate.stat-value {
+            font-size: 24px;
+            letter-spacing: 0.3px;
+        }
+
+        body.dark-mode .stat-box {
+            background: color-mix(in srgb, var(--wu-surface) 90%, #000 10%);
+            border-color: color-mix(in srgb, var(--wu-border) 82%, transparent);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.26);
+        }
+
+        .history-table-wrapper {
+            border: 1px solid var(--wu-border);
+            border-radius: 12px;
+            background: var(--wu-surface-strong);
+            margin-top: 0;
+            max-height: 560px;
+        }
+
+        .history-table thead {
+            background: color-mix(in srgb, var(--wu-brand-soft) 7%, var(--wu-surface-strong));
+            border-bottom: 1px solid var(--wu-border);
+        }
+
+        .history-table th {
+            color: var(--wu-text-muted);
+            font-size: 12px;
+            letter-spacing: 0.6px;
+        }
+
+        .history-table td {
+            color: var(--wu-text-main);
+            border-bottom: 1px solid var(--wu-border);
+            font-size: 13px;
+        }
+
+        .history-table tbody tr:hover {
+            background: color-mix(in srgb, var(--wu-brand-soft) 9%, var(--wu-surface-strong));
+            border-left: none;
+        }
+
+        .history-cell-link {
+            cursor: pointer;
+        }
+
+        .history-template-name {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 700;
+        }
+
+        .history-time-value {
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .history-time-date {
+            color: var(--wu-text-muted);
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .history-actions {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+        }
+
+        #mainView .btn {
+            min-height: 34px;
+            border-radius: 999px;
+            border: 1px solid var(--wu-border);
+            box-shadow: none;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 8px 12px;
+            transform: none;
+        }
+
+        #mainView .btn-small {
+            min-height: 30px;
+            padding: 6px 11px !important;
+            font-size: 12px !important;
+        }
+
+        #mainView .btn-secondary {
+            background: var(--wu-success-bg);
+            color: color-mix(in srgb, var(--wu-brand) 80%, #0f3f56);
+            border-color: color-mix(in srgb, var(--wu-brand-soft) 56%, var(--wu-border));
+        }
+
+        #mainView .btn-secondary:hover:not(:disabled) {
+            background: color-mix(in srgb, var(--wu-brand-soft) 34%, var(--wu-success-bg));
+            border-color: color-mix(in srgb, var(--wu-brand-soft) 75%, var(--wu-brand));
+        }
+
+        #mainView .btn-danger {
+            background: var(--wu-danger-bg);
+            color: var(--wu-danger);
+            border-color: color-mix(in srgb, var(--wu-danger) 35%, var(--wu-border));
+        }
+
+        #mainView .btn-danger:hover:not(:disabled) {
+            background: color-mix(in srgb, var(--wu-danger) 20%, var(--wu-danger-bg));
+            border-color: color-mix(in srgb, var(--wu-danger) 50%, var(--wu-border));
+            color: color-mix(in srgb, var(--wu-danger) 90%, #c53a54);
+        }
+
+        #mainView .btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        #mainView .bulk-action-btn {
+            min-height: 32px;
+            padding: 7px 14px !important;
+            font-size: 12px !important;
+            border-radius: 999px;
+            letter-spacing: 0.1px;
+            font-weight: 800;
+        }
+
+        #mainView .bulk-export-btn {
+            background: linear-gradient(140deg, color-mix(in srgb, var(--wu-brand-soft) 26%, #ffffff), color-mix(in srgb, var(--wu-brand-soft) 12%, var(--wu-surface-strong)));
+            color: color-mix(in srgb, var(--wu-brand) 82%, #0f3f56);
+            border-color: color-mix(in srgb, var(--wu-brand-soft) 64%, var(--wu-border));
+        }
+
+        #mainView .bulk-delete-btn {
+            background: linear-gradient(140deg, color-mix(in srgb, var(--wu-danger) 12%, #ffffff), color-mix(in srgb, var(--wu-danger) 6%, var(--wu-surface-strong)));
+            color: var(--wu-danger);
+            border-color: color-mix(in srgb, var(--wu-danger) 42%, var(--wu-border));
+        }
+
+        #mainView .template-delete-btn,
+        #mainView .table-action-btn {
+            min-height: 32px;
+            border-radius: 999px;
+            padding: 6px 13px !important;
+            font-size: 12px !important;
+            font-weight: 800;
+            border-width: 1px;
+            box-shadow: 0 2px 8px rgba(16, 45, 88, 0.08);
+        }
+
+        #mainView .table-action-btn {
+            min-width: 82px;
+            justify-content: center;
+        }
+
+        #mainView .table-action-export {
+            background: linear-gradient(140deg, #f2fcf8 0%, #e2f8f2 100%);
+            color: #11806b;
+            border-color: #b7e8dc;
+        }
+
+        #mainView .table-action-export:hover:not(:disabled) {
+            background: linear-gradient(140deg, #e6f8f2 0%, #d4f1e8 100%);
+            border-color: #8ad7c6;
+            color: #0f6c5a;
+        }
+
+        #mainView .template-delete-btn,
+        #mainView .table-action-delete {
+            background: linear-gradient(140deg, #fff4f7 0%, #ffe9ef 100%);
+            color: #d75473;
+            border-color: #f4c5d2;
+        }
+
+        #mainView .template-delete-btn:hover:not(:disabled),
+        #mainView .table-action-delete:hover:not(:disabled) {
+            background: linear-gradient(140deg, #ffe9ef 0%, #ffdde6 100%);
+            border-color: #ee9fb5;
+            color: #c13f5f;
+        }
+
+        body.dark-mode #mainView .table-action-export {
+            background: linear-gradient(140deg, rgba(72, 198, 188, 0.28), rgba(72, 198, 188, 0.2));
+            color: #95f2e2;
+            border-color: rgba(146, 236, 220, 0.55);
+        }
+
+        body.dark-mode #mainView .template-delete-btn,
+        body.dark-mode #mainView .table-action-delete {
+            background: linear-gradient(140deg, rgba(230, 111, 135, 0.26), rgba(230, 111, 135, 0.18));
+            color: #ff9fba;
+            border-color: rgba(255, 159, 186, 0.5);
+        }
+
+        body.dark-mode #mainView .bulk-export-btn {
+            background: linear-gradient(140deg, rgba(72, 198, 188, 0.24), rgba(72, 198, 188, 0.17));
+            color: #95f2e2;
+            border-color: rgba(146, 236, 220, 0.55);
+        }
+
+        body.dark-mode #mainView .bulk-delete-btn {
+            background: linear-gradient(140deg, rgba(230, 111, 135, 0.24), rgba(230, 111, 135, 0.16));
+            color: #ff9fba;
+            border-color: rgba(255, 159, 186, 0.45);
+        }
+
+        .empty-state {
+            color: var(--wu-text-muted);
+        }
+
+        @media (max-width: 1280px) {
+            #mainView.main-grid {
+                grid-template-columns: minmax(270px, 320px) minmax(0, 1fr);
+            }
+        }
+
+        @media (max-width: 980px) {
+            #mainView.main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #mainView .panel:first-child {
+                position: static;
+            }
+        }
+
+        @media (max-width: 820px) {
+            .word-topbar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                border-radius: 18px;
+            }
+
+            .word-topbar .topbar-actions {
+                width: 100%;
+                justify-content: flex-end;
+                flex-wrap: wrap;
+            }
+
+            .stat-value {
+                font-size: 31px;
+            }
+
+            .history-actions {
+                flex-wrap: wrap;
+            }
+
+            .history-table th,
+            .history-table td {
+                padding: 12px 8px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>📄 Word Form Upload & Fill</h1>
-            <div class="header-actions">
-                <button class="btn btn-secondary" onclick="goHome()" title="Quay lại trang chủ">← Quay lại</button>
-                <button class="theme-toggle-btn" id="themeToggle" onclick="themeManager.toggleTheme()" title="Toggle Theme">
-                    <span id="themeIcon">🌙</span>
-                    <span id="themeLabel">Tối</span>
+        <header class="topbar word-topbar">
+            <a class="brand" href="/word-upload">
+                <span class="brand-dot">📄</span>
+                <span>Word Form Upload & Fill</span>
+            </a>
+            <div class="topbar-actions">
+                <button class="btn secondary" onclick="goHome()" title="Quay lại trang chủ">← Quay lại</button>
+                <button class="btn secondary word-theme-btn" id="themeToggle" data-theme-toggle title="Toggle Theme">
+                    <span class="theme-dot" aria-hidden="true"></span>
+                    <span id="themeLabel" class="theme-toggle-label" data-theme-label>Tối</span>
                 </button>
             </div>
-        </div>
+        </header>
 
         <!-- Main View -->
         <div id="mainView" class="main-grid">
@@ -1882,7 +2470,7 @@
                         </label>
                         <span class="template-selected-count" id="selectedTemplatesCount">0 đã chọn</span>
                     </div>
-                    <button id="deleteSelectedTemplatesBtn" class="btn btn-danger btn-small" onclick="deleteSelectedTemplates()" disabled>
+                    <button id="deleteSelectedTemplatesBtn" class="btn btn-danger btn-small bulk-action-btn bulk-delete-btn" onclick="deleteSelectedTemplates()" disabled>
                         🗑️ Xóa đã chọn
                     </button>
                 </div>
@@ -1923,10 +2511,10 @@
                             <span class="history-selected-count" id="selectedSubmissionsCount">0 đã chọn</span>
                         </div>
                         <div class="history-bulk-right">
-                            <button id="exportSelectedSubmissionsBtn" class="btn btn-secondary btn-small" onclick="showBulkExportOptions()" disabled>
+                            <button id="exportSelectedSubmissionsBtn" class="btn btn-secondary btn-small bulk-action-btn bulk-export-btn" onclick="showBulkExportOptions()" disabled>
                                 📥 Xuất đã chọn
                             </button>
-                            <button id="deleteSelectedSubmissionsBtn" class="btn btn-danger btn-small" onclick="deleteSelectedSubmissions()" disabled>
+                            <button id="deleteSelectedSubmissionsBtn" class="btn btn-danger btn-small bulk-action-btn bulk-delete-btn" onclick="deleteSelectedSubmissions()" disabled>
                                 🗑️ Xóa đã chọn
                             </button>
                         </div>
@@ -1988,6 +2576,7 @@
                             <div class="form-actions-primary">
                                 <button type="submit" class="btn btn-primary">💾 Lưu & Submit</button>
                                 <button type="button" class="btn btn-secondary" onclick="submitFormAndAddPage(event)">📄 Lưu + Trang mới</button>
+                                <button type="button" class="btn btn-danger" onclick="deleteCurrentWordFormPage(event)">🗑️ Xóa trang hiện tại</button>
                             </div>
                             <div class="form-actions-secondary">
                                 <button type="button" class="btn btn-secondary" onclick="clearFormWithConfirm()">🗑️ Làm Sạch Dữ Liệu</button>
@@ -2029,6 +2618,11 @@
                             <button id="submissionPrevBtn" type="button" class="btn btn-secondary" onclick="navigateSubmissionHistory(-1)">◀ Dòng trước</button>
                             <button id="submissionNextBtn" type="button" class="btn btn-secondary" onclick="navigateSubmissionHistory(1)">Dòng tiếp ▶</button>
                         </div>
+                        <div class="reference-upload-row">
+                            <button id="wordReferenceUploadBtnSubmission" type="button" class="btn btn-secondary">📤 Upload Excel tham chiếu</button>
+                            <input id="wordReferenceUploadInputSubmission" type="file" accept=".xlsx,.xls" style="display: none;" />
+                            <span id="wordReferenceStatusSubmission" class="reference-upload-status">Chưa có file tham chiếu cho dropdown.</span>
+                        </div>
                     </div>
 
                     <form id="editForm" onsubmit="saveSubmissionChanges(event)">
@@ -2037,6 +2631,8 @@
                         <div class="form-actions">
                             <div class="form-actions-primary">
                                 <button type="submit" class="btn btn-primary">💾 Lưu Thay Đổi</button>
+                                <button type="button" class="btn btn-secondary" onclick="addSubmissionHistoryPage(event)">📄 Thêm trang mới</button>
+                                <button type="button" class="btn btn-danger" onclick="deleteCurrentSubmissionPage(event)">🗑️ Xóa trang hiện tại</button>
                             </div>
                             <div class="form-actions-secondary">
                                 <button type="button" class="btn btn-secondary" onclick="backToMain()">❌ Hủy</button>
@@ -2072,38 +2668,103 @@
         let exportMode = 'single';
         let bulkExportSubmissionIds = [];
         let submissionDetailCache = {};
-        let formPages = [{ data: {}, submissionId: null }];
+        let formPages = [{ data: {}, submissionId: null, historyGroupId: null }];
         let currentFormPageIndex = 0;
         let submissionHistoryOrder = [];
         let currentSubmissionNavIndex = -1;
         let excelReferenceOptions = {};
         let excelReferenceFileName = '';
         let isWordReferenceAutofill = false;
+        const SUBMISSION_META_KEY = '__autofill_meta__';
+
+        function getSubmissionGroupKey(item) {
+            const templateId = Number(item?.template_id || 0);
+            const groupId = String(item?.history_group_id || '').trim();
+            if (!groupId) {
+                return `single:${Number(item?.id || 0)}`;
+            }
+            return `group:${templateId}:${groupId}`;
+        }
+
+        function getGroupedHistoryItems() {
+            const sorted = [...submissions].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            const grouped = new Map();
+
+            sorted.forEach((item) => {
+                if (!item || !item.id) return;
+
+                const key = getSubmissionGroupKey(item);
+                if (!grouped.has(key)) {
+                    grouped.set(key, {
+                        key,
+                        representative: { ...item },
+                        submissionIds: [Number(item.id)],
+                        latestCreatedAt: item.created_at,
+                    });
+                    return;
+                }
+
+                const bucket = grouped.get(key);
+                bucket.submissionIds.push(Number(item.id));
+            });
+
+            return Array.from(grouped.values())
+                .map((bucket) => ({
+                    ...bucket.representative,
+                    group_submission_ids: [...bucket.submissionIds],
+                    page_count: bucket.submissionIds.length,
+                    created_at: bucket.latestCreatedAt || bucket.representative.created_at,
+                }))
+                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        }
+
+        function getHistoryRowSubmissionIds(historyRowId) {
+            const targetId = Number(historyRowId);
+            const row = getGroupedHistoryItems().find((item) => Number(item.id) === targetId);
+            if (row && Array.isArray(row.group_submission_ids) && row.group_submission_ids.length > 0) {
+                return row.group_submission_ids.map((id) => Number(id)).filter((id) => Number.isInteger(id) && id > 0);
+            }
+            return Number.isInteger(targetId) && targetId > 0 ? [targetId] : [];
+        }
 
         function getDisplayedSubmissions() {
-            return [...submissions]
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            return getGroupedHistoryItems()
                 .slice(0, 10);
         }
 
-        function buildSubmissionHistoryOrderForTemplate(templateId) {
-            const targetTemplateId = Number(templateId);
-            if (!targetTemplateId) {
+        function createWordHistoryGroupId() {
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                return window.crypto.randomUUID();
+            }
+            return `group_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+        }
+
+        function buildSubmissionHistoryOrderForSubmission(submissionItem) {
+            const targetTemplateId = Number(submissionItem?.template_id || 0);
+            if (!targetTemplateId || !submissionItem?.id) {
                 submissionHistoryOrder = [];
                 currentSubmissionNavIndex = -1;
                 updateSubmissionNavigation();
                 return;
             }
 
-            submissionHistoryOrder = [...submissions]
-                .filter((item) => Number(item.template_id) === targetTemplateId)
-                .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                .map((item) => item.id);
-
-            if (currentSubmission?.id) {
-                currentSubmissionNavIndex = submissionHistoryOrder.indexOf(currentSubmission.id);
+            const groupId = String(submissionItem.history_group_id || '').trim();
+            if (!groupId) {
+                submissionHistoryOrder = [submissionItem.id];
+                currentSubmissionNavIndex = 0;
+                updateSubmissionNavigation();
+                return;
             }
 
+            submissionHistoryOrder = [...submissions]
+                .filter((item) => (
+                    Number(item.template_id) === targetTemplateId &&
+                    String(item.history_group_id || '').trim() === groupId
+                ))
+                .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+                .map((item) => item.id);
+
+            currentSubmissionNavIndex = submissionHistoryOrder.indexOf(submissionItem.id);
             updateSubmissionNavigation();
         }
 
@@ -2140,7 +2801,7 @@
 
         function saveCurrentFormPageDraft() {
             if (!formPages[currentFormPageIndex]) {
-                formPages[currentFormPageIndex] = { data: {}, submissionId: null };
+                formPages[currentFormPageIndex] = { data: {}, submissionId: null, historyGroupId: null };
             }
 
             formPages[currentFormPageIndex].data = collectCurrentFormValues();
@@ -2168,7 +2829,7 @@
         }
 
         function resetFormPageCounter() {
-            formPages = [{ data: {}, submissionId: null }];
+            formPages = [{ data: {}, submissionId: null, historyGroupId: null }];
             currentFormPageIndex = 0;
             updateFormPageIndicator();
             updateFormPageNavigation();
@@ -2201,7 +2862,7 @@
 
             const nextIndex = currentFormPageIndex + 1;
             if (!formPages[nextIndex]) {
-                formPages.push({ data: {}, submissionId: null });
+                formPages.push({ data: {}, submissionId: null, historyGroupId: formPages[currentFormPageIndex]?.historyGroupId || null });
             }
 
             currentFormPageIndex = nextIndex;
@@ -2209,6 +2870,49 @@
             resetAutofillPanelState('form');
             updateFormPageIndicator();
             updateFormPageNavigation();
+        }
+
+        async function deleteCurrentWordFormPage(event) {
+            if (event) {
+                event.preventDefault();
+            }
+
+            const currentPage = formPages[currentFormPageIndex] || { data: {}, submissionId: null, historyGroupId: null };
+            const currentSubmissionId = currentPage.submissionId;
+            const totalPages = Math.max(formPages.length, 1);
+            const confirmed = confirm(`Bạn có chắc muốn xóa trang hiện tại (${currentFormPageIndex + 1}/${totalPages})?`);
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                if (currentSubmissionId) {
+                    const response = await fetch(`${API_BASE}/api/word/submission/${currentSubmissionId}`, {
+                        method: 'DELETE'
+                    });
+                    await parseApiResponse(response);
+                }
+
+                if (formPages.length <= 1) {
+                    formPages = [{ data: {}, submissionId: null, historyGroupId: null }];
+                    currentFormPageIndex = 0;
+                } else {
+                    formPages.splice(currentFormPageIndex, 1);
+                    currentFormPageIndex = Math.min(currentFormPageIndex, formPages.length - 1);
+                }
+
+                applyFormValues(formPages[currentFormPageIndex]?.data || {});
+                refreshWordReferenceDropdowns();
+                resetAutofillPanelState('form');
+                updateFormPageIndicator();
+                updateFormPageNavigation();
+
+                await loadSubmissions();
+                await loadTemplates();
+                showMessage('formMessage', '✅ Đã xóa trang hiện tại.', 'success');
+            } catch (error) {
+                showMessage('formMessage', `❌ Lỗi khi xóa trang: ${error.message}`, 'error');
+            }
         }
 
         function updateSubmissionNavigation() {
@@ -2339,6 +3043,12 @@
                 wordReferenceUploadBtn.addEventListener('click', () => wordReferenceUploadInput.click());
                 wordReferenceUploadInput.addEventListener('change', uploadWordReferenceExcel);
             }
+            const wordReferenceUploadBtnSubmission = document.getElementById('wordReferenceUploadBtnSubmission');
+            const wordReferenceUploadInputSubmission = document.getElementById('wordReferenceUploadInputSubmission');
+            if (wordReferenceUploadBtnSubmission && wordReferenceUploadInputSubmission) {
+                wordReferenceUploadBtnSubmission.addEventListener('click', () => wordReferenceUploadInputSubmission.click());
+                wordReferenceUploadInputSubmission.addEventListener('change', uploadWordReferenceExcel);
+            }
             updateWordReferenceStatus('Chưa có file tham chiếu cho dropdown.');
 
             const ok = await ensureAuthenticated();
@@ -2452,14 +3162,17 @@
                             />
                         </label>
                         <div class="template-info">
-                            <div class="template-name">${escapeHtml(t.filename)}</div>
+                            <div class="template-name-row">
+                                <span class="template-file-icon">📄</span>
+                                <div class="template-name">${escapeHtml(t.filename)}</div>
+                            </div>
                             <div class="template-meta">
-                                ${t.fields_count} trường • ${t.submissions_count} submissions • 
+                                ${t.fields_count} trường • ${t.submissions_count} submissions •
                                 ${new Date(t.created_at).toLocaleDateString('vi-VN')}
                             </div>
                         </div>
                         <div class="template-actions">
-                            <button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteTemplate(${t.id})">
+                            <button class="btn btn-danger btn-small template-delete-btn" onclick="event.stopPropagation(); deleteTemplate(${t.id})">
                                 Xóa
                             </button>
                         </div>
@@ -2604,9 +3317,11 @@
                         return;  // Skip this field for now
                     }
                     
+                    const fieldLabel = formatExportFieldName(field.label || field.name || '');
+
                     validFields.push(`
                     <div class="form-group">
-                        <label for="field_${idx}">${escapeHtml(field.label)}</label>
+                        <label for="field_${idx}">${escapeHtml(fieldLabel)}</label>
                         <div class="form-field-wrapper">
                             <input 
                                 type="${field.field_type === 'email' ? 'email' : field.field_type === 'date' ? 'date' : field.field_type === 'number' ? 'number' : 'text'}"
@@ -2614,7 +3329,7 @@
                                 name="${field.name}"
                                 data-field-name="${field.name}"
                                 data-field-id="${fieldId}"
-                                placeholder="Nhập ${field.label.toLowerCase()}"
+                                placeholder="Nhập ${fieldLabel.toLocaleLowerCase('vi-VN')}"
                                 autocomplete="off"
                                 onFocus="loadSuggestions(event)"
                                 onInput="filterSuggestions(event)"
@@ -2660,7 +3375,7 @@
             }
 
             const keepFormOpen = Boolean(options.keepFormOpen);
-            const currentPage = formPages[currentFormPageIndex] || { data: {}, submissionId: null };
+            const currentPage = formPages[currentFormPageIndex] || { data: {}, submissionId: null, historyGroupId: null };
             const existingSubmissionId = currentPage.submissionId;
             const successText = options.successText || (existingSubmissionId
                 ? '✅ Đã cập nhật trang hiện tại.'
@@ -2668,6 +3383,17 @@
 
             const formData = new FormData(document.getElementById('dynamicForm'));
             const data = Object.fromEntries(formData);
+            let historyGroupId = String(currentPage.historyGroupId || '').trim();
+            if (keepFormOpen && !historyGroupId) {
+                historyGroupId = createWordHistoryGroupId();
+            }
+            const payload = { ...data };
+            if (historyGroupId) {
+                payload[SUBMISSION_META_KEY] = {
+                    group_id: historyGroupId,
+                    page_index: currentFormPageIndex + 1
+                };
+            }
 
             try {
                 let response;
@@ -2678,7 +3404,7 @@
                         {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(data)
+                            body: JSON.stringify(payload)
                         }
                     );
                 } else {
@@ -2687,7 +3413,7 @@
                         {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(data)
+                            body: JSON.stringify(payload)
                         }
                     );
                 }
@@ -2695,10 +3421,11 @@
                 const result = await parseApiResponse(response);
 
                 if (!formPages[currentFormPageIndex]) {
-                    formPages[currentFormPageIndex] = { data: {}, submissionId: null };
+                    formPages[currentFormPageIndex] = { data: {}, submissionId: null, historyGroupId: null };
                 }
                 formPages[currentFormPageIndex].data = { ...data };
                 formPages[currentFormPageIndex].submissionId = existingSubmissionId || result.submission_id || result.id || null;
+                formPages[currentFormPageIndex].historyGroupId = historyGroupId || String(result.history_group_id || '').trim() || null;
 
                 showMessage('formMessage', successText, 'success');
                 
@@ -2752,7 +3479,7 @@
                     }
                 });
 
-                document.getElementById('submissionsCount').textContent = submissions.length;
+                document.getElementById('submissionsCount').textContent = displayedSubmissions.length;
 
                 const historyWrapper = document.getElementById('historyWrapper');
                 const historyBody = document.getElementById('historyBody');
@@ -2802,17 +3529,31 @@
                                 onchange="toggleSubmissionSelection(${s.id}, this.checked)"
                             />
                         </td>
-                        <td style="cursor: pointer;" onclick="viewSubmissionDetail(${s.id})">📄 ${escapeHtml(getCleanFilename(s.template_name))}</td>
-                        <td style="cursor: pointer;" onclick="viewSubmissionDetail(${s.id})">#${s.id}</td>
-                        <td style="cursor: pointer;" onclick="viewSubmissionDetail(${s.id})">${new Date(s.created_at).toLocaleString('vi-VN')}</td>
-                        <td><button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); showExportOptions(${s.id})" title="Xuất file">📥 Xuất</button><button class="btn btn-danger btn-small" onclick="event.stopPropagation(); deleteSubmissionConfirm(${s.id})" title="Xóa mục này">Xóa</button></td>
+                        <td class="history-cell-link" onclick="viewSubmissionDetail(${s.id})">
+                            <span class="history-template-name">
+                                <span class="template-file-icon">📄</span>
+                                ${escapeHtml(getCleanFilename(s.template_name))}
+                            </span>
+                            ${Number(s.page_count || 1) > 1 ? ` <span class="suggestion-meta">(${Number(s.page_count)} trang)</span>` : ''}
+                        </td>
+                        <td class="history-cell-link" onclick="viewSubmissionDetail(${s.id})"><strong>#${s.id}</strong></td>
+                        <td class="history-cell-link" onclick="viewSubmissionDetail(${s.id})">
+                            <div class="history-time-value">${new Date(s.created_at).toLocaleTimeString('vi-VN')}</div>
+                            <div class="history-time-date">${new Date(s.created_at).toLocaleDateString('vi-VN')}</div>
+                        </td>
+                        <td>
+                            <div class="history-actions">
+                                <button class="btn btn-secondary btn-small table-action-btn table-action-export" onclick="event.stopPropagation(); showExportOptions(${s.id})" title="Xuất file">📥 Xuất</button>
+                                <button class="btn btn-danger btn-small table-action-btn table-action-delete" onclick="event.stopPropagation(); deleteSubmissionConfirm(${s.id})" title="Xóa mục này">Xóa</button>
+                            </div>
+                        </td>
                     </tr>
                 `).join('');
 
                 updateHistoryBulkActions();
 
-                if (currentSubmission?.template_id) {
-                    buildSubmissionHistoryOrderForTemplate(currentSubmission.template_id);
+                if (currentSubmission?.id) {
+                    buildSubmissionHistoryOrderForSubmission(currentSubmission);
                 } else {
                     submissionHistoryOrder = [];
                     currentSubmissionNavIndex = -1;
@@ -2883,11 +3624,15 @@
         }
 
         function showBulkExportOptions() {
-            const selectedIds = Array.from(selectedSubmissionIds);
-            if (selectedIds.length === 0) {
+            const selectedHistoryRowIds = Array.from(selectedSubmissionIds);
+            if (selectedHistoryRowIds.length === 0) {
                 showMessage('uploadMessage', '⚠️ Vui lòng chọn submission để xuất', 'error');
                 return;
             }
+
+            const selectedIds = Array.from(new Set(
+                selectedHistoryRowIds.flatMap((historyRowId) => getHistoryRowSubmissionIds(historyRowId))
+            ));
 
             exportMode = 'bulk';
             bulkExportSubmissionIds = selectedIds;
@@ -2897,7 +3642,7 @@
             const firstTemplate = submissions.find((s) => s.id === selectedIds[0])?.template_name || 'submissions';
             const cleanTemplateName = getCleanFilename(firstTemplate).replace(/\.[^/.]+$/, '');
 
-            document.getElementById('exportTitle').textContent = `Chọn định dạng xuất ${selectedIds.length} mục đã chọn`;
+            document.getElementById('exportTitle').textContent = `Chọn định dạng xuất ${selectedIds.length} trang đã chọn`;
             fileNameInput.value = sanitizeExportFilename(`${cleanTemplateName}_selected_${selectedIds.length}`, 'submissions_export');
             modal.classList.add('show');
         }
@@ -2991,43 +3736,47 @@
             });
         }
 
-        async function exportBulkSubmissionsPDF() {
-            const details = await fetchBulkSubmissionDetails();
-            const { headers, rows } = buildBulkFieldMatrix(details);
-            const { jsPDF } = window.jspdf;
+        async function exportBulkSubmissionsWord() {
+            const selectedIds = bulkExportSubmissionIds.length > 0
+                ? bulkExportSubmissionIds
+                : Array.from(selectedSubmissionIds);
 
-            const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            if (!selectedIds.length) {
+                throw new Error('Không có dữ liệu để xuất.');
+            }
+
             const baseName = getExportFileBaseName() || 'submissions_export';
-
-            pdf.setFontSize(14);
-            pdf.setFont(undefined, 'bold');
-            pdf.text(`Du lieu da chon (${details.length} submissions)`, 14, 14);
-
-            pdf.autoTable({
-                startY: 20,
-                head: [headers],
-                body: rows,
-                styles: { font: 'helvetica', fontSize: 9, overflow: 'linebreak' },
-                headStyles: { fillColor: [90, 103, 216], textColor: [255, 255, 255], fontStyle: 'bold' },
-                margin: { left: 10, right: 10 }
-            });
-
-            const blob = pdf.output('blob');
-            return saveBlobWithLocationPicker(blob, {
-                suggestedName: `${baseName}.pdf`,
-                mimeType: 'application/pdf',
-                extension: 'pdf'
-            });
+            try {
+                const blob = await requestDocxExportBlob(selectedIds);
+                return saveBlobWithLocationPicker(blob, {
+                    suggestedName: `${baseName}.docx`,
+                    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    extension: 'docx',
+                    autoOpen: false
+                });
+            } catch (error) {
+                const details = await fetchBulkSubmissionDetails();
+                const fallbackBlob = buildLegacyWordBlob(details);
+                return saveBlobWithLocationPicker(fallbackBlob, {
+                    suggestedName: `${baseName}.doc`,
+                    mimeType: 'application/msword',
+                    extension: 'doc',
+                    autoOpen: false
+                });
+            }
         }
 
         async function deleteSelectedSubmissions() {
-            const selectedIds = Array.from(selectedSubmissionIds);
-            if (selectedIds.length === 0) {
+            const selectedHistoryRowIds = Array.from(selectedSubmissionIds);
+            if (selectedHistoryRowIds.length === 0) {
                 showMessage('uploadMessage', '⚠️ Vui lòng chọn submission để xóa', 'error');
                 return;
             }
 
-            const confirmed = confirm(`Bạn chắc chắn muốn xóa ${selectedIds.length} submission đã chọn?`);
+            const selectedIds = Array.from(new Set(
+                selectedHistoryRowIds.flatMap((historyRowId) => getHistoryRowSubmissionIds(historyRowId))
+            ));
+            const confirmed = confirm(`Bạn chắc chắn muốn xóa ${selectedIds.length} trang dữ liệu đã chọn?`);
             if (!confirmed) return;
 
             let successCount = 0;
@@ -3050,7 +3799,7 @@
             await loadSubmissions();
 
             if (successCount > 0) {
-                showMessage('uploadMessage', `✅ Đã xóa ${successCount} submission`, 'success');
+                showMessage('uploadMessage', `✅ Đã xóa ${successCount} trang dữ liệu`, 'success');
             }
             if (failedIds.length > 0) {
                 showMessage('uploadMessage', `❌ Không thể xóa submission ID: ${failedIds.join(', ')}`, 'error');
@@ -3080,13 +3829,15 @@
             }
             
             try {
-                const response = await fetch(
-                    `${API_BASE}/api/word/submission/${submissionId}`,
-                    { method: 'DELETE' }
-                );
-
-                await parseApiResponse(response);
-                showMessage('uploadMessage', '✅ Xóa submission thành công', 'success');
+                const idsToDelete = getHistoryRowSubmissionIds(submissionId);
+                for (const id of idsToDelete) {
+                    const response = await fetch(
+                        `${API_BASE}/api/word/submission/${id}`,
+                        { method: 'DELETE' }
+                    );
+                    await parseApiResponse(response);
+                }
+                showMessage('uploadMessage', '✅ Xóa lịch sử thành công', 'success');
                 await loadSubmissions();
             } catch (error) {
                 console.error('Delete submission error:', error);
@@ -3100,7 +3851,7 @@
                 const response = await fetch(`${API_BASE}/api/word/submission/${submissionId}`);
                 const data = await parseApiResponse(response);
                 currentSubmission = data;
-                buildSubmissionHistoryOrderForTemplate(data.template_id);
+                buildSubmissionHistoryOrderForSubmission(data);
                 currentSubmissionNavIndex = submissionHistoryOrder.indexOf(data.id);
                 
                 // Hiển thị submission view
@@ -3115,9 +3866,11 @@
                 const fields = data.data || {};
                 
                 const fieldElements = Object.entries(fields).map(([key, value], idx) => {
-                    const fieldName = escapeHtml(key);
+                    const formattedFieldName = formatExportFieldName(key) || key;
+                    const fieldName = escapeHtml(formattedFieldName);
                     const fieldValue = escapeHtml(String(value || ''));
                     const fieldId = `sub_field_${idx}`;
+                    const suggestionFieldId = Number(`${data.id}${idx + 1}`);
                     return `
                     <div class="form-group">
                         <label for="${fieldId}">${fieldName}</label>
@@ -3127,9 +3880,21 @@
                                 id="${fieldId}"
                                 name="${key}"
                                 value="${fieldValue}"
+                                data-field-name="${key}"
+                                data-field-id="${suggestionFieldId}"
                                 placeholder="Nhập dữ liệu"
+                                autocomplete="off"
+                                onFocus="loadSuggestions(event)"
+                                onInput="filterSuggestions(event)"
+                                onBlur="hideSuggestionsOnBlur(event)"
                             />
+                            <div class="excel-reference-inline" data-field-id="${suggestionFieldId}">
+                                <select class="excel-reference-select" data-field-id="${suggestionFieldId}" onchange="applyWordReferenceSelection(event)">
+                                    <option value="">▼</option>
+                                </select>
+                            </div>
                         </div>
+                        <div class="suggestions-list" id="suggestions_${suggestionFieldId}"></div>
                     </div>
                     `;
                 }).join('');
@@ -3142,6 +3907,7 @@
                     `;
                 } else {
                     submissionFields.innerHTML = fieldElements;
+                    refreshWordReferenceDropdowns();
                     resetAutofillPanelState('submission');
                 }
 
@@ -3165,19 +3931,8 @@
             }
             
             try {
-                const formData = new FormData(document.getElementById('editForm'));
-                const data = Object.fromEntries(formData);
-                
-                const response = await fetch(
-                    `${API_BASE}/api/word/submission/${currentSubmission.id}`,
-                    {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    }
-                );
-
-                await parseApiResponse(response);
+                const data = collectSubmissionEditValues();
+                await updateSubmissionRecord(currentSubmission.id, data, currentSubmission.history_group_id);
                 showMessage('submissionMessage', `✅ Cập nhật dữ liệu #${currentSubmission.id} thành công!`, 'success');
                 
                 setTimeout(() => {
@@ -3190,11 +3945,132 @@
             }
         }
 
+        function collectSubmissionEditValues() {
+            const form = document.getElementById('editForm');
+            const formData = new FormData(form);
+            return Object.fromEntries(formData);
+        }
+
+        async function updateSubmissionRecord(submissionId, data, historyGroupId = null) {
+            const payload = { ...(data || {}) };
+            const groupId = String(historyGroupId || '').trim();
+            if (groupId) {
+                payload[SUBMISSION_META_KEY] = { group_id: groupId };
+            }
+
+            const response = await fetch(
+                `${API_BASE}/api/word/submission/${submissionId}`,
+                {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }
+            );
+            return parseApiResponse(response);
+        }
+
+        async function addSubmissionHistoryPage(event) {
+            if (event) event.preventDefault();
+
+            if (!currentSubmission || !currentSubmission.template_id) {
+                showMessage('submissionMessage', '❌ Không tìm thấy dữ liệu lịch sử để thêm trang mới.', 'error');
+                return;
+            }
+
+            try {
+                const currentData = collectSubmissionEditValues();
+                let historyGroupId = String(currentSubmission.history_group_id || '').trim();
+                if (!historyGroupId) {
+                    historyGroupId = createWordHistoryGroupId();
+                }
+
+                await updateSubmissionRecord(currentSubmission.id, currentData, historyGroupId);
+                currentSubmission.history_group_id = historyGroupId;
+
+                const newPageData = {};
+                Object.keys(currentData || {}).forEach((key) => {
+                    newPageData[key] = '';
+                });
+
+                const createPayload = {
+                    ...newPageData,
+                    [SUBMISSION_META_KEY]: {
+                        group_id: historyGroupId,
+                        page_index: Math.max(submissionHistoryOrder.length + 1, 2)
+                    }
+                };
+
+                const createResponse = await fetch(
+                    `${API_BASE}/api/word/submit?template_id=${encodeURIComponent(currentSubmission.template_id)}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(createPayload)
+                    }
+                );
+                const createResult = await parseApiResponse(createResponse);
+
+                await loadSubmissions();
+
+                const newSubmissionId = Number(createResult.submission_id || createResult.id || 0);
+                if (newSubmissionId > 0) {
+                    await viewSubmissionDetail(newSubmissionId, { suppressMessage: true });
+                }
+
+                showMessage('submissionMessage', '✅ Đã thêm trang mới trong lịch sử đã điền.', 'success');
+            } catch (error) {
+                console.error('Add submission page error:', error);
+                showMessage('submissionMessage', `❌ Không thể thêm trang mới: ${error.message}`, 'error');
+            }
+        }
+
+        async function deleteCurrentSubmissionPage(event) {
+            if (event) event.preventDefault();
+
+            if (!currentSubmission || !currentSubmission.id) {
+                showMessage('submissionMessage', '❌ Không tìm thấy trang hiện tại để xóa.', 'error');
+                return;
+            }
+
+            const confirmed = confirm(`Bạn có chắc muốn xóa trang hiện tại (#${currentSubmission.id})?`);
+            if (!confirmed) return;
+
+            const currentId = Number(currentSubmission.id);
+            const currentOrder = [...submissionHistoryOrder];
+            const currentIndex = currentOrder.indexOf(currentId);
+            const fallbackId = currentIndex >= 0
+                ? (currentOrder[currentIndex + 1] || currentOrder[currentIndex - 1] || null)
+                : null;
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/api/word/submission/${currentId}`,
+                    { method: 'DELETE' }
+                );
+                await parseApiResponse(response);
+
+                await loadSubmissions();
+
+                const stillExists = fallbackId && submissions.some((item) => Number(item.id) === Number(fallbackId));
+                if (stillExists) {
+                    await viewSubmissionDetail(fallbackId, { suppressMessage: true });
+                    showMessage('submissionMessage', '✅ Đã xóa trang hiện tại.', 'success');
+                } else {
+                    backToMain();
+                    showMessage('uploadMessage', '✅ Đã xóa trang hiện tại.', 'success');
+                }
+            } catch (error) {
+                console.error('Delete current submission page error:', error);
+                showMessage('submissionMessage', `❌ Không thể xóa trang hiện tại: ${error.message}`, 'error');
+            }
+        }
+
         /**
          * Show export format options modal
          */
         function showExportOptions(submissionId) {
             try {
+                const historySubmissionIds = getHistoryRowSubmissionIds(submissionId);
                 // Find submission data
                 const submission = submissions.find(s => s.id === submissionId);
                 if (!submission) {
@@ -3204,15 +4080,17 @@
 
                 // Set current submission for export functions
                 currentSubmission = submission;
-                exportMode = 'single';
-                bulkExportSubmissionIds = [];
+                exportMode = historySubmissionIds.length > 1 ? 'bulk' : 'single';
+                bulkExportSubmissionIds = historySubmissionIds.length > 1 ? historySubmissionIds : [];
 
                 // Show export format modal
                 const modal = document.getElementById('exportModal');
                 const templateName = getCleanFilename(submission.template_name);
                 const defaultExportName = getDefaultExportName(submission);
                 
-                document.getElementById('exportTitle').textContent = `Chọn định dạng xuất file: ${templateName}`;
+                document.getElementById('exportTitle').textContent = historySubmissionIds.length > 1
+                    ? `Chọn định dạng xuất ${historySubmissionIds.length} trang: ${templateName}`
+                    : `Chọn định dạng xuất file: ${templateName}`;
                 document.getElementById('exportFileName').value = defaultExportName;
                 modal.classList.add('show');
             } catch (error) {
@@ -3249,12 +4127,13 @@
                 ? getDefaultExportName(currentSubmission)
                 : 'du_lieu_xuat';
             const baseName = sanitizeExportFilename(input ? input.value : '', fallbackName);
-            return baseName.replace(/\.(xlsx|csv|pdf)$/i, '');
+            return baseName.replace(/\.(xlsx|csv|docx|doc)$/i, '');
         }
 
         function formatExportFieldName(fieldName) {
             const normalized = String(fieldName || '')
                 .replace(/[_-]+/g, ' ')
+                .replace(/[!@#$%^&*()+=\[\]{}\\|;:'",.<>/?`~]+/g, ' ')
                 .replace(/\s+/g, ' ')
                 .trim();
 
@@ -3268,6 +4147,71 @@
                     return `${firstChar}${remaining}`;
                 })
                 .join(' ');
+        }
+
+        async function requestDocxExportBlob(submissionIds) {
+            const payload = {
+                submission_ids: submissionIds,
+                file_name: getExportFileBaseName()
+            };
+            const endpointCandidates = [
+                `${API_BASE}/api/word/export-docx`,
+                `${API_BASE}/api/word/export-docx/`,
+                `${API_BASE}/api/word/export_docx`
+            ];
+
+            let lastErrorMessage = 'Không thể xuất file Word.';
+
+            for (const endpoint of endpointCandidates) {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    return response.blob();
+                }
+
+                let errorMessage = '';
+                try {
+                    const errorData = await response.json();
+                    errorMessage = errorData.detail || errorData.error || errorData.message || '';
+                } catch (_) {
+                    try {
+                        const textMessage = await response.text();
+                        errorMessage = textMessage ? textMessage.trim() : '';
+                    } catch (_) {
+                        errorMessage = '';
+                    }
+                }
+
+                // 404 may happen on old backend versions; try the next compatible endpoint.
+                if (response.status === 404) {
+                    lastErrorMessage = errorMessage || 'Not Found';
+                    continue;
+                }
+
+                throw new Error(errorMessage || `Lỗi xuất Word (HTTP ${response.status})`);
+            }
+
+            throw new Error(lastErrorMessage || 'Không thể xuất file Word.');
+        }
+
+        function buildLegacyWordBlob(submissions) {
+            const content = (submissions || []).map((item) => {
+                const data = item?.data || {};
+                const keys = Object.keys(data);
+                if (!keys.length) return 'Không có dữ liệu.';
+                return keys
+                    .map((key) => `${formatExportFieldName(key)}: ${String(data[key] ?? '').trim()}`)
+                    .join('\r\n');
+            }).join('\r\n\r\n');
+
+            return new Blob(['\uFEFF', content || 'Không có dữ liệu.'], {
+                type: 'application/msword;charset=utf-8;'
+            });
         }
 
         async function tryAutoOpenExportedFile({ blob, fileHandle, mimeType, suggestedName }) {
@@ -3309,7 +4253,7 @@
         }
 
         async function saveBlobWithLocationPicker(blob, options) {
-            const { suggestedName, mimeType, extension } = options;
+            const { suggestedName, mimeType, extension, autoOpen = true } = options;
             const accepts = { [mimeType]: [`.${extension}`] };
 
             if ('showSaveFilePicker' in window) {
@@ -3327,12 +4271,14 @@
                     await writable.write(blob);
                     await writable.close();
 
-                    await tryAutoOpenExportedFile({
-                        blob,
-                        fileHandle: handle,
-                        mimeType,
-                        suggestedName
-                    });
+                    if (autoOpen) {
+                        await tryAutoOpenExportedFile({
+                            blob,
+                            fileHandle: handle,
+                            mimeType,
+                            suggestedName
+                        });
+                    }
 
                     return handle.name || suggestedName;
                 } catch (error) {
@@ -3355,11 +4301,13 @@
 
             setTimeout(() => URL.revokeObjectURL(url), 0);
 
-            await tryAutoOpenExportedFile({
-                blob,
-                mimeType,
-                suggestedName
-            });
+            if (autoOpen) {
+                await tryAutoOpenExportedFile({
+                    blob,
+                    mimeType,
+                    suggestedName
+                });
+            }
 
             return suggestedName;
         }
@@ -3875,16 +4823,16 @@
         }
 
         /**
-         * Export submission data to PDF format using jsPDF
+         * Export submission data to Word (.docx) with "Tên trường: Giá trị"
          */
-        async function exportSubmissionPDF() {
+        async function exportSubmissionWord() {
             if (exportMode === 'bulk') {
                 try {
-                    const savedName = await exportBulkSubmissionsPDF();
+                    const savedName = await exportBulkSubmissionsWord();
                     closeExportModal();
-                    showMessage('uploadMessage', `✅ Xuất PDF thành công: ${savedName}`, 'success');
+                    showMessage('uploadMessage', `✅ Xuất Word thành công: ${savedName}`, 'success');
                 } catch (error) {
-                    showMessage('uploadMessage', `❌ Lỗi xuất PDF hàng loạt: ${error.message}`, 'error');
+                    showMessage('uploadMessage', `❌ Lỗi xuất Word hàng loạt: ${error.message}`, 'error');
                 }
                 return;
             }
@@ -3895,116 +4843,33 @@
             }
 
             try {
-                const { jsPDF } = window.jspdf;
-                const templateName = getCleanFilename(currentSubmission.template_name);
-                const fields = currentSubmission.data || {};
-                
-                // Create PDF with UTF-8 support
-                const pdf = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: 'a4'
-                });
-                
-                // Set metadata
-                pdf.setProperties({
-                    title: `${templateName} - ${currentSubmission.id}`,
-                    subject: 'Form Submission',
-                    creator: 'Word Form Upload System'
-                });
-                
-                let yPosition = 15;
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const margin = 15;
-                const contentWidth = pageWidth - 2 * margin;
-                
-                // Add header
-                pdf.setFontSize(16);
-                pdf.setFont(undefined, 'bold');
-                pdf.text(`📋 ${templateName}`, margin, yPosition);
-                
-                yPosition += 10;
-                
-                // Add metadata section
-                pdf.setFontSize(10);
-                pdf.setFont(undefined, 'normal');
-                
-                const metadataLines = [
-                    `ID Submission: ${currentSubmission.id}`,
-                    `Thời gian tạo: ${new Date(currentSubmission.created_at).toLocaleString('vi-VN')}`,
-                    `Lần cập nhật cuối: ${new Date(currentSubmission.updated_at).toLocaleString('vi-VN')}`
-                ];
-                
-                metadataLines.forEach(line => {
-                    pdf.text(line, margin, yPosition);
-                    yPosition += 6;
-                });
-                
-                yPosition += 5;
-                
-                // Add separator line
-                pdf.setDrawColor(100, 100, 100);
-                pdf.line(margin, yPosition - 2, pageWidth - margin, yPosition - 2);
-                
-                yPosition += 5;
-                
-                // Add form data as table
-                const tableData = Object.entries(fields).map(([key, value]) => [
-                    formatExportFieldName(key),
-                    String(value || '')
-                ]);
-                
-                pdf.autoTable({
-                    startY: yPosition,
-                    head: [['Trường', 'Giá trị']],
-                    body: tableData,
-                    margin: { left: margin, right: margin },
-                    styles: {
-                        font: 'helvetica',
-                        fontSize: 10,
-                        cellPadding: 5,
-                        overflow: 'linebreak',
-                        halign: 'left'
-                    },
-                    headStyles: {
-                        fillColor: [90, 103, 216],
-                        textColor: [255, 255, 255],
-                        fontStyle: 'bold'
-                    },
-                    alternateRowStyles: {
-                        fillColor: [245, 245, 255]
-                    },
-                    didDrawPage: function(data) {
-                        // Footer
-                        const pageSize = pdf.internal.pageSize;
-                        const pageHeight = pageSize.getHeight();
-                        const pageWidth = pageSize.getWidth();
-                        
-                        pdf.setFontSize(8);
-                        pdf.setFont(undefined, 'normal');
-                        pdf.text(
-                            `Trang ${data.pageNumber}`,
-                            pageWidth / 2,
-                            pageHeight - 10,
-                            { align: 'center' }
-                        );
-                    }
-                });
-                
-                // Save PDF
+                const blob = await requestDocxExportBlob([currentSubmission.id]);
                 const baseName = getExportFileBaseName();
-                const pdfBlob = pdf.output('blob');
-                const savedName = await saveBlobWithLocationPicker(pdfBlob, {
-                    suggestedName: `${baseName}.pdf`,
-                    mimeType: 'application/pdf',
-                    extension: 'pdf'
+                const savedName = await saveBlobWithLocationPicker(blob, {
+                    suggestedName: `${baseName}.docx`,
+                    mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    extension: 'docx',
+                    autoOpen: false
                 });
 
                 closeExportModal();
-                showMessage('mainView', `✅ Xuất PDF thành công: ${savedName}`, 'success');
+                showMessage('mainView', `✅ Xuất Word thành công: ${savedName}`, 'success');
             } catch (error) {
-                console.error('PDF export error:', error);
-                showMessage('mainView', `❌ Lỗi xuất PDF: ${error.message}`, 'error');
+                try {
+                    const fallbackBlob = buildLegacyWordBlob([currentSubmission]);
+                    const baseName = getExportFileBaseName();
+                    const fallbackName = await saveBlobWithLocationPicker(fallbackBlob, {
+                        suggestedName: `${baseName}.doc`,
+                        mimeType: 'application/msword',
+                        extension: 'doc',
+                        autoOpen: false
+                    });
+                    closeExportModal();
+                    showMessage('mainView', `⚠️ Không xuất được .docx, đã lưu .doc: ${fallbackName}`, 'info');
+                } catch (fallbackError) {
+                    console.error('Word export error:', error, fallbackError);
+                    showMessage('mainView', `❌ Lỗi xuất Word: ${error.message}`, 'error');
+                }
             }
         }
 
@@ -4064,6 +4929,10 @@
             if (statusEl) {
                 statusEl.textContent = text;
             }
+            const statusElSubmission = document.getElementById('wordReferenceStatusSubmission');
+            if (statusElSubmission) {
+                statusElSubmission.textContent = text;
+            }
         }
 
         function resetWordReferenceOptions() {
@@ -4079,13 +4948,31 @@
             if (uploadInput) {
                 uploadInput.value = '';
             }
+            const uploadInputSubmission = document.getElementById('wordReferenceUploadInputSubmission');
+            if (uploadInputSubmission) {
+                uploadInputSubmission.value = '';
+            }
 
             updateWordReferenceStatus('Chưa có file tham chiếu cho dropdown.');
         }
 
         function getWordReferenceTargets() {
             if (!currentTemplate || !Array.isArray(currentTemplate.fields)) {
-                return [];
+                const activeInputs = Array.from(
+                    document.querySelectorAll('#formView.active #dynamicForm input[data-field-id], #formView.active #dynamicForm textarea[data-field-id], #submissionView.active #editForm input[data-field-id], #submissionView.active #editForm textarea[data-field-id]')
+                );
+                return activeInputs
+                    .map((input, index) => ({
+                        field_id: Number(input.getAttribute('data-field-id') || 0),
+                        field_name: String(input.getAttribute('data-field-name') || input.getAttribute('name') || '').trim(),
+                        field_label: String(
+                            input.closest('.form-group')?.querySelector('label')?.textContent
+                            || input.getAttribute('data-field-name')
+                            || input.getAttribute('name')
+                            || `Field ${index + 1}`
+                        ).trim()
+                    }))
+                    .filter((field) => field.field_id > 0 && field.field_name);
             }
 
             return currentTemplate.fields
@@ -4093,7 +4980,7 @@
                 .map((field) => ({
                     field_id: Number(field.field_id),
                     field_name: String(field.name || '').trim(),
-                    field_label: String(field.label || field.name || '').trim()
+                    field_label: formatExportFieldName(field.label || field.name || '')
                 }));
         }
 
@@ -4109,13 +4996,13 @@
         }
 
         function getWordInputByFieldId(fieldId) {
-            return document.querySelector(`#dynamicForm input[data-field-id="${fieldId}"], #dynamicForm textarea[data-field-id="${fieldId}"]`);
+            return document.querySelector(`#formView.active #dynamicForm input[data-field-id="${fieldId}"], #formView.active #dynamicForm textarea[data-field-id="${fieldId}"], #submissionView.active #editForm input[data-field-id="${fieldId}"], #submissionView.active #editForm textarea[data-field-id="${fieldId}"]`);
         }
 
         function getActiveWordReferenceFilters(excludeFieldId = '') {
             const filters = [];
 
-            document.querySelectorAll('#dynamicForm input[data-field-id], #dynamicForm textarea[data-field-id]').forEach((input) => {
+            document.querySelectorAll('#formView.active #dynamicForm input[data-field-id], #formView.active #dynamicForm textarea[data-field-id], #submissionView.active #editForm input[data-field-id], #submissionView.active #editForm textarea[data-field-id]').forEach((input) => {
                 const fieldId = String(input.getAttribute('data-field-id') || '');
                 if (!fieldId || fieldId === excludeFieldId) {
                     return;
@@ -4240,9 +5127,13 @@
                 const select = wrapper.querySelector('.excel-reference-select');
                 const optionData = excelReferenceOptions[fieldId];
 
+                if (select) {
+                    select.title = 'Chon gia tri tham chieu tu file Excel';
+                }
+
                 if (!select || !optionData || !Array.isArray(optionData.values) || optionData.values.length === 0) {
                     if (select) {
-                        select.innerHTML = '<option value="">▼</option>';
+                        select.innerHTML = '<option value="">Chon...</option>';
                     }
                     wrapper.classList.remove('active');
                     wrapper.style.display = 'none';
@@ -4254,7 +5145,7 @@
                 if (!choices.length) {
                     wrapper.classList.remove('active');
                     wrapper.style.display = 'none';
-                    select.innerHTML = '<option value="">▼</option>';
+                    select.innerHTML = '<option value="">Chon...</option>';
                     return;
                 }
 
@@ -4267,7 +5158,7 @@
                     })
                     .join('');
 
-                select.innerHTML = `<option value="">▼</option>${optionsHtml}`;
+                select.innerHTML = `<option value="">Chon...</option>${optionsHtml}`;
                 wrapper.style.display = 'flex';
                 wrapper.classList.add('active');
             });
@@ -4280,7 +5171,7 @@
 
             isWordReferenceAutofill = true;
             try {
-                document.querySelectorAll('#dynamicForm input[data-field-id], #dynamicForm textarea[data-field-id]').forEach((input) => {
+                document.querySelectorAll('#formView.active #dynamicForm input[data-field-id], #formView.active #dynamicForm textarea[data-field-id], #submissionView.active #editForm input[data-field-id], #submissionView.active #editForm textarea[data-field-id]').forEach((input) => {
                     const fieldId = String(input.getAttribute('data-field-id') || '');
                     if (!fieldId || fieldId === sourceFieldId) {
                         return;
@@ -4317,7 +5208,7 @@
                 return;
             }
 
-            const input = document.querySelector(`#dynamicForm input[data-field-id="${fieldId}"], #dynamicForm textarea[data-field-id="${fieldId}"]`);
+            const input = getWordInputByFieldId(fieldId);
             if (!input) {
                 return;
             }
@@ -4343,13 +5234,21 @@
             select.selectedIndex = 0;
         }
 
-        async function uploadWordReferenceExcel() {
-            if (!currentTemplate) {
-                showMessage('formMessage', '⚠️ Hãy mở một template trước khi upload file tham chiếu.', 'error');
+        async function uploadWordReferenceExcel(event) {
+            const messageBoxId = document.getElementById('submissionView')?.classList.contains('active')
+                ? 'submissionMessage'
+                : 'formMessage';
+
+            if (!currentTemplate && !currentSubmission) {
+                showMessage(messageBoxId, '⚠️ Hãy mở biểu mẫu trước khi upload file tham chiếu.', 'error');
                 return;
             }
 
-            const uploadInput = document.getElementById('wordReferenceUploadInput');
+            const uploadInputFromEvent = event?.target instanceof HTMLInputElement ? event.target : null;
+            const uploadInputMain = document.getElementById('wordReferenceUploadInput');
+            const uploadInputSubmission = document.getElementById('wordReferenceUploadInputSubmission');
+            const uploadInput = [uploadInputFromEvent, uploadInputMain, uploadInputSubmission]
+                .find((input) => input && input.files && input.files.length > 0) || null;
             const file = uploadInput?.files?.[0];
             if (!file) {
                 return;
@@ -4357,8 +5256,8 @@
 
             const targets = getWordReferenceTargets();
             if (!targets.length) {
-                showMessage('formMessage', '⚠️ Template chưa có trường hợp lệ để đối chiếu.', 'error');
-                uploadInput.value = '';
+                showMessage(messageBoxId, '⚠️ Chưa có trường hợp lệ để đối chiếu.', 'error');
+                if (uploadInput) uploadInput.value = '';
                 return;
             }
 
@@ -4382,14 +5281,13 @@
 
                 const matchedCount = Number(data.matched_count || 0);
                 updateWordReferenceStatus(`Đã nạp ${matchedCount} trường gợi ý từ file: ${excelReferenceFileName}`);
-                showMessage('formMessage', data.message || `✅ Đã đối chiếu ${matchedCount} trường từ file tham chiếu.`, 'success');
+                showMessage(messageBoxId, data.message || `✅ Đã đối chiếu ${matchedCount} trường từ file tham chiếu.`, 'success');
             } catch (error) {
                 updateWordReferenceStatus('Không thể đọc file tham chiếu. Vui lòng thử lại.');
-                showMessage('formMessage', `❌ Lỗi đọc file tham chiếu: ${error.message}`, 'error');
+                showMessage(messageBoxId, `❌ Lỗi đọc file tham chiếu: ${error.message}`, 'error');
             } finally {
-                if (uploadInput) {
-                    uploadInput.value = '';
-                }
+                if (uploadInputMain) uploadInputMain.value = '';
+                if (uploadInputSubmission) uploadInputSubmission.value = '';
             }
         }
 
@@ -4414,7 +5312,10 @@
 
             try {
                 const normalizedFieldKey = removeAccents(fieldName || `field_${fieldId}`);
-                const cacheScope = `${currentFormId || 0}_${currentTemplate?.id || 0}`;
+                const templateScopeId = Number(currentTemplate?.id || currentSubmission?.template_id || 0);
+                const isDynamicFormInput = Boolean(input.closest('#dynamicForm'));
+                const formScopeId = isDynamicFormInput ? Number(currentFormId || 0) : 0;
+                const cacheScope = `${formScopeId}_${templateScopeId}`;
                 const cacheKey = `${CURRENT_USER_ID || 'anon'}_${cacheScope}_${normalizedFieldKey}`;
                 
                 if (!suggestionsCache[cacheKey]) {
@@ -4424,11 +5325,11 @@
                         top_k: '10'
                     });
 
-                    if (currentFormId) {
+                    if (isDynamicFormInput && currentFormId) {
                         queryParams.set('current_form_id', String(currentFormId));
                     }
-                    if (currentTemplate?.id) {
-                        queryParams.set('current_template_id', String(currentTemplate.id));
+                    if (templateScopeId) {
+                        queryParams.set('current_template_id', String(templateScopeId));
                     }
 
                     const response = await fetch(
@@ -4508,7 +5409,10 @@
 
             const fieldName = input.getAttribute('data-field-name') || '';
             const normalizedFieldKey = removeAccents(fieldName || `field_${fieldId}`);
-            const cacheScope = `${currentFormId || 0}_${currentTemplate?.id || 0}`;
+            const templateScopeId = Number(currentTemplate?.id || currentSubmission?.template_id || 0);
+            const isDynamicFormInput = Boolean(input.closest('#dynamicForm'));
+            const formScopeId = isDynamicFormInput ? Number(currentFormId || 0) : 0;
+            const cacheScope = `${formScopeId}_${templateScopeId}`;
             const cacheKey = `${CURRENT_USER_ID || 'anon'}_${cacheScope}_${normalizedFieldKey}`;
             const allSuggestions = suggestionsCache[cacheKey] || [];
 
@@ -4619,8 +5523,8 @@
                 <button class="modal-btn modal-btn-ok" onclick="exportSubmissionCSV()" title="Xuất dữ liệu sang CSV">
                     📊 CSV
                 </button>
-                <button class="modal-btn modal-btn-ok" onclick="exportSubmissionPDF()" title="Xuất dữ liệu sang PDF">
-                    📄 PDF
+                <button class="modal-btn modal-btn-ok" onclick="exportSubmissionWord()" title="Xuất dữ liệu sang Word">
+                    📝 Word
                 </button>
             </div>
             <div class="modal-footer export-cancel-wrap">

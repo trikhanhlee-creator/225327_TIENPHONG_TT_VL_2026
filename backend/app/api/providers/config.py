@@ -13,16 +13,17 @@ class AIConfig:
     PROVIDER = os.getenv("AI_PROVIDER", "openrouter")
     
     # Default Model
-    MODEL = os.getenv("DEFAULT_MODEL", "openai/gpt-4o-mini")
+    MODEL = os.getenv("DEFAULT_MODEL", "openai/gpt-oss-120b:free")
     
     # Available Models
     AVAILABLE_MODELS: List[str] = [
-        "openai/gpt-4o",
-        "openai/gpt-4o-mini",
-        "google/gemini-2.0-flash-exp:free",
-        "google/gemini-pro",
-        "anthropic/claude-3-haiku",
-        "meta-llama/llama-3.1-8b-instruct:free",
+        "openai/gpt-oss-120b:free",
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "google/gemma-4-31b-it:free",
+        "qwen/qwen3-next-80b-a3b-instruct:free",
+        "minimax/minimax-m2.5:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "openai/gpt-oss-20b:free",
     ]
     
     # API Endpoints

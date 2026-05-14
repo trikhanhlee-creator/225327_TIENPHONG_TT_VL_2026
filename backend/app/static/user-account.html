@@ -5,153 +5,140 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AutoFill AI - Quản Lý Tài Khoản</title>
     <script src="/static/js/theme-manager.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Manrope:wght@600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/site.css">
     <style>
         :root {
-            --bg: #eef2f8;
-            --surface: #ffffff;
-            --surface-soft: #f5f8fd;
-            --line: #d7e3f6;
-            --line-strong: #95b6f2;
-            --text: #14213d;
-            --muted: #6f809f;
-            --primary: #4f77d7;
-            --success: #0f9d70;
-            --danger: #d13e54;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
+            --ua-bg: #f1f4fb;
+            --ua-card: #ffffff;
+            --ua-card-soft: #f7f9ff;
+            --ua-border: #d7e2f5;
+            --ua-text: #14213d;
+            --ua-muted: #6a7894;
+            --ua-primary: #1b4ddb;
+            --ua-primary-strong: #0b7db4;
+            --ua-success: #0f9d70;
+            --ua-danger: #d13e54;
         }
 
         body.dark-mode {
-            --bg: #111827;
-            --surface: #1f2937;
-            --surface-soft: #253041;
-            --line: #334155;
-            --line-strong: #4d6cae;
-            --text: #e5e7eb;
-            --muted: #a6b0c0;
-            --primary: #76a3ff;
-            --success: #22c55e;
-            --danger: #fb7185;
+            --ua-bg: #101a2a;
+            --ua-card: #1a2942;
+            --ua-card-soft: #22344f;
+            --ua-border: #35517f;
+            --ua-text: #e6efff;
+            --ua-muted: #9fb4d5;
+            --ua-primary: #7ba4ff;
+            --ua-primary-strong: #4eb5e6;
+            --ua-success: #36c992;
+            --ua-danger: #f17c8f;
         }
 
-        .page {
-            max-width: 980px;
-            margin: 18px auto;
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            overflow: hidden;
-            box-shadow: 0 10px 28px rgba(18, 43, 87, 0.12);
+        .ua-wrap {
+            width: min(1680px, calc(100vw - 28px));
+            max-width: none;
+            margin: 0 auto;
+            padding: 108px 8px 30px;
         }
 
-        .topbar {
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--line);
-            background: var(--surface);
+        .ua-head {
+            margin: 18px 0 20px;
+            text-align: center;
         }
 
-        .brand {
-            color: var(--text);
-            font-weight: 700;
-            text-decoration: none;
+        .ua-head h1 {
+            margin: 0;
+            font-size: clamp(34px, 4vw, 48px);
+            color: var(--ua-text);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .ua-head p {
+            margin: 8px 0 0;
+            color: var(--ua-muted);
             font-size: 16px;
         }
 
-        .top-actions {
-            display: flex;
-            gap: 8px;
-            align-items: center;
+        .ua-layout {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 18px;
+            align-items: start;
         }
 
-        .btn {
-            border: 1px solid var(--line-strong);
-            background: var(--surface-soft);
-            color: var(--primary);
-            border-radius: 10px;
+        .top-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
             font-size: 14px;
-            font-weight: 600;
-            padding: 8px 14px;
-            cursor: pointer;
-            text-decoration: none;
-        }
-
-        .btn.primary {
-            background: linear-gradient(90deg, #4f77d7, #5476cf);
-            color: #fff;
-            border-color: #4f77d7;
-        }
-
-        .btn.success {
-            background: linear-gradient(90deg, #11a57b, #0f9d70);
-            color: #fff;
-            border-color: #0f9d70;
-        }
-
-        .btn.danger {
-            background: linear-gradient(90deg, #e25165, #d13e54);
-            color: #fff;
-            border-color: #d13e54;
-        }
-
-        .head {
-            text-align: center;
-            padding: 26px 18px 12px;
-        }
-
-        .head h1 {
-            font-size: 42px;
             font-weight: 800;
-            margin-bottom: 8px;
+            color: #fff;
+            background: linear-gradient(140deg, var(--ua-primary-strong), var(--ua-primary));
         }
 
-        .head p {
-            color: var(--muted);
-            font-size: 15px;
+        .ua-sidebar {
+            border-radius: 14px;
+            padding: 10px 0;
         }
 
-        .tabs {
-            display: flex;
-            justify-content: center;
-            gap: 8px;
-            padding: 16px 10px 8px;
-            border-bottom: 1px solid var(--line);
-            flex-wrap: wrap;
-        }
-
-        .tab-btn {
+        .side-tab {
+            width: 100%;
             border: 0;
-            border-bottom: 3px solid transparent;
             background: transparent;
-            color: var(--muted);
-            font-size: 15px;
-            font-weight: 700;
-            padding: 10px 14px;
+            color: var(--ua-text);
+            font-size: 18px;
+            font-weight: 600;
+            text-align: left;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 6px;
             cursor: pointer;
-            border-radius: 8px;
+            transition: background-color 0.2s ease, color 0.2s ease;
         }
 
-        .tab-btn.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-            background: color-mix(in srgb, var(--primary) 12%, transparent);
+        .side-tab:hover {
+            background: color-mix(in srgb, var(--ua-primary) 10%, transparent);
         }
 
-        .content {
-            padding: 18px;
+        .side-tab.active {
+            background: linear-gradient(90deg, var(--ua-primary-strong), var(--ua-primary));
+            color: #fff;
+            box-shadow: 0 8px 16px rgba(16, 82, 150, 0.2);
+        }
+
+        .ua-main .panel {
+            border: 1px solid var(--ua-border);
+            background: var(--ua-card);
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .panel-head {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--ua-border);
+            background: var(--ua-card-soft);
+        }
+
+        .panel-head h2 {
+            margin: 0;
+            font-size: 34px;
+            color: var(--ua-text);
+            font-weight: 800;
+        }
+
+        .panel-head p {
+            margin: 6px 0 0;
+            color: var(--ua-muted);
+            font-size: 15px;
+        }
+
+        .panel-body {
+            padding: 18px 20px 20px;
         }
 
         .tab-panel {
@@ -162,88 +149,9 @@
             display: block;
         }
 
-        .card {
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 16px;
-            background: var(--surface);
-        }
-
-        .card-head {
-            background: var(--surface-soft);
-            border-bottom: 1px solid var(--line-strong);
-            padding: 16px 18px;
-            font-weight: 800;
-            font-size: 19px;
-        }
-
-        .card-body {
-            padding: 18px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px 18px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-group.full {
-            grid-column: 1 / -1;
-        }
-
-        label {
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        .hint {
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        input,
-        select,
-        textarea {
-            width: 100%;
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 10px 12px;
-            font-size: 14px;
-            background: var(--surface-soft);
-            color: var(--text);
-        }
-
-        input:focus,
-        select:focus,
-        textarea:focus {
-            outline: 0;
-            border-color: var(--line-strong);
-            box-shadow: 0 0 0 3px color-mix(in srgb, var(--line-strong) 24%, transparent);
-        }
-
-        input[readonly] {
-            opacity: 0.85;
-            cursor: not-allowed;
-        }
-
-        .actions {
-            margin-top: 14px;
-            display: flex;
-            justify-content: flex-end;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
         .status {
-            margin-bottom: 12px;
-            border-radius: 8px;
+            margin-bottom: 10px;
+            border-radius: 10px;
             padding: 10px 12px;
             border: 1px solid transparent;
             display: none;
@@ -256,461 +164,717 @@
         }
 
         .status.success {
-            background: color-mix(in srgb, var(--success) 16%, transparent);
-            border-color: color-mix(in srgb, var(--success) 38%, transparent);
-            color: var(--success);
+            background: color-mix(in srgb, var(--ua-success) 16%, transparent);
+            border-color: color-mix(in srgb, var(--ua-success) 35%, transparent);
+            color: var(--ua-success);
         }
 
         .status.error {
-            background: color-mix(in srgb, var(--danger) 16%, transparent);
-            border-color: color-mix(in srgb, var(--danger) 38%, transparent);
-            color: var(--danger);
+            background: color-mix(in srgb, var(--ua-danger) 16%, transparent);
+            border-color: color-mix(in srgb, var(--ua-danger) 35%, transparent);
+            color: var(--ua-danger);
+        }
+
+        .profile-summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .avatar {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(160deg, var(--ua-primary), var(--ua-primary-strong));
+            color: #fff;
+            font-size: 26px;
+            font-weight: 800;
+            display: grid;
+            place-items: center;
+            border: 4px solid color-mix(in srgb, var(--ua-primary) 20%, #fff);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ua-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            border: 1px solid var(--ua-border);
+            border-radius: 10px;
+            padding: 11px 12px;
+            font-size: 15px;
+            background: var(--ua-card-soft);
+            color: var(--ua-text);
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: color-mix(in srgb, var(--ua-primary) 55%, #fff);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--ua-primary) 22%, transparent);
+        }
+
+        .hint {
+            color: var(--ua-muted);
+            font-size: 12px;
+        }
+
+        .actions {
+            margin-top: 14px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-ua {
+            border: 1px solid transparent;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-ua.primary {
+            color: #fff;
+            background: linear-gradient(90deg, var(--ua-primary-strong), var(--ua-primary));
+            box-shadow: 0 8px 16px rgba(16, 82, 150, 0.24);
+        }
+
+        .btn-ua.danger {
+            color: #fff;
+            background: linear-gradient(90deg, #e25165, var(--ua-danger));
+        }
+
+        .btn-ua.ghost {
+            color: var(--ua-primary);
+            background: var(--ua-card-soft);
+            border-color: var(--ua-border);
         }
 
         .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10px;
+            gap: 12px;
         }
 
         .info-item {
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            background: var(--surface-soft);
+            border: 1px solid var(--ua-border);
+            border-radius: 12px;
+            background: var(--ua-card-soft);
             padding: 12px;
         }
 
         .info-item .k {
-            color: var(--muted);
+            color: var(--ua-muted);
             font-size: 12px;
-            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 5px;
         }
 
         .info-item .v {
-            font-size: 14px;
-            font-weight: 700;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--ua-text);
         }
 
         .activity-wrap {
             margin-top: 14px;
-            border: 1px solid var(--line);
-            border-radius: 10px;
-            background: var(--surface-soft);
+            border: 1px solid var(--ua-border);
+            border-radius: 12px;
+            background: var(--ua-card-soft);
             padding: 10px;
         }
 
         .activity-title {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 700;
             margin-bottom: 10px;
+            color: var(--ua-text);
         }
 
         .activity-list {
             display: grid;
             gap: 8px;
-            max-height: 240px;
+            max-height: 230px;
             overflow: auto;
         }
 
         .activity-item {
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 8px 10px;
-            background: var(--surface);
+            border: 1px solid var(--ua-border);
+            border-radius: 10px;
+            padding: 9px 10px;
+            background: var(--ua-card);
+            color: var(--ua-text);
         }
 
         .activity-item .meta {
-            color: var(--muted);
+            color: var(--ua-muted);
             font-size: 12px;
             margin-top: 3px;
         }
 
-        @media (max-width: 860px) {
-            .form-grid,
-            .info-grid {
+        .mini-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .mini-card {
+            border: 1px solid var(--ua-border);
+            border-radius: 12px;
+            background: var(--ua-card);
+            padding: 14px;
+        }
+
+        .mini-card .label {
+            color: var(--ua-muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .mini-card .value {
+            margin-top: 3px;
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--ua-primary-strong);
+        }
+
+        .promo-card {
+            margin-top: 12px;
+            border-radius: 12px;
+            padding: 20px;
+            color: #fff;
+            background: linear-gradient(100deg, var(--ua-primary-strong), var(--ua-primary));
+        }
+
+        .promo-card h3 {
+            margin: 0;
+            font-size: 30px;
+            line-height: 1.2;
+        }
+
+        .promo-card p {
+            margin: 8px 0 0;
+            opacity: 0.95;
+        }
+
+        @media (max-width: 980px) {
+            .ua-layout {
                 grid-template-columns: 1fr;
             }
+            .ua-sidebar {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 8px;
+                padding: 0;
+            }
+            .side-tab {
+                margin-bottom: 0;
+                text-align: center;
+            }
+            .panel-head h2 {
+                font-size: 28px;
+            }
+            .form-grid,
+            .info-grid,
+            .mini-stats {
+                grid-template-columns: 1fr;
+            }
+
         }
     </style>
 </head>
 <body>
-<div class="page">
-    <header class="topbar">
-        <a class="brand" href="/">AutoFill AI System</a>
-        <div class="top-actions">
-            <button class="btn" data-theme-toggle><span data-theme-icon>🌙</span><span data-theme-label>Tối</span></button>
-            <a class="btn" href="/">Trang chủ</a>
-        </div>
-    </header>
-
-    <section class="head">
-        <h1>Quản Lý Tài Khoản</h1>
-        <p>Cập nhật thông tin cá nhân, bảo mật và cài đặt tài khoản</p>
-    </section>
-
-    <nav class="tabs" aria-label="Tài khoản tabs">
-        <button class="tab-btn active" data-tab="profile">👤 Hồ Sơ</button>
-        <button class="tab-btn" data-tab="password">🔒 Mật Khẩu</button>
-        <button class="tab-btn" data-tab="security">🛡️ Bảo Mật</button>
-        <button class="tab-btn" data-tab="settings">⚙️ Tùy Chỉnh</button>
-    </nav>
-
-    <main class="content">
-        <div id="statusBox" class="status"></div>
-
-        <section class="tab-panel active" id="panel-profile">
-            <article class="card">
-                <div class="card-head">👤 Thông Tin Cá Nhân</div>
-                <div class="card-body">
-                    <form id="profileForm" novalidate>
-                        <div class="form-grid">
-                            <div class="form-group">
-                                <label for="username">Tên Người Dùng</label>
-                                <input id="username" type="text" readonly>
-                                <span class="hint">Tên đăng nhập (không thể thay đổi)</span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="fullName">Tên Đầy Đủ *</label>
-                                <input id="fullName" type="text" placeholder="Nhập tên đầy đủ">
-                            </div>
-
-                            <div class="form-group full">
-                                <label for="email">Email *</label>
-                                <input id="email" type="email" placeholder="Nhập email">
-                                <span class="hint">Email được sử dụng để xác minh và lấy lại tài khoản</span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="phone">Số Điện Thoại</label>
-                                <input id="phone" type="text" placeholder="Nhập số điện thoại">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="address">Địa Chỉ</label>
-                                <input id="address" type="text" placeholder="Nhập địa chỉ">
-                            </div>
-
-                            <div class="form-group full">
-                                <label for="language">Ngôn Ngữ</label>
-                                <select id="language">
-                                    <option value="vi">Tiếng Việt</option>
-                                    <option value="en">English</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="actions">
-                            <button type="submit" class="btn primary">Lưu Thông Tin</button>
-                        </div>
-                    </form>
+    <div class="page-shell">
+        <header class="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-[1280px] px-4">
+            <nav class="bg-surface-bright/80 backdrop-blur-md rounded-full px-6 h-[74px] flex items-center justify-between gap-4 border border-outline-variant/30 shadow-sm">
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#7ed9c3] to-[#efb24a] flex items-center justify-center text-on-surface font-bold text-xs">AF</div>
+                    <div class="text-base font-extrabold text-on-surface tracking-tight hidden lg:block font-['Manrope']">AutoFill AI</div>
                 </div>
-            </article>
-        </section>
-
-        <section class="tab-panel" id="panel-password">
-            <article class="card">
-                <div class="card-head">🔒 Đổi Mật Khẩu</div>
-                <div class="card-body">
-                    <form id="passwordForm" novalidate>
-                        <div class="form-grid">
-                            <div class="form-group full">
-                                <label for="currentPassword">Mật Khẩu Hiện Tại *</label>
-                                <input id="currentPassword" type="password" autocomplete="off" placeholder="Nhập mật khẩu hiện tại">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="newPassword">Mật Khẩu Mới *</label>
-                                <input id="newPassword" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu mới">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="confirmPassword">Xác Nhận Mật Khẩu *</label>
-                                <input id="confirmPassword" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu mới">
-                            </div>
+                <nav class="hidden md:flex items-center gap-6 text-on-surface-variant font-semibold flex-1 justify-center" aria-label="Main Navigation">
+                    <a class="hover:text-primary transition-colors" href="/home">Trang chủ</a>
+                    <a class="hover:text-primary transition-colors" href="/word-upload">Word Upload</a>
+                    <a class="hover:text-primary transition-colors" href="/excel">Excel Upload</a>
+                    <a class="hover:text-primary transition-colors" href="/composer">Soạn Thảo</a>
+                    <a class="hover:text-primary transition-colors" href="/payment">Thanh toán</a>
+                    <a class="hover:text-primary transition-colors" href="/admin-dashboard" data-admin-user-only style="display:none;">Hệ thống</a>
+                </nav>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                    <button class="flex items-center gap-2 px-3 py-2 rounded-full border border-outline-variant/50 hover:bg-surface-container transition-colors" data-theme-toggle>
+                        <div class="w-4 h-4 rounded-full bg-gradient-to-r from-blue-400 to-yellow-500"></div>
+                        <span class="text-sm font-bold text-on-surface" data-theme-label>Sáng</span>
+                    </button>
+                    <button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container transition-colors sm:hidden lg:flex" type="button" aria-label="Thông báo">
+                        <span class="material-symbols-outlined">notifications</span>
+                    </button>
+                    <div class="flex items-center gap-3 pl-2 border-l border-outline-variant/30 ml-1">
+                        <div class="text-right hidden xl:block">
+                            <p class="text-xs font-bold text-on-surface leading-none" id="navAccountName">User</p>
+                            <p class="text-[9px] text-on-surface-variant uppercase tracking-wider font-semibold" id="navAccountRole">MEMBER</p>
                         </div>
-
-                        <div class="actions">
-                            <button type="submit" class="btn danger">Cập Nhật Mật Khẩu</button>
-                        </div>
-                    </form>
+                        <div class="top-avatar" id="navAvatarLabel">A</div>
+                        <button id="logoutBtnMenu" class="text-xs font-semibold text-on-surface-variant hover:text-primary" type="button">Đăng xuất</button>
+                    </div>
                 </div>
-            </article>
-        </section>
+            </nav>
+        </header>
 
-        <section class="tab-panel" id="panel-security">
-            <article class="card">
-                <div class="card-head">🛡️ Bảo Mật Tài Khoản</div>
-                <div class="card-body">
-                    <div class="info-grid" id="securityInfo">
-                        <div class="info-item">
-                            <div class="k">Trạng thái đăng nhập</div>
-                            <div class="v">Đang hoạt động</div>
+        <main class="ua-wrap fade-in">
+            <section class="ua-head">
+                <h1 id="pageTitle">Quản Lý Tài Khoản</h1>
+                <p>Cập nhật thông tin cá nhân, bảo mật và cài đặt tài khoản của bạn.</p>
+            </section>
+
+            <div class="ua-layout">
+                <aside class="ua-sidebar" aria-label="Tài khoản tabs">
+                    <button class="side-tab active" data-tab="profile">👤 Hồ Sơ</button>
+                    <button class="side-tab" data-tab="password">🔒 Mật Khẩu</button>
+                    <button class="side-tab" data-tab="security">🛡️ Bảo Mật</button>
+                    <button class="side-tab" data-tab="settings">⚙️ Tùy Chỉnh</button>
+                </aside>
+
+                <section class="ua-main">
+                    <div id="statusBox" class="status"></div>
+
+                    <section class="tab-panel active" id="panel-profile">
+                        <article class="panel">
+                            <div class="panel-head">
+                                <h2>Thông Tin Cá Nhân</h2>
+                                <p>Cập nhật ảnh đại diện và chi tiết hồ sơ của bạn.</p>
+                            </div>
+                            <div class="panel-body">
+                                <div class="profile-summary">
+                                    <div class="hint">Hồ sơ hiển thị trên toàn hệ thống theo tài khoản đăng nhập.</div>
+                                    <div class="avatar" id="avatarLabel">A</div>
+                                </div>
+                                <form id="profileForm" novalidate>
+                                    <div class="form-grid">
+                                        <div class="form-group">
+                                            <label for="username">Tên đăng nhập</label>
+                                            <input id="username" type="text" readonly>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="fullName">Họ và tên *</label>
+                                            <input id="fullName" type="text" placeholder="Nhập họ và tên">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="email">Email liên hệ *</label>
+                                            <input id="email" type="email" placeholder="Nhập email">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="phone">Số điện thoại</label>
+                                            <input id="phone" type="text" placeholder="Nhập số điện thoại">
+                                        </div>
+                                        <div class="form-group full">
+                                            <label for="address">Địa chỉ</label>
+                                            <input id="address" type="text" placeholder="Nhập địa chỉ">
+                                        </div>
+                                        <div class="form-group full">
+                                            <label for="language">Ngôn ngữ hiển thị</label>
+                                            <select id="language">
+                                                <option value="vi">Tiếng Việt (VI)</option>
+                                                <option value="en">English (EN)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="actions">
+                                        <button type="submit" class="btn-ua primary">💾 Lưu Thông Tin</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </article>
+                    </section>
+
+                    <section class="tab-panel" id="panel-password">
+                        <article class="panel">
+                            <div class="panel-head">
+                                <h2>Đổi Mật Khẩu</h2>
+                                <p>Thay đổi mật khẩu để bảo vệ tài khoản an toàn hơn.</p>
+                            </div>
+                            <div class="panel-body">
+                                <form id="passwordForm" novalidate>
+                                    <div class="form-grid">
+                                        <div class="form-group full">
+                                            <label for="currentPassword">Mật khẩu hiện tại *</label>
+                                            <input id="currentPassword" type="password" autocomplete="off" placeholder="Nhập mật khẩu hiện tại">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="newPassword">Mật khẩu mới *</label>
+                                            <input id="newPassword" type="password" autocomplete="new-password" placeholder="Nhập mật khẩu mới">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="confirmPassword">Xác nhận mật khẩu *</label>
+                                            <input id="confirmPassword" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu mới">
+                                        </div>
+                                    </div>
+                                    <div class="actions">
+                                        <button type="submit" class="btn-ua primary">📤 Cập Nhật Mật Khẩu</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </article>
+                    </section>
+
+                    <section class="tab-panel" id="panel-security">
+                        <article class="panel">
+                            <div class="panel-head">
+                                <h2>Bảo Mật Tài Khoản</h2>
+                                <p>Theo dõi trạng thái đăng nhập và lịch sử sử dụng gần đây.</p>
+                            </div>
+                            <div class="panel-body">
+                                <div class="info-grid" id="securityInfo">
+                                    <div class="info-item">
+                                        <div class="k">Trạng thái đăng nhập</div>
+                                        <div class="v">Đang hoạt động</div>
+                                    </div>
+                                    <div class="info-item">
+                                        <div class="k">Xác thực hai lớp</div>
+                                        <div class="v">Sắp ra mắt</div>
+                                    </div>
+                                </div>
+
+                                <div class="activity-wrap">
+                                    <div class="activity-title">Lịch sử sử dụng gần đây</div>
+                                    <div id="activityList" class="activity-list">
+                                        <div class="hint">Đang tải lịch sử...</div>
+                                    </div>
+                                </div>
+
+                                <div class="actions">
+                                    <button id="logoutBtn" type="button" class="btn-ua ghost">Đăng Xuất</button>
+                                </div>
+                            </div>
+                        </article>
+                    </section>
+
+                    <section class="tab-panel" id="panel-settings">
+                        <article class="panel">
+                            <div class="panel-head">
+                                <h2>Tùy Chỉnh</h2>
+                                <p>Tùy chỉnh trải nghiệm hiển thị theo nhu cầu của bạn.</p>
+                            </div>
+                            <div class="panel-body">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Giao diện</label>
+                                        <button id="themeToggleBtn" type="button" class="btn-ua ghost">Chuyển Sáng/Tối</button>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Mẹo</label>
+                                        <span class="hint">Các tùy chọn nâng cao sẽ được bổ sung ở phiên bản tiếp theo.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </section>
+
+                    <div class="mini-stats">
+                        <div class="mini-card">
+                            <div class="label">Trạng thái tài khoản</div>
+                            <div class="value" id="planStatusText">FREE</div>
                         </div>
-                        <div class="info-item">
-                            <div class="k">Xác thực hai lớp</div>
-                            <div class="v">Sắp ra mắt</div>
+                        <div class="mini-card">
+                            <div class="label">Lần đồng bộ gần nhất</div>
+                            <div class="value" id="lastSeenText">--:--</div>
                         </div>
                     </div>
 
-                    <div class="activity-wrap">
-                        <div class="activity-title">Lịch sử sử dụng gần đây</div>
-                        <div id="activityList" class="activity-list">
-                            <div class="hint">Đang tải lịch sử...</div>
-                        </div>
+                    <div class="promo-card">
+                        <h3>Tự động hóa quy trình của bạn</h3>
+                        <p>Sử dụng AI Document Composer để soạn thảo tài liệu nhanh chóng, chính xác và chuyên nghiệp hơn bao giờ hết.</p>
                     </div>
+                </section>
+            </div>
+        </main>
+    </div>
 
-                    <div class="actions">
-                        <button id="logoutBtn" type="button" class="btn">Đăng Xuất</button>
-                    </div>
-                </div>
-            </article>
-        </section>
-
-        <section class="tab-panel" id="panel-settings">
-            <article class="card">
-                <div class="card-head">⚙️ Tùy Chỉnh</div>
-                <div class="card-body">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Giao diện</label>
-                            <button id="themeToggleBtn" type="button" class="btn">Chuyển Sáng/Tối</button>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Mẹo</label>
-                            <span class="hint">Các tùy chọn nâng cao sẽ được bổ sung ở phiên bản tiếp theo.</span>
-                        </div>
-                    </div>
-                </div>
-            </article>
-        </section>
-    </main>
-</div>
-
-<script>
-    const statusBox = document.getElementById('statusBox');
-
-    function showStatus(message, type = 'success') {
-        statusBox.textContent = message;
-        statusBox.className = `status show ${type}`;
-    }
-
-    function clearStatus() {
-        statusBox.className = 'status';
-        statusBox.textContent = '';
-    }
-
-    async function parseApiResponse(response) {
-        const raw = await response.text();
-        let data = {};
-        try {
-            data = raw ? JSON.parse(raw) : {};
-        } catch (e) {
-            data = {};
-        }
-
-        if (!response.ok) {
-            const msg = data.error || data.detail || data.message || `HTTP ${response.status}`;
-            throw new Error(msg);
-        }
-
-        return data;
-    }
-
-    function setupTabs() {
-        const tabButtons = document.querySelectorAll('.tab-btn');
-        const panels = document.querySelectorAll('.tab-panel');
-
-        tabButtons.forEach((button) => {
-            button.addEventListener('click', () => {
-                const target = button.dataset.tab;
-                tabButtons.forEach((b) => b.classList.remove('active'));
-                panels.forEach((p) => p.classList.remove('active'));
-
-                button.classList.add('active');
-                const panel = document.getElementById(`panel-${target}`);
-                if (panel) panel.classList.add('active');
-
-                if (target === 'security') {
-                    loadActivityHistory();
-                }
-
-                clearStatus();
-            });
-        });
-    }
-
-    function formatActivityDate(value) {
-        if (!value) return '-';
-        const d = new Date(value);
-        if (Number.isNaN(d.getTime())) return '-';
-        return d.toLocaleString('vi-VN');
-    }
-
-    function renderActivityHistory(rows) {
-        const list = document.getElementById('activityList');
-        if (!list) return;
-
-        if (!rows || rows.length === 0) {
-            list.innerHTML = '<div class="hint">Chưa có lịch sử sử dụng.</div>';
-            return;
-        }
-
-        list.innerHTML = rows.map((item) => {
-            const description = item.description || 'Hoạt động hệ thống';
-            const path = item.path || '-';
-            const when = formatActivityDate(item.created_at);
-            return `
-                <div class="activity-item">
-                    <div><strong>${description}</strong></div>
-                    <div class="meta">${path} • ${when}</div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    async function loadActivityHistory() {
-        const list = document.getElementById('activityList');
-        if (!list) return;
-        list.innerHTML = '<div class="hint">Đang tải lịch sử...</div>';
-
-        try {
-            const response = await fetch('/api/auth/activity-history?limit=30');
-            const data = await parseApiResponse(response);
-            renderActivityHistory(data.activities || []);
-        } catch (error) {
-            list.innerHTML = `<div class="hint">Không tải được lịch sử: ${error.message || 'Unknown error'}</div>`;
-        }
-    }
-
-    async function ensureAuthenticated() {
-        const response = await fetch('/api/auth/session');
-        const data = await parseApiResponse(response);
-        if (!data.authenticated) {
-            const next = encodeURIComponent('/user-account');
-            window.location.href = `/login?next=${next}`;
-            return null;
-        }
-        return data.user;
-    }
-
-    function fillUserProfile(user) {
-        document.getElementById('username').value = user.username || '';
-        document.getElementById('fullName').value = user.full_name || '';
-        document.getElementById('email').value = user.email || '';
-        document.getElementById('phone').value = user.phone || '';
-        document.getElementById('address').value = user.address || '';
-        document.getElementById('language').value = user.language || 'vi';
-    }
-
-    async function loadProfile() {
-        try {
-            const user = await ensureAuthenticated();
-            if (!user) return;
-            fillUserProfile(user);
-        } catch (error) {
-            showStatus(error.message || 'Không tải được thông tin tài khoản', 'error');
-        }
-    }
-
-    document.getElementById('profileForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearStatus();
-
-        const payload = {
-            full_name: document.getElementById('fullName').value.trim(),
-            email: document.getElementById('email').value.trim(),
-            phone: document.getElementById('phone').value.trim(),
-            address: document.getElementById('address').value.trim(),
-            language: document.getElementById('language').value,
+    <script src="/static/js/site-ui.js?v=20260406-1"></script>
+    <script>
+        const statusBox = document.getElementById("statusBox");
+        const avatarLabel = document.getElementById("avatarLabel");
+        const planStatusText = document.getElementById("planStatusText");
+        const lastSeenText = document.getElementById("lastSeenText");
+        const navAccountName = document.getElementById("navAccountName");
+        const navAccountRole = document.getElementById("navAccountRole");
+        const navAvatarLabel = document.getElementById("navAvatarLabel");
+        const PLAN_LABELS = {
+            free: { vi: "Miễn phí", en: "Free" },
+            basic_monthly: { vi: "Cơ bản", en: "Basic" },
+            professional_monthly: { vi: "Chuyên nghiệp", en: "Professional" },
+            enterprise_monthly: { vi: "Doanh nghiệp", en: "Enterprise" },
         };
 
-        try {
-            const response = await fetch('/api/auth/update-profile', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+        function normalizeLanguage(languageValue) {
+            return String(languageValue || "").toLowerCase().startsWith("en") ? "en" : "vi";
+        }
+
+        function getPlanDisplayName(planCode, fallbackName, language = "vi") {
+            const labels = PLAN_LABELS[planCode || ""];
+            if (labels) {
+                return labels[language] || labels.vi;
+            }
+            return fallbackName || (language === "en" ? "Free" : "Miễn phí");
+        }
+
+        function showStatus(message, type = "success") {
+            statusBox.textContent = message;
+            statusBox.className = `status show ${type}`;
+        }
+
+        function clearStatus() {
+            statusBox.className = "status";
+            statusBox.textContent = "";
+        }
+
+        async function parseApiResponse(response) {
+            const raw = await response.text();
+            let data = {};
+            try {
+                data = raw ? JSON.parse(raw) : {};
+            } catch (_) {
+                data = {};
+            }
+            if (!response.ok) {
+                const msg = data.error || data.detail || data.message || `HTTP ${response.status}`;
+                throw new Error(msg);
+            }
+            return data;
+        }
+
+        function setupTabs() {
+            const tabButtons = document.querySelectorAll(".side-tab");
+            const panels = document.querySelectorAll(".tab-panel");
+
+            tabButtons.forEach((button) => {
+                button.addEventListener("click", () => {
+                    const target = button.dataset.tab;
+                    tabButtons.forEach((b) => b.classList.remove("active"));
+                    panels.forEach((p) => p.classList.remove("active"));
+                    button.classList.add("active");
+                    const panel = document.getElementById(`panel-${target}`);
+                    if (panel) panel.classList.add("active");
+                    if (target === "security") loadActivityHistory();
+                    clearStatus();
+                });
             });
+        }
+
+        function formatActivityDate(value) {
+            if (!value) return "-";
+            const d = new Date(value);
+            if (Number.isNaN(d.getTime())) return "-";
+            return d.toLocaleString("vi-VN");
+        }
+
+        function renderActivityHistory(rows) {
+            const list = document.getElementById("activityList");
+            if (!list) return;
+            if (!rows || rows.length === 0) {
+                list.innerHTML = '<div class="hint">Chưa có lịch sử sử dụng.</div>';
+                return;
+            }
+            list.innerHTML = rows.map((item) => {
+                const description = item.description || "Hoạt động hệ thống";
+                const path = item.path || "-";
+                const when = formatActivityDate(item.created_at);
+                return `
+                    <div class="activity-item">
+                        <div><strong>${description}</strong></div>
+                        <div class="meta">${path} • ${when}</div>
+                    </div>
+                `;
+            }).join("");
+        }
+
+        async function loadActivityHistory() {
+            const list = document.getElementById("activityList");
+            if (!list) return;
+            list.innerHTML = '<div class="hint">Đang tải lịch sử...</div>';
+            try {
+                const response = await fetch("/api/auth/activity-history?limit=30", { credentials: "include" });
+                const data = await parseApiResponse(response);
+                renderActivityHistory(data.activities || []);
+            } catch (error) {
+                list.innerHTML = `<div class="hint">Không tải được lịch sử: ${error.message || "Unknown error"}</div>`;
+            }
+        }
+
+        async function ensureAuthenticated() {
+            const response = await fetch("/api/auth/session", { credentials: "include", cache: "no-store" });
             const data = await parseApiResponse(response);
-            fillUserProfile(data.user || payload);
-            showStatus(data.message || 'Cập nhật hồ sơ thành công', 'success');
-        } catch (error) {
-            showStatus(error.message || 'Không thể cập nhật hồ sơ', 'error');
-        }
-    });
-
-    document.getElementById('passwordForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearStatus();
-
-        const currentPassword = document.getElementById('currentPassword').value;
-        const newPassword = document.getElementById('newPassword').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-
-        if (!currentPassword || !newPassword || !confirmPassword) {
-            showStatus('Vui lòng điền đầy đủ thông tin mật khẩu', 'error');
-            return;
+            if (!data.authenticated) {
+                window.location.replace("/");
+                return null;
+            }
+            return data.user;
         }
 
-        if (newPassword.length < 6) {
-            showStatus('Mật khẩu mới phải có ít nhất 6 ký tự', 'error');
-            return;
-        }
-
-        if (newPassword !== confirmPassword) {
-            showStatus('Xác nhận mật khẩu không khớp', 'error');
-            return;
-        }
-
-        try {
-            const response = await fetch('/api/auth/change-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    current_password: currentPassword,
-                    new_password: newPassword
-                })
+        function fillUserProfile(user) {
+            const language = normalizeLanguage(user.language || "vi");
+            document.getElementById("username").value = user.username || "";
+            document.getElementById("fullName").value = user.full_name || "";
+            document.getElementById("email").value = user.email || "";
+            document.getElementById("phone").value = user.phone || "";
+            document.getElementById("address").value = user.address || "";
+            document.getElementById("language").value = language;
+            document.documentElement.setAttribute("lang", language);
+            const displayName = (user.full_name || user.username || user.email || "A").trim();
+            if (avatarLabel) avatarLabel.textContent = (displayName[0] || "A").toUpperCase();
+            if (navAvatarLabel) navAvatarLabel.textContent = (displayName[0] || "A").toUpperCase();
+            if (navAccountName) navAccountName.textContent = user.username || displayName;
+            if (navAccountRole) navAccountRole.textContent = user.is_admin ? "ADMINISTRATOR" : "MEMBER";
+            if (lastSeenText) {
+                const locale = language === "en" ? "en-US" : "vi-VN";
+                lastSeenText.textContent = new Date().toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+            }
+            document.querySelectorAll("[data-admin-user-only]").forEach((node) => {
+                node.style.display = user.is_admin ? "" : "none";
             });
-            const data = await parseApiResponse(response);
-
-            document.getElementById('currentPassword').value = '';
-            document.getElementById('newPassword').value = '';
-            document.getElementById('confirmPassword').value = '';
-            showStatus(data.message || 'Thay đổi mật khẩu thành công', 'success');
-        } catch (error) {
-            showStatus(error.message || 'Không thể thay đổi mật khẩu', 'error');
         }
-    });
 
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-        try {
-            await fetch('/api/auth/logout', { method: 'POST' });
-        } finally {
-            window.location.href = '/login';
+        async function loadPlanStatus(language = "vi") {
+            try {
+                const response = await fetch("/api/payments/plans", { credentials: "include", cache: "no-store" });
+                if (!response.ok) return;
+                const data = await response.json();
+                const activeSubscription = data.active_subscription || null;
+                const planCode = activeSubscription ? activeSubscription.plan_code : "free";
+                const fallbackName = activeSubscription ? activeSubscription.plan_name : (language === "en" ? "Free" : "Miễn phí");
+                const planName = getPlanDisplayName(planCode, fallbackName, language);
+                if (planStatusText) {
+                    planStatusText.textContent = planName;
+                }
+            } catch (_) {
+                // ignore
+            }
         }
-    });
 
-    document.getElementById('themeToggleBtn').addEventListener('click', () => {
-        if (window.themeManager && typeof window.themeManager.toggleTheme === 'function') {
-            window.themeManager.toggleTheme();
+        async function loadProfile() {
+            try {
+                const user = await ensureAuthenticated();
+                if (!user) return;
+                fillUserProfile(user);
+                await loadPlanStatus(normalizeLanguage(user.language || "vi"));
+            } catch (error) {
+                showStatus(error.message || "Không tải được thông tin tài khoản", "error");
+            }
         }
-    });
 
-    const topThemeBtn = document.querySelector('[data-theme-toggle]');
-    if (topThemeBtn) {
-        topThemeBtn.addEventListener('click', () => {
-            if (window.themeManager && typeof window.themeManager.toggleTheme === 'function') {
+        document.getElementById("profileForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            clearStatus();
+            const payload = {
+                full_name: document.getElementById("fullName").value.trim(),
+                email: document.getElementById("email").value.trim(),
+                phone: document.getElementById("phone").value.trim(),
+                address: document.getElementById("address").value.trim(),
+                language: document.getElementById("language").value,
+            };
+            try {
+                const response = await fetch("/api/auth/update-profile", {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify(payload),
+                });
+                const data = await parseApiResponse(response);
+                const updatedUser = data.user || payload;
+                fillUserProfile(updatedUser);
+                await loadPlanStatus(normalizeLanguage(updatedUser.language || "vi"));
+                showStatus(data.message || "Cập nhật hồ sơ thành công", "success");
+            } catch (error) {
+                showStatus(error.message || "Không thể cập nhật hồ sơ", "error");
+            }
+        });
+
+        document.getElementById("passwordForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            clearStatus();
+            const currentPassword = document.getElementById("currentPassword").value;
+            const newPassword = document.getElementById("newPassword").value;
+            const confirmPassword = document.getElementById("confirmPassword").value;
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showStatus("Vui lòng điền đầy đủ thông tin mật khẩu", "error");
+                return;
+            }
+            if (newPassword.length < 6) {
+                showStatus("Mật khẩu mới phải có ít nhất 6 ký tự", "error");
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                showStatus("Xác nhận mật khẩu không khớp", "error");
+                return;
+            }
+            try {
+                const response = await fetch("/api/auth/change-password", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword,
+                    }),
+                });
+                const data = await parseApiResponse(response);
+                document.getElementById("currentPassword").value = "";
+                document.getElementById("newPassword").value = "";
+                document.getElementById("confirmPassword").value = "";
+                showStatus(data.message || "Thay đổi mật khẩu thành công", "success");
+            } catch (error) {
+                showStatus(error.message || "Không thể thay đổi mật khẩu", "error");
+            }
+        });
+
+        async function handleLogout() {
+            try {
+                await fetch("/api/auth/logout", { method: "POST", credentials: "include", cache: "no-store" });
+            } finally {
+                window.location.replace("/");
+            }
+        }
+
+        document.getElementById("logoutBtn").addEventListener("click", handleLogout);
+        document.getElementById("logoutBtnMenu").addEventListener("click", handleLogout);
+        document.getElementById("themeToggleBtn").addEventListener("click", () => {
+            if (window.themeManager && typeof window.themeManager.toggleTheme === "function") {
                 window.themeManager.toggleTheme();
             }
         });
-    }
 
-    window.addEventListener('load', async () => {
-        setupTabs();
-        await loadProfile();
-        await loadActivityHistory();
-    });
-</script>
+        window.addEventListener("load", async () => {
+            setupTabs();
+            await loadProfile();
+            await loadActivityHistory();
+        });
+    </script>
 </body>
 </html>

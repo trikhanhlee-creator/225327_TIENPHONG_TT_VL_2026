@@ -139,11 +139,13 @@ class AIComposerService:
 
         # Add safe defaults to increase chance of success on free/public OpenRouter tiers.
         candidates.extend([
-            "google/gemma-3-4b-it:free",
-            "openai/gpt-4o-mini",
-            "openai/gpt-4o",
-            "anthropic/claude-3-haiku",
-            "meta-llama/llama-3.1-8b-instruct:free",
+            "openai/gpt-oss-120b:free",
+            "meta-llama/llama-3.3-70b-instruct:free",
+            "google/gemma-4-31b-it:free",
+            "qwen/qwen3-next-80b-a3b-instruct:free",
+            "minimax/minimax-m2.5:free",
+            "nvidia/nemotron-3-super-120b-a12b:free",
+            "openai/gpt-oss-20b:free",
         ])
 
         unique: List[str] = []

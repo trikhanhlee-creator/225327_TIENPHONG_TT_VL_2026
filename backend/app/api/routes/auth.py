@@ -4,7 +4,8 @@ Authentication routes for user login
 from fastapi import APIRouter, HTTPException, Response, Request, Depends
 from fastapi.responses import JSONResponse, HTMLResponse
 import os
-from typing import Optional
+import re
+from typing import Optional, Tuple
 from datetime import datetime, timedelta
 import json
 import base64
@@ -25,15 +26,37 @@ user_profile_cache = {}  # user_id -> profile extras not mapped in current DB sc
 
 SESSION_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", str(60 * 60 * 24 * 2)))  # 2 days inactivity
 GUEST_MODE_COOKIE = "guest_mode"
+SESSION_COOKIE_NAME = "session_id"
+SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").strip().lower() in {"1", "true", "yes"}
+NO_STORE_HEADER_VALUE = "no-store, no-cache, must-revalidate, private"
 
 
 def _get_session_secret() -> str:
     return os.getenv("SESSION_SECRET", "autofill-dev-session-secret")
 
 
+def _set_no_store_headers(response: Response) -> None:
+    response.headers["Cache-Control"] = NO_STORE_HEADER_VALUE
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
+
+def _no_store_json_response(status_code: int, content: dict) -> JSONResponse:
+    response = JSONResponse(status_code=status_code, content=content)
+    _set_no_store_headers(response)
+    return response
+
+
+def _utc_naive_to_unix_millis(value: Optional[datetime]) -> int:
+    if not value:
+        return 0
+    epoch = datetime(1970, 1, 1)
+    return int((value - epoch).total_seconds() * 1000)
+
+
 def generate_session_token(user_id: int) -> str:
-    issued_at = int(time.time())
-    payload = f"{user_id}:{issued_at}"
+    issued_at_ms = int(time.time() * 1000)
+    payload = f"{user_id}:{issued_at_ms}"
     signature = hmac.new(
         _get_session_secret().encode("utf-8"),
         payload.encode("utf-8"),
@@ -43,7 +66,7 @@ def generate_session_token(user_id: int) -> str:
     return base64.urlsafe_b64encode(raw).decode("utf-8")
 
 
-def verify_session_token(token: Optional[str]) -> Optional[int]:
+def decode_session_token(token: Optional[str]) -> Optional[Tuple[int, int]]:
     if not token:
         return None
 
@@ -61,25 +84,38 @@ def verify_session_token(token: Optional[str]) -> Optional[int]:
         if not hmac.compare_digest(signature, expected_signature):
             return None
 
-        issued_at = int(issued_at_str)
-        if (int(time.time()) - issued_at) > SESSION_TTL_SECONDS:
+        issued_at_raw = int(issued_at_str)
+        issued_at_ms = issued_at_raw * 1000 if issued_at_raw < 100_000_000_000 else issued_at_raw
+        if (int(time.time() * 1000) - issued_at_ms) > (SESSION_TTL_SECONDS * 1000):
             return None
 
         user_id = int(user_id_str)
-        return user_id if user_id > 0 else None
+        if user_id <= 0:
+            return None
+        return user_id, issued_at_ms
     except Exception:
         return None
+
+
+def verify_session_token(token: Optional[str]) -> Optional[int]:
+    payload = decode_session_token(token)
+    if not payload:
+        return None
+    return payload[0]
 
 
 def _set_session_cookie(response: Response, user_id: int) -> str:
     """Issue a signed session token and attach it as a browser-session cookie."""
     session_id = generate_session_token(user_id)
     response.set_cookie(
-        key="session_id",
+        key=SESSION_COOKIE_NAME,
         value=session_id,
         httponly=True,
-        samesite="Lax"
+        samesite="Lax",
+        secure=SESSION_COOKIE_SECURE,
+        path="/",
     )
+    _set_no_store_headers(response)
     return session_id
 
 
@@ -89,23 +125,41 @@ def _set_guest_mode_cookie(response: Response) -> None:
         key=GUEST_MODE_COOKIE,
         value="1",
         httponly=False,
-        samesite="Lax"
+        samesite="Lax",
+        secure=SESSION_COOKIE_SECURE,
+        path="/",
     )
+    _set_no_store_headers(response)
 
 
 def _clear_guest_mode_cookie(response: Response) -> None:
-    response.delete_cookie(GUEST_MODE_COOKIE)
+    response.delete_cookie(GUEST_MODE_COOKIE, path="/")
 
 
 def get_authenticated_user_from_request(request: Request, db: Session) -> Optional[User]:
-    token = request.cookies.get("session_id")
-    user_id = verify_session_token(token)
-    if not user_id:
+    token = request.cookies.get(SESSION_COOKIE_NAME)
+    session_payload = decode_session_token(token)
+    if not session_payload:
         return None
 
+    user_id, issued_at_ms = session_payload
     user = db.query(User).filter(User.id == user_id).first()
     if not user or not user.is_active:
         return None
+
+    latest_logout = (
+        db.query(UserActivity.created_at)
+        .filter(
+            UserActivity.user_id == user_id,
+            UserActivity.activity_type == "logout",
+        )
+        .order_by(UserActivity.created_at.desc())
+        .first()
+    )
+    if latest_logout:
+        logout_at_ms = _utc_naive_to_unix_millis(latest_logout[0])
+        if issued_at_ms <= logout_at_ms:
+            return None
 
     return user
 
@@ -165,7 +219,7 @@ async def login(request: Request, db: Session = Depends(get_db)):
         password = data.get("password", "").strip()
         
         if not username or not password:
-            return JSONResponse(
+            return _no_store_json_response(
                 status_code=400,
                 content={"error": "Tên đăng nhập và mật khẩu không được để trống"}
             )
@@ -178,7 +232,7 @@ async def login(request: Request, db: Session = Depends(get_db)):
             )
         ).first()
         if not user:
-            return JSONResponse(
+            return _no_store_json_response(
                 status_code=401,
                 content={"error": "Tên đăng nhập hoặc mật khẩu không chính xác"}
             )
@@ -186,9 +240,15 @@ async def login(request: Request, db: Session = Depends(get_db)):
         # Support legacy plaintext values while migrating existing data
         password_ok = verify_password(password, user.password_hash) or (user.password_hash == password)
         if not password_ok:
-            return JSONResponse(
+            return _no_store_json_response(
                 status_code=401,
                 content={"error": "Tên đăng nhập hoặc mật khẩu không chính xác"}
+            )
+
+        if not user.is_active:
+            return _no_store_json_response(
+                status_code=403,
+                content={"error": "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên."}
             )
 
         user.last_login = datetime.utcnow()
@@ -231,7 +291,7 @@ async def login(request: Request, db: Session = Depends(get_db)):
         return response
         
     except Exception as e:
-        return JSONResponse(
+        return _no_store_json_response(
             status_code=500,
             content={"error": f"Lỗi đăng nhập: {str(e)}"}
         )
@@ -241,15 +301,26 @@ async def signup(request: Request, db: Session = Depends(get_db)):
     """Handle user registration"""
     try:
         data = await request.json()
+        full_name = data.get("full_name", "").strip()
         username = data.get("username", "").strip()
         email = data.get("email", "").strip()
         password = data.get("password", "").strip()
         
+        if not full_name:
+            full_name = username
+
         # Validation
         if not username or not email or not password:
             return JSONResponse(
                 status_code=400,
-                content={"error": "Vui lòng điền đầy đủ thông tin"}
+                content={"error": "Vui lòng điền đầy đủ tên đăng nhập, email và mật khẩu"}
+            )
+
+        # Basic email format validation
+        if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", email):
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Email không hợp lệ"}
             )
         
         # Check username length
@@ -293,6 +364,14 @@ async def signup(request: Request, db: Session = Depends(get_db)):
         db.add(new_user)
         db.commit()
         db.refresh(new_user)
+
+        # Keep extended profile info aligned with /session response shape
+        user_profile_cache[new_user.id] = {
+            "full_name": full_name,
+            "phone": "",
+            "address": "",
+            "language": "vi",
+        }
         
         return JSONResponse(
             status_code=201,
@@ -300,6 +379,7 @@ async def signup(request: Request, db: Session = Depends(get_db)):
                 "success": True,
                 "message": "Đăng ký thành công! Vui lòng đăng nhập.",
                 "user": {
+                    "full_name": full_name,
                     "username": username,
                     "email": email
                 }
@@ -317,7 +397,7 @@ async def logout(request: Request, db: Session = Depends(get_db)):
     """Handle user logout"""
     try:
         user = get_authenticated_user_from_request(request, db)
-        session_id = request.cookies.get("session_id")
+        session_id = request.cookies.get(SESSION_COOKIE_NAME)
         if session_id and session_id in sessions:
             del sessions[session_id]
 
@@ -336,11 +416,12 @@ async def logout(request: Request, db: Session = Depends(get_db)):
             status_code=200,
             content={"success": True, "message": "Đã đăng xuất"}
         )
-        response.delete_cookie("session_id")
+        _set_no_store_headers(response)
+        response.delete_cookie(SESSION_COOKIE_NAME, path="/")
         _clear_guest_mode_cookie(response)
         return response
     except Exception as e:
-        return JSONResponse(
+        return _no_store_json_response(
             status_code=500,
             content={"error": f"Lỗi đăng xuất: {str(e)}"}
         )
@@ -373,7 +454,7 @@ async def get_session(request: Request, db: Session = Depends(get_db)):
             return response
         else:
             guest_mode = request.cookies.get(GUEST_MODE_COOKIE) == "1"
-            return JSONResponse(
+            return _no_store_json_response(
                 status_code=200,
                 content={
                     "authenticated": False,
@@ -382,7 +463,7 @@ async def get_session(request: Request, db: Session = Depends(get_db)):
                 }
             )
     except Exception as e:
-        return JSONResponse(
+        return _no_store_json_response(
             status_code=500,
             content={"error": str(e)}
         )
@@ -409,7 +490,7 @@ async def check_auth(request: Request, db: Session = Depends(get_db)):
         _set_session_cookie(response, user.id)
         return response
     guest_mode = request.cookies.get(GUEST_MODE_COOKIE) == "1"
-    return JSONResponse(
+    return _no_store_json_response(
         status_code=200,
         content={
             "authenticated": False,

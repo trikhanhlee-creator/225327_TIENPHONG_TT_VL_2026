@@ -1,4 +1,66 @@
+function isProtectedAppPath(pathname) {
+	if (!pathname) {
+		return false;
+	}
+	if (pathname.startsWith('/admin-')) {
+		return true;
+	}
+	const exactProtectedPaths = new Set([
+		'/home',
+		'/form',
+		'/excel',
+		'/word-upload',
+		'/composer',
+		'/payment',
+		'/user-account',
+	]);
+	if (exactProtectedPaths.has(pathname)) {
+		return true;
+	}
+	return pathname.startsWith('/excel-form/') || pathname.startsWith('/excel-data-form/');
+}
+
+function buildLandingRedirectUrl() {
+	return '/';
+}
+
+async function revalidateAuthAfterHistoryRestore() {
+	const pathname = window.location.pathname;
+	if (!isProtectedAppPath(pathname)) {
+		return;
+	}
+
+	try {
+		const response = await fetch('/api/auth/check-auth', {
+			method: 'GET',
+			credentials: 'include',
+			cache: 'no-store',
+		});
+		const data = response.ok ? await response.json() : { authenticated: false };
+		const isAuthenticated = Boolean(data && data.authenticated && data.user);
+
+		if (!isAuthenticated) {
+			window.location.replace(buildLandingRedirectUrl());
+			return;
+		}
+
+		if (pathname.startsWith('/admin-') && !data.user.is_admin) {
+			window.location.replace('/');
+		}
+	} catch (_error) {
+		window.location.replace(buildLandingRedirectUrl());
+	}
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+	void revalidateAuthAfterHistoryRestore();
+
+	window.addEventListener('pageshow', (event) => {
+		if (event && event.persisted) {
+			void revalidateAuthAfterHistoryRestore();
+		}
+	});
+
 	const toggleButtons = document.querySelectorAll('[data-theme-toggle]');
 
 	if (
@@ -43,6 +105,12 @@ document.addEventListener('DOMContentLoaded', () => {
 	navLinks.forEach((link) => {
 		const href = link.getAttribute('href');
 		if (!href) {
+			return;
+		}
+		if (href.startsWith('#')) {
+			const target = document.querySelector(href);
+			const isSectionVisible = target && Math.abs(target.getBoundingClientRect().top) < 160;
+			link.classList.toggle('active', Boolean(isSectionVisible));
 			return;
 		}
 
@@ -157,9 +225,10 @@ document.addEventListener('DOMContentLoaded', () => {
 				await fetch('/api/auth/logout', {
 					method: 'POST',
 					credentials: 'include',
+					cache: 'no-store',
 				});
 			} finally {
-				window.location.href = '/';
+				window.location.replace('/');
 			}
 		});
 	});

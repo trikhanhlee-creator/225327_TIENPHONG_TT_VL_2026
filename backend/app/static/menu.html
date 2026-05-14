@@ -1,183 +1,666 @@
 ﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoFill AI System - Menu</title>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>Dashboard - AutoFill AI</title>
     <script src="/static/js/theme-manager.js"></script>
-    <link rel="stylesheet" href="/static/css/site.css">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Manrope:wght@600;700;800&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-container": "#70757e",
+                        "primary-fixed-dim": "#b7c4ff",
+                        "inverse-surface": "#2e3036",
+                        "surface-container-high": "#e8e7ef",
+                        "primary-fixed": "#dde1ff",
+                        "tertiary": "#575c65",
+                        "error-container": "#ffdad6",
+                        "surface-container": "#ededf4",
+                        "primary": "#1b4ddb",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed": "#00201a",
+                        "inverse-on-surface": "#f0f0f7",
+                        "tertiary-fixed": "#dee2ed",
+                        "background": "#f9f9ff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#fffbff",
+                        "on-error": "#ffffff",
+                        "on-background": "#1a1c20",
+                        "surface-container-highest": "#e2e2e9",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed": "#96f4de",
+                        "on-primary-fixed": "#001452",
+                        "tertiary-fixed-dim": "#c2c6d1",
+                        "surface-container-low": "#f3f3fa",
+                        "on-secondary-fixed-variant": "#005145",
+                        "on-tertiary-container": "#fdfcff",
+                        "surface": "#f9f9ff",
+                        "on-surface-variant": "#434655",
+                        "surface-variant": "#e2e2e9",
+                        "secondary": "#006b5c",
+                        "inverse-primary": "#b7c4ff",
+                        "on-tertiary-fixed-variant": "#424750",
+                        "surface-dim": "#d9d9e0",
+                        "on-surface": "#1a1c20",
+                        "on-secondary": "#ffffff",
+                        "on-primary-fixed-variant": "#0038b7",
+                        "on-primary": "#ffffff",
+                        "outline": "#747686",
+                        "primary-container": "#3f68f5",
+                        "outline-variant": "#c4c5d7",
+                        "secondary-container": "#96f4de",
+                        "on-secondary-container": "#007261",
+                        "surface-tint": "#1f50de",
+                        "surface-bright": "#f9f9ff",
+                        "secondary-fixed-dim": "#7ad7c2",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#171c23"
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+        }
+        .menu-page.light-mode {
+            --menu-bg: #f4fbff;
+            --menu-surface: rgba(255, 255, 255, 0.88);
+            --menu-surface-strong: rgba(255, 255, 255, 0.95);
+            --menu-line: rgba(16, 70, 112, 0.18);
+            --menu-line-strong: rgba(16, 70, 112, 0.4);
+            --menu-text-main: #08243c;
+            --menu-text-sub: #355b80;
+            --menu-accent: #0ea5e9;
+        }
+        .menu-page.dark-mode {
+            --menu-bg: #061323;
+            --menu-surface: rgba(10, 31, 52, 0.8);
+            --menu-surface-strong: rgba(8, 24, 41, 0.86);
+            --menu-line: rgba(128, 196, 255, 0.24);
+            --menu-line-strong: rgba(128, 196, 255, 0.48);
+            --menu-text-main: #e8f4ff;
+            --menu-text-sub: #98b2cb;
+            --menu-accent: #47d9ff;
+        }
+        .menu-page {
+            color: var(--menu-text-main);
+            background: var(--menu-bg) !important;
+            position: relative;
+            overflow-x: hidden;
+        }
+        .menu-page::before,
+        .menu-page::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+        }
+        .menu-page::before {
+            z-index: -2;
+            background:
+                radial-gradient(38% 44% at 10% 14%, rgba(71, 217, 255, 0.34), transparent 70%),
+                radial-gradient(36% 42% at 90% 14%, rgba(245, 158, 11, 0.3), transparent 72%);
+        }
+        .menu-page.light-mode::before {
+            background:
+                radial-gradient(40% 45% at 10% 14%, rgba(14, 165, 233, 0.22), transparent 70%),
+                radial-gradient(36% 40% at 90% 14%, rgba(245, 158, 11, 0.18), transparent 72%);
+        }
+        .menu-page::after {
+            z-index: -1;
+            opacity: 0.08;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.55) 0.7px, transparent 0.8px);
+            background-size: 4px 4px;
+        }
+        .menu-page .text-on-surface {
+            color: var(--menu-text-main) !important;
+        }
+        .menu-page .text-on-surface-variant {
+            color: var(--menu-text-sub) !important;
+        }
+        .menu-page .text-primary,
+        .menu-page .text-primary-container,
+        .menu-page .text-secondary {
+            color: var(--menu-accent) !important;
+        }
+        .glass-card {
+            background: color-mix(in srgb, var(--menu-surface) 82%, transparent);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--menu-line);
+        }
+        .glass-card-elevated {
+            background: var(--menu-surface-strong);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--menu-line);
+            box-shadow: 0 8px 32px 0 rgba(8, 17, 31, 0.16);
+        }
+        .menu-page .border-white {
+            border-color: color-mix(in srgb, var(--menu-line-strong) 62%, transparent) !important;
+        }
+        .menu-page.dark-mode .bg-green-50 {
+            background: rgba(52, 211, 153, 0.16) !important;
+            color: #86efac !important;
+        }
+        .menu-page.dark-mode .bg-blue-50 {
+            background: rgba(96, 165, 250, 0.16) !important;
+            color: #93c5fd !important;
+        }
+        .menu-page.dark-mode .bg-orange-50 {
+            background: rgba(251, 191, 36, 0.16) !important;
+            color: #fde68a !important;
+        }
+
+        #systemStatusCard {
+            background: linear-gradient(165deg, #f4f8ff 0%, #eaf1ff 100%);
+            border: 1px solid #d1def4;
+            color: #1a1c20;
+            box-shadow: 0 10px 26px rgba(41, 74, 136, 0.14);
+        }
+
+        #systemStatusCard .status-title {
+            color: #1f3150;
+        }
+
+        #systemStatusCard .status-row-label {
+            color: #5e7298;
+        }
+
+        #systemStatusCard .status-row-value {
+            color: #1f3150;
+        }
+
+        #systemStatusCard .status-divider {
+            border-top-color: rgba(64, 95, 156, 0.18);
+        }
+
+        #systemStatusCard .status-progress-track {
+            background: rgba(73, 107, 175, 0.2);
+        }
+
+        #systemStatusCard .status-progress-fill {
+            background: linear-gradient(90deg, #4f7df0 0%, #6f98ff 100%);
+        }
+
+        #planBadge {
+            background: #e7efff;
+            color: #2f57ca;
+            border: 1px solid #c1d1f5;
+        }
+
+        #planBadge.is-admin-plan {
+            background: linear-gradient(120deg, #e8f5ff 0%, #eef4ff 100%);
+            border-color: #9fb9ef;
+            color: #1845b8;
+        }
+
+        #statusManageBtn {
+            background: #ffffff;
+            color: #2852c3;
+            border: 1px solid #bfd0f0;
+        }
+
+        #statusManageBtn:hover {
+            background: #f4f8ff;
+        }
+
+        body.dark-mode #systemStatusCard {
+            background: linear-gradient(165deg, #1b2a44 0%, #223657 100%);
+            border-color: #37527c;
+            color: #e8f1ff;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode #systemStatusCard .status-title,
+        body.dark-mode #systemStatusCard .status-row-value {
+            color: #e8f1ff;
+        }
+
+        body.dark-mode #systemStatusCard .status-row-label {
+            color: #a7bcdf;
+        }
+
+        body.dark-mode #systemStatusCard .status-divider {
+            border-top-color: rgba(118, 160, 230, 0.2);
+        }
+
+        body.dark-mode #systemStatusCard .status-progress-track {
+            background: rgba(118, 160, 230, 0.3);
+        }
+
+        body.dark-mode #systemStatusCard .status-progress-fill {
+            background: linear-gradient(90deg, #7aa8ff 0%, #92b8ff 100%);
+        }
+
+        body.dark-mode #planBadge {
+            background: rgba(122, 168, 255, 0.2);
+            border-color: rgba(146, 184, 255, 0.45);
+            color: #d7e6ff;
+        }
+
+        body.dark-mode #statusManageBtn {
+            background: rgba(255, 255, 255, 0.08);
+            color: #dce9ff;
+            border-color: rgba(146, 184, 255, 0.45);
+        }
+
+        body.dark-mode #statusManageBtn:hover {
+            background: rgba(255, 255, 255, 0.14);
+        }
+        .app-menu-shell {
+            background: rgba(255, 255, 255, 0.82);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(212, 223, 240, 0.92);
+            box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+        }
+        .app-menu-brand-text {
+            color: #1f4fbf;
+        }
+        .app-menu-link {
+            padding: 8px 10px;
+            border-radius: 999px;
+            color: #4b5563;
+            font-weight: 700;
+            font-size: 15px;
+            line-height: 1;
+            transition: all 0.2s ease;
+        }
+        .app-menu-link:hover {
+            color: #1f4fbf;
+            background: rgba(31, 79, 191, 0.08);
+        }
+        .app-menu-link.active {
+            color: #1f4fbf;
+            background: #edf2ff;
+            box-shadow: inset 0 0 0 1px #dbe7ff;
+        }
+        .app-menu-theme {
+            border: 1px solid rgba(210, 219, 234, 0.92);
+            background: linear-gradient(180deg, #fbfdff 0%, #f4f8ff 100%);
+            color: #334155;
+            transition: all 0.2s ease;
+        }
+        .app-menu-theme:hover {
+            border-color: #c4d5f5;
+            background: linear-gradient(180deg, #f8fbff 0%, #edf3ff 100%);
+        }
+        .app-menu-bell {
+            color: #4b5563;
+            transition: all 0.2s ease;
+        }
+        .app-menu-bell:hover {
+            color: #1f4fbf;
+            background: rgba(31, 79, 191, 0.08);
+        }
+        .app-menu-account-separator {
+            border-left: 1px solid rgba(210, 219, 234, 0.9);
+        }
+        .app-menu-user-name {
+            color: #0f172a;
+        }
+        .app-menu-user-role {
+            color: #64748b;
+        }
+        .app-menu-account-avatar {
+            background: #dde1ff;
+            border: 1px solid #ffffff;
+            box-shadow: 0 2px 8px rgba(31, 79, 191, 0.15);
+        }
+        .app-menu-account-avatar-icon {
+            color: #1f50de;
+        }
+        .app-menu-logout {
+            color: #475569;
+            transition: color 0.2s ease;
+        }
+        .app-menu-logout:hover {
+            color: #1f4fbf;
+        }
+        body.dark-mode .app-menu-shell {
+            background: rgba(17, 26, 43, 0.82);
+            border-color: rgba(70, 94, 130, 0.75);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.32);
+        }
+        body.dark-mode .app-menu-brand-text,
+        body.dark-mode .app-menu-link,
+        body.dark-mode .app-menu-user-name {
+            color: #dce9ff;
+        }
+        body.dark-mode .app-menu-link:hover,
+        body.dark-mode .app-menu-link.active {
+            color: #9fc2ff;
+            background: rgba(122, 168, 255, 0.18);
+            box-shadow: inset 0 0 0 1px rgba(146, 184, 255, 0.34);
+        }
+        body.dark-mode .app-menu-theme {
+            border-color: rgba(88, 118, 168, 0.7);
+            background: rgba(255, 255, 255, 0.08);
+            color: #dce9ff;
+        }
+        body.dark-mode .app-menu-theme:hover {
+            border-color: rgba(146, 184, 255, 0.62);
+            background: rgba(255, 255, 255, 0.14);
+        }
+        body.dark-mode .app-menu-bell {
+            color: #c2d8ff;
+        }
+        body.dark-mode .app-menu-bell:hover {
+            color: #9fc2ff;
+            background: rgba(122, 168, 255, 0.18);
+        }
+        body.dark-mode .app-menu-account-separator {
+            border-left-color: rgba(88, 118, 168, 0.7);
+        }
+        body.dark-mode .app-menu-user-role,
+        body.dark-mode .app-menu-logout {
+            color: #9fb4d5;
+        }
+        body.dark-mode .app-menu-account-avatar {
+            background: rgba(122, 168, 255, 0.24);
+            border-color: rgba(146, 184, 255, 0.5);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+        }
+        body.dark-mode .app-menu-account-avatar-icon {
+            color: #d7e6ff;
+        }
+        body.dark-mode .app-menu-logout:hover {
+            color: #9fc2ff;
+        }
+    </style>
 </head>
-<body>
-    <div class="page-shell">
-        <header class="topbar">
-            <a class="brand" href="/home"><span>AutoFill AI</span></a>
-            <nav class="main-nav" aria-label="Main Navigation">
-                <a class="nav-link active" href="/home">Trang Chủ</a>
-                <a class="nav-link" href="/word-upload">Word Upload</a>
-                <a class="nav-link" href="/excel">Excel Upload</a>
-                <a class="nav-link" href="/composer">Soạn Thảo</a>
-                <div class="nav-dropdown" data-nav-dropdown data-admin-user-only style="display:none;">
-                    <button class="nav-link nav-dropdown-toggle" type="button" data-nav-dropdown-toggle aria-haspopup="true" aria-expanded="false">
-                        Quản lý hệ thống
-                    </button>
-                    <div class="nav-dropdown-menu" data-nav-dropdown-menu>
-                        <a class="nav-dropdown-item" href="/admin-dashboard">Bảng điều khiển</a>
-                        <a class="nav-dropdown-item" href="/admin-users">Quản lý người dùng</a>
-                        <a class="nav-dropdown-item" href="/admin-forms">Quản lý biểu mẫu</a>
-                        <a class="nav-dropdown-item" href="/admin-reports">Báo cáo & thống kê</a>
-                        <a class="nav-dropdown-item" href="/admin-audit-log">Lịch sử hoạt động</a>
-                        <a class="nav-dropdown-item" href="/admin-account">Tài khoản admin</a>
-                    </div>
-                </div>
+<body class="menu-page font-['Inter'] selection:bg-primary-fixed">
+    <header class="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-[1280px] px-4">
+        <nav class="app-menu-shell rounded-full px-6 h-[74px] flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3 flex-shrink-0">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-[#7ed9c3] to-[#efb24a] flex items-center justify-center text-on-surface font-bold text-xs">AF</div>
+                <div class="app-menu-brand-text text-base font-extrabold tracking-tight hidden lg:block font-['Manrope']">AutoFill AI</div>
+            </div>
+
+            <nav class="main-nav hidden md:flex items-center gap-2 flex-1 justify-center" aria-label="Main Navigation">
+                <a class="app-menu-link nav-link active" href="/home">Trang chủ</a>
+                <a class="app-menu-link nav-link" href="/word-upload">Word Upload</a>
+                <a class="app-menu-link nav-link" href="/excel">Excel Upload</a>
+                <a class="app-menu-link nav-link" href="/composer">Soạn Thảo</a>
+                <a class="app-menu-link nav-link" href="/payment">Thanh toán</a>
+                <a class="app-menu-link nav-link" href="/admin-dashboard" data-admin-user-only style="display:none;">Hệ thống</a>
             </nav>
-            <div class="topbar-actions">
-                <button class="btn secondary" data-theme-toggle>
-                    <span class="theme-dot" aria-hidden="true"></span>
-                    <span data-theme-label>Sáng</span>
+
+            <div class="flex items-center gap-3 flex-shrink-0">
+                <button class="app-menu-theme flex items-center gap-2 px-3 py-2 rounded-full" data-theme-toggle>
+                    <div class="w-4 h-4 rounded-full bg-gradient-to-r from-blue-400 to-yellow-500"></div>
+                    <span class="text-sm font-bold" data-theme-label>Sáng</span>
                 </button>
-                <a class="btn primary" data-auth-anon href="/login?mode=login">Đăng nhập</a>
-                <a class="btn accent" data-auth-anon href="/login?mode=signup">Đăng ký</a>
-                <div class="account-dropdown" data-auth-user data-account-dropdown style="display:none;">
-                    <button class="btn secondary" type="button" data-account-toggle aria-haspopup="true" aria-expanded="false">
-                        Tài khoản: <strong data-account-name>User</strong>
-                    </button>
-                    <div class="account-menu" data-account-menu>
-                        <a class="account-menu-item" data-account-link href="/user-account">Quản lý tài khoản</a>
-                        <a class="account-menu-item" data-admin-user-only href="/admin-dashboard" style="display:none;">Quản lý hệ thống</a>
-                        <button class="account-menu-item danger" type="button" data-account-logout>Đăng xuất</button>
+                <button class="app-menu-bell w-10 h-10 rounded-full flex items-center justify-center sm:hidden lg:flex">
+                    <span class="material-symbols-outlined">notifications</span>
+                </button>
+                <div class="app-menu-account-separator flex items-center gap-3 pl-2 ml-1">
+                    <div class="text-right hidden xl:block">
+                            <p class="app-menu-user-name text-xs font-bold leading-none" id="navAccountName">User</p>
+                            <p class="app-menu-user-role text-[9px] uppercase tracking-wider font-semibold" id="navAccountRole">MEMBER</p>
+                    </div>
+                    <a class="app-menu-account-avatar w-9 h-9 rounded-full flex items-center justify-center" href="/user-account" title="Tài khoản">
+                        <span class="app-menu-account-avatar-icon material-symbols-outlined text-xl">person</span>
+                    </a>
+                    <button id="logoutBtn" class="app-menu-logout text-xs font-semibold">Đăng xuất</button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="pt-32 pb-20">
+        <div class="max-w-[1280px] mx-auto px-10">
+            <div class="mb-10 space-y-2">
+                <div class="flex items-center gap-2 text-primary text-xs font-semibold uppercase tracking-wide mb-1">
+                    <span class="material-symbols-outlined text-sm">dashboard</span>
+                    Hệ thống quản trị
+                </div>
+                <h1 class="font-['Manrope'] text-[32px] md:text-[40px] font-bold text-on-surface" id="welcomeTitle">Chào mừng trở lại</h1>
+                <p class="text-on-surface-variant" id="welcomeSubtitle">Hôm nay bạn muốn xử lý tài liệu nào? Chọn một công cụ bên dưới để bắt đầu công việc.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                <a href="/word-upload" class="group p-6 glass-card-elevated rounded-2xl border border-white hover:border-primary/30 transition-all cursor-pointer">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-2xl">description</span>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant/40 group-hover:text-primary transition-colors">open_in_new</span>
+                    </div>
+                    <h3 class="font-['Manrope'] text-xl mb-2">Word Upload</h3>
+                    <p class="text-on-surface-variant text-sm mb-6 leading-relaxed">Tải file mẫu Word và trích xuất các trường dữ liệu tự động để tạo biểu mẫu nhanh chóng.</p>
+                    <div class="flex items-center justify-between pt-4 border-t border-outline-variant/20">
+                        <span class="text-xs font-semibold text-on-surface-variant/60 uppercase">Xử lý tài liệu Word</span>
+                        <span class="text-primary font-bold text-sm">Sử dụng ngay</span>
+                    </div>
+                </a>
+
+                <a href="/excel" class="group p-6 glass-card-elevated rounded-2xl border border-white hover:border-secondary/30 transition-all cursor-pointer">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+                            <span class="material-symbols-outlined text-2xl">table_view</span>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant/40 group-hover:text-secondary transition-colors">open_in_new</span>
+                    </div>
+                    <h3 class="font-['Manrope'] text-xl mb-2">Excel Upload</h3>
+                    <p class="text-on-surface-variant text-sm mb-6 leading-relaxed">Nhập dữ liệu từ Excel để ánh xạ vào các trường thông tin trong văn bản hàng loạt.</p>
+                    <div class="flex items-center justify-between pt-4 border-t border-outline-variant/20">
+                        <span class="text-xs font-semibold text-on-surface-variant/60 uppercase">Hỗ trợ .xlsx, .xls</span>
+                        <span class="text-secondary font-bold text-sm">Nhập dữ liệu</span>
+                    </div>
+                </a>
+
+                <a href="/composer" class="group p-6 glass-card-elevated rounded-2xl border border-white hover:border-primary/30 transition-all cursor-pointer">
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="w-12 h-12 rounded-xl bg-primary-container/10 flex items-center justify-center text-primary-container">
+                            <span class="material-symbols-outlined text-2xl">edit_document</span>
+                        </div>
+                        <span class="material-symbols-outlined text-on-surface-variant/40 group-hover:text-primary-container transition-colors">open_in_new</span>
+                    </div>
+                    <h3 class="font-['Manrope'] text-xl mb-2">AI Composer</h3>
+                    <p class="text-on-surface-variant text-sm mb-6 leading-relaxed">Trình soạn thảo trực quan hỗ trợ AI giúp hoàn thiện văn bản và định dạng chuyên nghiệp.</p>
+                    <div class="flex items-center justify-between pt-4 border-t border-outline-variant/20">
+                        <span class="text-xs font-semibold text-on-surface-variant/60 uppercase">Soạn thảo thông minh</span>
+                        <span class="text-primary-container font-bold text-sm">Soạn thảo</span>
+                    </div>
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-8">
+                    <div class="glass-card-elevated rounded-2xl p-6 border border-white h-full">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="font-['Manrope'] text-lg">Hoạt động gần đây</h3>
+                            <a class="text-primary font-semibold text-sm hover:underline" href="/user-account">Xem tất cả</a>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
+                                    <span class="material-symbols-outlined text-xl">check_circle</span>
+                                </div>
+                                <div class="flex-grow">
+                                    <p class="text-sm font-bold">Sẵn sàng xử lý biểu mẫu Word/Excel</p>
+                                    <p class="text-xs text-on-surface-variant">Tối ưu cho quy trình nhập liệu tự động theo tài khoản.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                    <span class="material-symbols-outlined text-xl">description</span>
+                                </div>
+                                <div class="flex-grow">
+                                    <p class="text-sm font-bold">Truy cập nhanh Word Upload và Excel Upload</p>
+                                    <p class="text-xs text-on-surface-variant">Tạo biểu mẫu từ tài liệu nguồn nhanh chóng.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <div class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
+                                    <span class="material-symbols-outlined text-xl">bolt</span>
+                                </div>
+                                <div class="flex-grow">
+                                    <p class="text-sm font-bold">Nâng cấp gói để mở rộng năng lực hệ thống</p>
+                                    <p class="text-xs text-on-surface-variant">Theo dõi trạng thái gói và thanh toán tại trang Thanh toán.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:col-span-4">
+                    <div id="systemStatusCard" class="glass-card-elevated rounded-2xl p-6">
+                        <h3 class="status-title font-['Manrope'] text-lg mb-6">Trạng thái hệ thống</h3>
+                        <div class="space-y-6">
+                            <div>
+                                <div class="flex justify-between text-xs font-bold uppercase tracking-wider mb-2">
+                                    <span class="status-row-label">Lưu trữ Cloud</span>
+                                    <span class="status-row-value">75%</span>
+                                </div>
+                                <div class="status-progress-track h-2 w-full rounded-full overflow-hidden">
+                                    <div class="status-progress-fill h-full rounded-full w-[75%]"></div>
+                                </div>
+                            </div>
+                            <div class="status-divider flex items-center justify-between py-4 border-t">
+                                <span class="status-row-label text-sm font-medium">Gói dịch vụ</span>
+                                <span class="px-2 py-1 rounded text-xs font-bold uppercase" id="planBadge">Free</span>
+                            </div>
+                            <div class="status-divider flex items-center justify-between py-4 border-t">
+                                <span class="status-row-label text-sm font-medium">Tự động hóa</span>
+                                <span class="status-row-value flex items-center gap-1 text-sm font-bold"><span class="w-2 h-2 rounded-full bg-emerald-500"></span>Sẵn sàng</span>
+                            </div>
+                            <a id="statusManageBtn" class="block w-full py-3 rounded-xl font-bold text-sm transition-all text-center" href="/user-account">Quản lý tài khoản</a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </header>
+        </div>
+    </main>
 
-        <main class="main-wrap fade-in">
-            <section class="hero">
-                <h1>AI Document Composer</h1>
-                <h2>Dùng ngay không cần đăng nhập</h2>
-                <p>Người dùng có thể sử dụng trực tiếp các chức năng hiện có mà không cần tài khoản.</p>
-                <p>Đăng nhập để đồng bộ lịch sử và dữ liệu riêng theo từng tài khoản.</p>
-                <p id="usageModeHint" class="muted">Bạn đang ở chế độ dùng miễn phí mặc định.</p>
-            </section>
-
-            <section class="feature feature-wide" aria-label="Main Feature">
-                <a class="card card-center" href="/composer">
-                    <span class="card-emoji" aria-hidden="true">✍️</span>
-                    <h3>AI Document Composer</h3>
-                    <p class="muted">Soạn thảo tài liệu giống Word với gợi ý từ AI. Tính năng auto-complete thông minh, định dạng văn bản đầy đủ, và lưu tài liệu tự động.</p>
-                </a>
-            </section>
-
-            <section class="grid cols-2 feature-bottom" aria-label="Upload Features">
-                <a class="card" href="/excel">
-                    <span class="card-emoji" aria-hidden="true">📊</span>
-                    <h3>Excel Upload</h3>
-                    <p class="muted">Tải file Excel lên và tạo form động từ dữ liệu. Hỗ trợ cả định dạng .xlsx và .xls.</p>
-                </a>
-                <a class="card" href="/word-upload">
-                    <span class="card-emoji" aria-hidden="true">📄</span>
-                    <h3>Word Upload</h3>
-                    <p class="muted">Tải file Word lên và trích xuất mẫu form để tái sử dụng dễ dàng và nhanh chóng.</p>
-                </a>
-            </section>
-        </main>
-
-        <footer class="site-footer" aria-label="Footer">
-            <div class="footer-inner">
-                <section class="footer-col">
-                    <h4>AutoFill AI</h4>
-                    <p>Hệ thống hỗ trợ soạn thảo và xử lý tài liệu thông minh, tối ưu hóa quy trình Word và Excel trong cùng một giao diện.</p>
-                </section>
-
-                <section class="footer-col">
-                    <h5>Điều hướng nhanh</h5>
-                    <ul class="footer-links">
-                        <li><a href="/home">Trang Chủ</a></li>
-                        <li><a href="/composer">Soạn Thảo</a></li>
-                        <li><a href="/word-upload">Word Upload</a></li>
-                        <li><a href="/excel">Excel Upload</a></li>
-                    </ul>
-                </section>
-
-                <section class="footer-col">
-                    <h5>Hỗ trợ</h5>
-                    <ul class="footer-links">
-                        <li><a href="/login">Đăng Nhập</a></li>
-                        <li><a href="/user-account">Tài Khoản</a></li>
-                        <li data-admin-link style="display:none;"><a href="/admin-dashboard">Admin</a></li>
-                    </ul>
-                </section>
-            </div>
-
-            <div class="footer-bottom">
-                <span>© 2026 AutoFill AI System. All rights reserved.</span>
-            </div>
-        </footer>
-    </div>
-
-    <div id="globalToast" class="toast"></div>
     <script src="/static/js/site-ui.js?v=20260406-1"></script>
     <script>
-        // Extra safeguard on homepage to avoid stale cached JS affecting auth UI state.
-        (async function syncHomepageAuthState() {
-            const anonButtons = document.querySelectorAll('[data-auth-anon]');
-            const userButtons = document.querySelectorAll('[data-auth-user]');
-            const accountNames = document.querySelectorAll('[data-account-name]');
-            const adminOnlyItems = document.querySelectorAll('[data-admin-user-only]');
-            const usageModeHint = document.getElementById('usageModeHint');
+        (async function syncDashboardUserContext() {
+            const welcomeTitle = document.getElementById("welcomeTitle");
+            const welcomeSubtitle = document.getElementById("welcomeSubtitle");
+            const navAccountName = document.getElementById("navAccountName");
+            const navAccountRole = document.getElementById("navAccountRole");
+            const logoutBtn = document.getElementById("logoutBtn");
+            const planBadge = document.getElementById("planBadge");
+            const adminOnlyItems = document.querySelectorAll("[data-admin-user-only]");
+            const sessionUserCacheKey = "app_session_user_cache_v1";
+
+            function getCachedSessionUser() {
+                try {
+                    const raw = window.sessionStorage.getItem(sessionUserCacheKey);
+                    const parsed = raw ? JSON.parse(raw) : null;
+                    if (!parsed || typeof parsed !== "object") {
+                        return null;
+                    }
+                    return parsed;
+                } catch (_) {
+                    return null;
+                }
+            }
+
+            function saveCachedSessionUser(user) {
+                if (!user || typeof user !== "object") {
+                    return;
+                }
+                try {
+                    window.sessionStorage.setItem(sessionUserCacheKey, JSON.stringify(user));
+                } catch (_) {
+                    // ignore storage failures
+                }
+            }
+
+            function clearCachedSessionUser() {
+                try {
+                    window.sessionStorage.removeItem(sessionUserCacheKey);
+                } catch (_) {
+                    // ignore storage failures
+                }
+            }
+
+            function applyNavbarUser(user) {
+                if (!user) {
+                    return;
+                }
+                const displayName = user.username || user.full_name || user.email || "User";
+                if (navAccountName) {
+                    navAccountName.textContent = displayName;
+                }
+                if (navAccountRole) {
+                    navAccountRole.textContent = user.is_admin ? "ADMINISTRATOR" : "MEMBER";
+                }
+                adminOnlyItems.forEach((node) => {
+                    node.style.display = user.is_admin ? "" : "none";
+                });
+            }
+
+            const cachedUser = getCachedSessionUser();
+            if (cachedUser) {
+                applyNavbarUser(cachedUser);
+            }
 
             try {
-                const response = await fetch('/api/auth/session', {
-                    method: 'GET',
-                    credentials: 'include',
-                    cache: 'no-store'
-                });
-                const data = response.ok ? await response.json() : { authenticated: false };
-                const isAuthenticated = Boolean(data && data.authenticated && data.user);
+                const [sessionResponse, planResponse] = await Promise.all([
+                    fetch("/api/auth/session", { method: "GET", credentials: "include", cache: "no-store" }),
+                    fetch("/api/payments/plans", { method: "GET", credentials: "include", cache: "no-store" }),
+                ]);
 
-                if (isAuthenticated) {
-                    const displayName = data.user.username || data.user.email || 'Tài khoản';
-                    anonButtons.forEach((el) => {
-                        el.style.display = 'none';
-                    });
-                    userButtons.forEach((el) => {
-                        el.style.display = '';
-                    });
-                    accountNames.forEach((el) => {
-                        el.textContent = displayName;
-                    });
-                    adminOnlyItems.forEach((el) => {
-                        el.style.display = data.user.is_admin ? '' : 'none';
-                    });
-                    if (usageModeHint) {
-                        usageModeHint.textContent = `Đang đăng nhập: ${displayName}. Lịch sử sẽ được lưu theo tài khoản.`;
-                    }
-                } else {
-                    anonButtons.forEach((el) => {
-                        el.style.display = '';
-                    });
-                    userButtons.forEach((el) => {
-                        el.style.display = 'none';
-                    });
-                    adminOnlyItems.forEach((el) => {
-                        el.style.display = 'none';
-                    });
-                    if (usageModeHint) {
-                        usageModeHint.textContent = 'Bạn đang ở chế độ dùng miễn phí mặc định. Có thể dùng ngay mọi chức năng không cần đăng nhập.';
+                const sessionData = sessionResponse.ok ? await sessionResponse.json() : { authenticated: false };
+                const planData = planResponse.ok ? await planResponse.json() : {};
+                if (!sessionData.authenticated || !sessionData.user) {
+                    clearCachedSessionUser();
+                    window.location.replace("/");
+                    return;
+                }
+                const user = sessionData.user || {};
+                saveCachedSessionUser(user);
+                applyNavbarUser(user);
+                const displayName = user.full_name || user.username || user.email || "bạn";
+
+                if (welcomeTitle) {
+                    welcomeTitle.textContent = "Chào mừng trở lại, " + displayName;
+                }
+                if (welcomeSubtitle) {
+                    welcomeSubtitle.textContent = "Hôm nay " + displayName + " muốn xử lý tài liệu nào? Chọn một công cụ bên dưới để bắt đầu công việc.";
+                }
+                if (planBadge) {
+                    const highestPlanName = "Enterprise";
+                    const activePlanName = (planData.active_subscription || {}).plan_name || "Free";
+                    const displayPlanName = user.is_admin ? highestPlanName : activePlanName;
+                    planBadge.textContent = String(displayPlanName).toUpperCase();
+                    planBadge.classList.toggle("is-admin-plan", Boolean(user.is_admin));
+                    if (user.is_admin) {
+                        planBadge.title = "Tài khoản quản trị: gói dịch vụ cao nhất";
+                    } else {
+                        planBadge.removeAttribute("title");
                     }
                 }
-            } catch (error) {
-                anonButtons.forEach((el) => {
-                    el.style.display = '';
-                });
-                userButtons.forEach((el) => {
-                    el.style.display = 'none';
-                });
-                adminOnlyItems.forEach((el) => {
-                    el.style.display = 'none';
-                });
-                if (usageModeHint) {
-                    usageModeHint.textContent = 'Không kiểm tra được trạng thái đăng nhập. Hệ thống vẫn cho phép dùng miễn phí.';
+            } catch (_) {
+                if (welcomeTitle) {
+                    welcomeTitle.textContent = "Chào mừng trở lại";
                 }
+            }
+
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", async () => {
+                    try {
+                        await fetch("/api/auth/logout", {
+                            method: "POST",
+                            credentials: "include",
+                            cache: "no-store",
+                        });
+                    } finally {
+                        clearCachedSessionUser();
+                        window.location.replace("/");
+                    }
+                });
             }
         })();
     </script>

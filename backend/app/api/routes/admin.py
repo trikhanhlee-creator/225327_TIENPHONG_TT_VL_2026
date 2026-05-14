@@ -135,7 +135,7 @@ async def list_users(
     verify_admin(current_user)
 
     try:
-        users, total = AdminService.get_users(
+        users, total, summary = AdminService.get_users(
             db=db,
             skip=skip,
             limit=limit,
@@ -158,6 +158,7 @@ async def list_users(
                 for u in users
             ],
             "total": total,
+            "summary": summary,
             "skip": skip,
             "limit": limit
         }
@@ -308,7 +309,7 @@ async def delete_user(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Xóa (deactivate) người dùng
+    Xóa vĩnh viễn người dùng
     Requires: Admin access
     """
     verify_admin(current_user)
@@ -327,9 +328,89 @@ async def delete_user(
             admin_id=current_user.id
         )
 
-        return {"message": "User đã được xóa"}
+        return {"message": "Tài khoản đã được xóa"}
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.post("/users/{user_id}/lock", response_model=dict)
+async def lock_user_account(
+    user_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Khóa tài khoản người dùng.
+    Requires: Admin access
+    """
+    verify_admin(current_user)
+
+    if user_id == current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Không thể tự khóa tài khoản của chính mình"
+        )
+
+    try:
+        user = AdminService.set_user_lock_status(
+            db=db,
+            user_id=user_id,
+            is_locked=True,
+            admin_id=current_user.id
+        )
+        return {
+            "id": user.id,
+            "is_active": user.is_active,
+            "message": f"Đã khóa tài khoản {user.username}"
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+
+@router.post("/users/{user_id}/unlock", response_model=dict)
+async def unlock_user_account(
+    user_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Mở khóa tài khoản người dùng.
+    Requires: Admin access
+    """
+    verify_admin(current_user)
+
+    try:
+        user = AdminService.set_user_lock_status(
+            db=db,
+            user_id=user_id,
+            is_locked=False,
+            admin_id=current_user.id
+        )
+        return {
+            "id": user.id,
+            "is_active": user.is_active,
+            "message": f"Đã mở khóa tài khoản {user.username}"
+        }
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

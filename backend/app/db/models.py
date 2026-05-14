@@ -28,6 +28,8 @@ class User(Base):
     excel_templates = relationship("ExcelTemplate", back_populates="user", cascade="all, delete-orphan")
     email_verifications = relationship("EmailVerification", back_populates="user", cascade="all, delete-orphan")
     activities = relationship("UserActivity", back_populates="user", cascade="all, delete-orphan")
+    subscriptions = relationship("UserSubscription", back_populates="user", cascade="all, delete-orphan")
+    payment_orders = relationship("PaymentOrder", back_populates="user", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email})>"
@@ -287,3 +289,53 @@ class AuditLog(Base):
 
     def __repr__(self):
         return f"<AuditLog(id={self.id}, action={self.action}, object_type={self.object_type})>"
+
+
+class UserSubscription(Base):
+    """Thông tin gói dịch vụ của người dùng."""
+    __tablename__ = "user_subscriptions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    plan_code = Column(String(50), nullable=False, index=True)
+    plan_name = Column(String(100), nullable=False)
+    amount_vnd = Column(Integer, nullable=False, default=0)
+    duration_days = Column(Integer, nullable=False, default=30)
+    status = Column(String(20), nullable=False, default="active", index=True)  # active | expired | cancelled
+    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="subscriptions")
+
+    def __repr__(self):
+        return f"<UserSubscription(id={self.id}, user_id={self.user_id}, plan_code={self.plan_code}, status={self.status})>"
+
+
+class PaymentOrder(Base):
+    """Đơn hàng thanh toán SePay."""
+    __tablename__ = "payment_orders"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    order_code = Column(String(64), unique=True, nullable=False, index=True)
+    plan_code = Column(String(50), nullable=False, index=True)
+    plan_name = Column(String(100), nullable=False)
+    amount_vnd = Column(Integer, nullable=False)
+    currency = Column(String(10), nullable=False, default="VND")
+    status = Column(String(20), nullable=False, default="pending", index=True)  # pending | paid | failed | expired
+    sepay_checkout_url = Column(String(500), nullable=True)
+    sepay_qr_url = Column(String(500), nullable=True)
+    sepay_transaction_id = Column(String(100), nullable=True, index=True)
+    customer_note = Column(String(500), nullable=True)
+    raw_response = Column(Text, nullable=True)
+    paid_at = Column(DateTime, nullable=True, index=True)
+    expires_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="payment_orders")
+
+    def __repr__(self):
+        return f"<PaymentOrder(id={self.id}, order_code={self.order_code}, status={self.status})>"

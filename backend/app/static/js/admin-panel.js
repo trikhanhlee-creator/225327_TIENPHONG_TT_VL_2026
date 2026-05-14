@@ -39,7 +39,7 @@
     }
 
     async function apiGet(url) {
-        const res = await fetch(url, { credentials: "include" });
+        const res = await fetch(url, { credentials: "include", cache: "no-store" });
         return parseResponse(res);
     }
 
@@ -66,6 +66,14 @@
     async function apiDelete(url) {
         const res = await fetch(url, { method: "DELETE", credentials: "include" });
         return parseResponse(res);
+    }
+
+    async function logoutAndRedirect() {
+        try {
+            await apiPost("/api/auth/logout");
+        } finally {
+            window.location.replace("/");
+        }
     }
 
     function formatDate(value) {
@@ -105,11 +113,7 @@
         const logoutButtons = document.querySelectorAll("[data-admin-logout]");
         logoutButtons.forEach((btn) => {
             btn.addEventListener("click", async () => {
-                try {
-                    await apiPost("/api/auth/logout");
-                } finally {
-                    window.location.href = "/login";
-                }
+                await logoutAndRedirect();
             });
         });
     }
@@ -165,11 +169,11 @@
     async function ensureAdminSession() {
         const session = await apiGet("/api/auth/session");
         if (!session.authenticated || !session.user) {
-            window.location.href = "/login?mode=login&next=/admin-dashboard";
+            window.location.replace("/");
             return false;
         }
         if (!session.user.is_admin) {
-            window.location.href = "/";
+            window.location.replace("/");
             return false;
         }
 
@@ -178,6 +182,16 @@
         });
 
         return true;
+    }
+
+    function setupHistoryRestoreGuard() {
+        window.addEventListener("pageshow", (event) => {
+            if (event && event.persisted) {
+                ensureAdminSession().catch(() => {
+                    window.location.replace("/");
+                });
+            }
+        });
     }
 
     async function loadDashboard() {
@@ -255,6 +269,7 @@
 
             const data = await apiGet("/api/admin/users?" + query.toString());
             const rows = data.data || [];
+            const summary = data.summary || {};
             state.usersTotal = data.total || 0;
 
             if (rows.length === 0) {
@@ -271,8 +286,8 @@
                         + "<td class=\"table-cell\"><span class=\"badge " + statusBadge + "</span></td>"
                         + "<td class=\"table-cell\">" + formatDate(u.created_at) + "</td>"
                         + "<td class=\"table-cell\"><div class=\"table-actions\">"
-                        + "<button class=\"btn btn-secondary btn-sm\" data-action=\"toggle-admin\" data-id=\"" + u.id + "\">Đổi quyền</button>"
-                        + "<button class=\"btn btn-warning btn-sm\" data-action=\"deactivate\" data-id=\"" + u.id + "\">Khóa</button>"
+                        + "<button class=\"btn btn-sm btn-action-delete\" data-action=\"delete-user\" data-id=\"" + u.id + "\">Xóa</button>"
+                        + "<button class=\"btn btn-sm btn-action-toggle " + (u.is_active ? "is-lock" : "is-unlock") + "\" data-action=\"" + (u.is_active ? "lock-user" : "unlock-user") + "\" data-id=\"" + u.id + "\" data-username=\"" + (u.username || "") + "\">" + (u.is_active ? "Khóa" : "Mở khóa") + "</button>"
                         + "</div></td>"
                         + "</tr>";
                 }).join("");
@@ -282,17 +297,15 @@
             const to = Math.min(skip + state.usersPageSize, state.usersTotal);
             pager.textContent = "Hiển thị " + from + " - " + to + " của " + state.usersTotal + " người dùng";
 
-            const totalAdmins = rows.filter((u) => u.is_admin).length;
-            const totalActive = rows.filter((u) => u.is_active).length;
             const statAll = document.getElementById("usersStatAll");
             const statAdmin = document.getElementById("usersStatAdmins");
             const statActive = document.getElementById("usersStatActive");
             const statInactive = document.getElementById("usersStatInactive");
 
-            if (statAll) statAll.textContent = String(state.usersTotal);
-            if (statAdmin) statAdmin.textContent = String(totalAdmins);
-            if (statActive) statActive.textContent = String(totalActive);
-            if (statInactive) statInactive.textContent = String(Math.max(rows.length - totalActive, 0));
+            if (statAll) statAll.textContent = String(summary.total_users || 0);
+            if (statAdmin) statAdmin.textContent = String(summary.admin_users || 0);
+            if (statActive) statActive.textContent = String(summary.active_users || 0);
+            if (statInactive) statInactive.textContent = String(summary.inactive_users || 0);
         }
 
         marker.addEventListener("click", async (event) => {
@@ -304,13 +317,21 @@
             if (!userId) return;
 
             try {
-                if (action === "toggle-admin") {
-                    await apiPost("/api/admin/users/" + userId + "/toggle-admin");
-                    showMessage("Đã cập nhật quyền admin", "success");
-                }
-                if (action === "deactivate") {
+                if (action === "delete-user") {
+                    const ok = window.confirm("Bạn có chắc muốn xóa tài khoản này? Dữ liệu liên quan có thể bị mất.");
+                    if (!ok) return;
                     await apiDelete("/api/admin/users/" + userId);
-                    showMessage("Đã khóa người dùng", "success");
+                    showMessage("Đã xóa tài khoản người dùng", "success");
+                }
+                if (action === "lock-user") {
+                    const ok = window.confirm("Bạn có chắc muốn khóa tài khoản này?");
+                    if (!ok) return;
+                    await apiPost("/api/admin/users/" + userId + "/lock");
+                    showMessage("Đã khóa tài khoản", "success");
+                }
+                if (action === "unlock-user") {
+                    await apiPost("/api/admin/users/" + userId + "/unlock");
+                    showMessage("Đã mở khóa tài khoản", "success");
                 }
                 await fetchUsers();
             } catch (error) {
@@ -495,16 +516,21 @@
             if (totalForms) totalForms.textContent = String(forms.total_forms || 0);
             if (totalSubmissions) totalSubmissions.textContent = String(system.total_submissions || 0);
 
-            const avg = Number(system.active_last_7_days || 0);
-            if (avgActivity) avgActivity.textContent = avg.toFixed(1) + "h";
+            if (avgActivity) avgActivity.textContent = String(system.active_last_7_days || 0);
 
             const growthText = document.getElementById("reportGrowthText");
             const usageText = document.getElementById("reportUsageText");
             if (growthText) {
-                growthText.textContent = "Người dùng mới 30 ngày: " + String(system.new_users_30_days || 0);
+                growthText.textContent = "Người dùng mới 30 ngày: "
+                    + String(system.new_users_30_days || 0)
+                    + " | Inactive: "
+                    + String(system.inactive_users || 0);
             }
             if (usageText) {
-                usageText.textContent = "Word: " + String(forms.word_forms || 0) + " | Excel: " + String(forms.excel_forms || 0);
+                usageText.textContent = "Word: " + String(forms.word_forms || 0)
+                    + " | Excel: " + String(forms.excel_forms || 0)
+                    + " | Total forms: " + String(forms.total_forms || 0)
+                    + " | Total submissions: " + String(system.total_submissions || 0);
             }
         }
 
@@ -596,6 +622,7 @@
             activateSidebar();
             setupUserMenu();
             setupThemeToggle();
+            setupHistoryRestoreGuard();
 
             const ok = await ensureAdminSession();
             if (!ok) return;
