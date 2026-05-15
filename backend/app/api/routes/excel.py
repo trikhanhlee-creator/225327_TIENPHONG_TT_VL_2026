@@ -22,11 +22,21 @@ from app.core.logger import logger
 from app.core.auth import get_current_user
 from app.db.session import get_db
 from app.db.models import User, Entry, ExcelTemplate
+from app.services.autofill.orchestrator import AutofillOrchestrator
+from app.services.autofill.memory_service import UserMemoryService
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/api/excel", tags=["excel"])
 
-# Store uploaded Excel data in memory (in production, use a database)
+# Hot cache only; DB is the source of truth.
 excel_data_store = {}
+autofill_orchestrator = AutofillOrchestrator()
+
+
+class ExcelFieldLabelUpdateRequest(BaseModel):
+    session_id: str
+    field_name: str
+    new_label: str
 
 
 def _normalize_lookup_key(value: str) -> str:
@@ -607,6 +617,7 @@ def _persist_session_to_db(
     file_ext: str | None = None,
     template_file_path: str | None = None,
     export_meta: dict | None = None,
+    form_instance_id: int | None = None,
 ) -> None:
     normalized_history = _normalize_history_items(history)
     persisted_payload = {
@@ -617,6 +628,7 @@ def _persist_session_to_db(
         "file_ext": str(file_ext or ""),
         "template_file_path": str(template_file_path or ""),
         "export_meta": export_meta if isinstance(export_meta, dict) else {},
+        "form_instance_id": int(form_instance_id or 0) if form_instance_id else None,
     }
 
     record = db.query(ExcelTemplate).filter(
@@ -674,6 +686,7 @@ def _load_session_from_db(db: Session, session_id: str) -> dict | None:
     file_ext = persisted_payload.get("file_ext") if isinstance(persisted_payload, dict) else ""
     template_file_path = persisted_payload.get("template_file_path") if isinstance(persisted_payload, dict) else ""
     export_meta = persisted_payload.get("export_meta") if isinstance(persisted_payload, dict) else {}
+    form_instance_id = persisted_payload.get("form_instance_id") if isinstance(persisted_payload, dict) else None
 
     if not isinstance(rows, list):
         rows = []
@@ -688,6 +701,10 @@ def _load_session_from_db(db: Session, session_id: str) -> dict | None:
         file_ext = ""
     if not isinstance(template_file_path, str):
         template_file_path = ""
+    try:
+        form_instance_id = int(form_instance_id) if form_instance_id is not None else None
+    except Exception:
+        form_instance_id = None
 
     return {
         "user_id": int(record.user_id),
@@ -701,6 +718,7 @@ def _load_session_from_db(db: Session, session_id: str) -> dict | None:
         "file_ext": file_ext,
         "template_file_path": template_file_path,
         "export_meta": export_meta,
+        "form_instance_id": form_instance_id,
     }
 
 
@@ -738,10 +756,13 @@ def _update_session_rows_in_db(db: Session, session_id: str, rows: list) -> None
 
 
 def _get_session_data_or_404(session_id: str, current_user: User, db: Session | None = None) -> dict:
-    if session_id not in excel_data_store and db is not None:
+    # DB-first source of truth; in-memory store is only a performance cache.
+    if db is not None:
         persisted = _load_session_from_db(db, session_id)
         if persisted is not None:
             excel_data_store[session_id] = persisted
+    elif session_id not in excel_data_store:
+        raise HTTPException(status_code=404, detail="Session not found")
 
     if session_id not in excel_data_store:
         raise HTTPException(status_code=404, detail="Session not found")
@@ -752,6 +773,57 @@ def _get_session_data_or_404(session_id: str, current_user: User, db: Session | 
         raise HTTPException(status_code=403, detail="Không có quyền truy cập session này")
 
     return data
+
+
+def _normalize_custom_field_label(text: str) -> str:
+    value = str(text or "").strip()
+    value = re.sub(r"\s+", " ", value).strip()
+    return value
+
+
+def _update_excel_session_header(
+    session_data: dict,
+    old_header: str,
+    new_header: str
+) -> None:
+    headers = session_data.get("headers")
+    if not isinstance(headers, list):
+        raise HTTPException(status_code=400, detail="Session header không hợp lệ")
+
+    if old_header not in headers:
+        raise HTTPException(status_code=404, detail="Không tìm thấy trường cần đổi tên")
+    if old_header == new_header:
+        return
+    if new_header in headers:
+        raise HTTPException(status_code=400, detail="Tên trường mới đã tồn tại")
+
+    updated_headers = [new_header if h == old_header else h for h in headers]
+    session_data["headers"] = updated_headers
+
+    rows = session_data.get("rows")
+    if isinstance(rows, list):
+        for idx, row in enumerate(rows):
+            if not isinstance(row, dict):
+                rows[idx] = {}
+                continue
+            if old_header in row:
+                row[new_header] = row.pop(old_header)
+            else:
+                row.setdefault(new_header, "")
+
+    history_items = _normalize_history_items(session_data.get("history"))
+    for item in history_items:
+        row_data = item.get("row_data")
+        if not isinstance(row_data, dict):
+            item["row_data"] = {}
+            continue
+        if old_header in row_data:
+            row_data[new_header] = row_data.pop(old_header)
+        else:
+            row_data.setdefault(new_header, "")
+    session_data["history"] = history_items
+
+    session_data["field_metadata"] = extract_field_metadata(updated_headers)
 
 def detect_field_type(field_name: str) -> str:
     """Detect field type from field name"""
@@ -1512,12 +1584,41 @@ async def upload_excel(
                 'history': [],
                 'file_ext': file_ext,
                 'template_file_path': template_file_path,
-                'export_meta': export_meta if isinstance(export_meta, dict) else {}
+                'export_meta': export_meta if isinstance(export_meta, dict) else {},
+                'form_instance_id': None,
             }
 
             # Ensure form + fields are available immediately after upload.
             form_id = _get_or_create_excel_form_id(db, current_user.id)
             _ensure_excel_fields(db, form_id, headers)
+            if template_file_path:
+                try:
+                    _, form_instance_id = await autofill_orchestrator.parse_and_prepare_schema(
+                        db=db,
+                        user_id=current_user.id,
+                        file_path=template_file_path,
+                        source_type="excel",
+                        source_ref=session_id,
+                        original_filename=filename,
+                    )
+                    excel_data_store[session_id]["form_instance_id"] = form_instance_id
+                except Exception as parse_error:
+                    logger.warning(f"Unable to build canonical form instance for excel session {session_id}: {parse_error}")
+
+            _persist_session_to_db(
+                db=db,
+                session_id=session_id,
+                user_id=current_user.id,
+                filename=filename,
+                headers=headers,
+                rows=rows,
+                created_at=excel_data_store[session_id]["created_at"],
+                history=[],
+                file_ext=file_ext,
+                template_file_path=template_file_path,
+                export_meta=export_meta if isinstance(export_meta, dict) else {},
+                form_instance_id=excel_data_store[session_id].get("form_instance_id"),
+            )
             
             logger.info(f"✓ Excel uploaded successfully: {len(rows)} rows, {len(headers)} columns (Format: {file_ext})")
             
@@ -1528,6 +1629,7 @@ async def upload_excel(
                 "headers": headers,
                 "total_rows": len(rows),
                 "field_metadata": field_metadata,
+                "form_instance_id": excel_data_store[session_id].get("form_instance_id"),
                 "created_at": excel_data_store[session_id]['created_at'],
                 "message": f"Tải file thành công! Tìm thấy {len(rows)} dòng dữ liệu"
             })
@@ -1558,7 +1660,8 @@ async def get_excel_data(
             "rows": data['rows'],
             "total_rows": data['total_rows'],
             "filename": data['filename'],
-            "field_metadata": data.get('field_metadata', {})
+            "field_metadata": data.get('field_metadata', {}),
+            "form_instance_id": data.get("form_instance_id"),
         })
     
     except HTTPException:
@@ -1566,6 +1669,64 @@ async def get_excel_data(
     except Exception as e:
         logger.error(f"Error getting Excel data: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error getting data: {str(e)}")
+
+
+@router.put("/field-label")
+async def update_excel_field_label(
+    payload: ExcelFieldLabelUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Rename one session header and keep all row/history data synced."""
+    try:
+        session_id = str(payload.session_id or "").strip()
+        if not session_id:
+            raise HTTPException(status_code=400, detail="session_id không hợp lệ")
+
+        current_header = str(payload.field_name or "").strip()
+        if not current_header:
+            raise HTTPException(status_code=400, detail="field_name không hợp lệ")
+
+        new_header = _normalize_custom_field_label(payload.new_label)
+        if not new_header:
+            raise HTTPException(status_code=400, detail="new_label không hợp lệ")
+
+        session_data = _get_session_data_or_404(session_id, current_user, db)
+        _update_excel_session_header(session_data, current_header, new_header)
+
+        session_owner_id = int(session_data.get("user_id") or current_user.id)
+        form_id = _get_or_create_excel_form_id(db, session_owner_id)
+        _ensure_excel_fields(db, form_id, session_data.get("headers", []))
+
+        _persist_session_to_db(
+            db=db,
+            session_id=session_id,
+            user_id=session_owner_id,
+            filename=session_data.get("filename", ""),
+            headers=session_data.get("headers", []),
+            rows=session_data.get("rows", []),
+            created_at=session_data.get("created_at") or datetime.utcnow().isoformat(),
+            history=session_data.get("history", []),
+            file_ext=session_data.get("file_ext"),
+            template_file_path=session_data.get("template_file_path"),
+            export_meta=session_data.get("export_meta"),
+            form_instance_id=session_data.get("form_instance_id"),
+        )
+
+        return JSONResponse({
+            "status": "success",
+            "session_id": session_id,
+            "field_name": new_header,
+            "headers": session_data.get("headers", []),
+            "field_metadata": session_data.get("field_metadata", {}),
+            "message": "Đã cập nhật tên trường Excel"
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating excel field label: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Lỗi cập nhật tên trường Excel: {str(e)}")
 
 
 @router.get("/row/{session_id}/{row_index}")
@@ -1637,6 +1798,7 @@ async def add_excel_page(
             file_ext=session_data.get('file_ext'),
             template_file_path=session_data.get('template_file_path'),
             export_meta=session_data.get('export_meta'),
+            form_instance_id=session_data.get("form_instance_id"),
         )
 
         return JSONResponse({
@@ -1698,6 +1860,7 @@ async def delete_excel_page(
             file_ext=session_data.get('file_ext'),
             template_file_path=session_data.get('template_file_path'),
             export_meta=session_data.get('export_meta'),
+            form_instance_id=session_data.get("form_instance_id"),
         )
 
         next_row_index = 0
@@ -1783,6 +1946,15 @@ async def list_sessions(
                     saved_count = len(_normalize_history_items(history))
                 except Exception:
                     saved_count = 0
+            form_instance_id = None
+            if row.mapping_json:
+                try:
+                    payload = json.loads(row.mapping_json)
+                    if isinstance(payload, dict):
+                        raw_id = payload.get("form_instance_id")
+                        form_instance_id = int(raw_id) if raw_id is not None else None
+                except Exception:
+                    form_instance_id = None
 
             sessions.append(
                 {
@@ -1791,6 +1963,7 @@ async def list_sessions(
                     "total_rows": int(row.data_row_start or 0),
                     "created_at": row.created_at.isoformat() if row.created_at is not None else None,
                     "saved_count": saved_count,
+                    "form_instance_id": form_instance_id,
                 }
             )
 
@@ -1805,6 +1978,82 @@ async def list_sessions(
     except Exception as e:
         logger.error(f"Error listing sessions: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error listing sessions: {str(e)}")
+
+
+@router.post("/autofill/{session_id}")
+async def run_excel_autofill(
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Run LLM autofill pipeline for an Excel session."""
+    session_data = _get_session_data_or_404(session_id, current_user, db)
+    form_instance_id = session_data.get("form_instance_id")
+
+    if not form_instance_id:
+        template_path = str(session_data.get("template_file_path") or "").strip()
+        if not template_path or not os.path.exists(template_path):
+            raise HTTPException(
+                status_code=400,
+                detail="Session chưa có file template để phân tích LLM. Vui lòng upload lại file Excel.",
+            )
+
+        _, form_instance_id = await autofill_orchestrator.parse_and_prepare_schema(
+            db=db,
+            user_id=current_user.id,
+            file_path=template_path,
+            source_type="excel",
+            source_ref=session_id,
+            original_filename=str(session_data.get("filename") or "excel.xlsx"),
+        )
+        session_data["form_instance_id"] = form_instance_id
+        _persist_session_to_db(
+            db=db,
+            session_id=session_id,
+            user_id=current_user.id,
+            filename=session_data.get("filename", ""),
+            headers=session_data.get("headers", []),
+            rows=session_data.get("rows", []),
+            created_at=session_data.get("created_at") or datetime.utcnow().isoformat(),
+            history=session_data.get("history", []),
+            file_ext=session_data.get("file_ext"),
+            template_file_path=session_data.get("template_file_path"),
+            export_meta=session_data.get("export_meta"),
+            form_instance_id=form_instance_id,
+        )
+
+    result = await autofill_orchestrator.run_autofill(
+        db=db,
+        user_id=current_user.id,
+        form_instance_id=int(form_instance_id),
+    )
+    return JSONResponse(
+        {
+            "status": "success",
+            "session_id": session_id,
+            "form_instance_id": int(form_instance_id),
+            **result,
+        }
+    )
+
+
+@router.get("/autofill-status/{session_id}")
+async def get_excel_autofill_status(
+    session_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Quick endpoint for UI to check if Excel session has canonical form instance."""
+    session_data = _get_session_data_or_404(session_id, current_user, db)
+    form_instance_id = session_data.get("form_instance_id")
+    return JSONResponse(
+        {
+            "status": "success",
+            "session_id": session_id,
+            "form_instance_id": form_instance_id,
+            "ready": bool(form_instance_id),
+        }
+    )
 
 
 @router.post("/save/{session_id}/{row_index}")
@@ -1901,7 +2150,27 @@ async def save_excel_row(
             file_ext=session_data.get('file_ext'),
             template_file_path=session_data.get('template_file_path'),
             export_meta=session_data.get('export_meta'),
+            form_instance_id=session_data.get("form_instance_id"),
         )
+
+        for entry in entries_to_insert:
+            try:
+                field_row = db.query(Field).filter(Field.id == entry.field_id).first()
+                field_key = field_row.field_name if field_row else ""
+                if field_key:
+                    UserMemoryService.upsert_memory_value(
+                        db=db,
+                        user_id=current_user.id,
+                        field_key=field_key,
+                        value_text=entry.value,
+                        memory_type="entry",
+                        source_ref=f"excel_session:{session_id}",
+                        confidence=0.68,
+                        is_confirmed=False,
+                    )
+            except Exception as memory_error:
+                logger.warning(f"Unable to sync Excel entry to memory: {memory_error}")
+        db.commit()
 
         return JSONResponse({
             "status": "success",
@@ -1934,6 +2203,7 @@ async def get_session_history(
             "session_id": session_id,
             "history": history_sorted,
             "total": len(history_sorted),
+            "form_instance_id": session_data.get("form_instance_id"),
         })
     except HTTPException:
         raise
@@ -1987,6 +2257,7 @@ async def update_session_history_item(
             file_ext=session_data.get('file_ext'),
             template_file_path=session_data.get('template_file_path'),
             export_meta=session_data.get('export_meta'),
+            form_instance_id=session_data.get("form_instance_id"),
         )
 
         return JSONResponse({
@@ -2031,6 +2302,7 @@ async def delete_session_history_item(
             file_ext=session_data.get('file_ext'),
             template_file_path=session_data.get('template_file_path'),
             export_meta=session_data.get('export_meta'),
+            form_instance_id=session_data.get("form_instance_id"),
         )
 
         return JSONResponse({

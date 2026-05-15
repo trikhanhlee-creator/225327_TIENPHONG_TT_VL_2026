@@ -8,7 +8,19 @@ import re
 
 from app.core.config import settings
 from app.core.logger import logger
-from app.api.routes import suggestions, word, form_replacement, excel, composer, auth, form_edit, admin, payment
+from app.api.routes import (
+    suggestions,
+    word,
+    form_replacement,
+    excel,
+    composer,
+    auth,
+    form_edit,
+    admin,
+    payment,
+    autofill,
+    memory,
+)
 from app.db.session import engine, Base, SessionLocal, get_db
 from app.db.models import User, UserActivity
 
@@ -65,6 +77,7 @@ STATIC_PAGE_REDIRECTS = {
     "/static/admin-reports.html": "/admin-reports",
     "/static/admin-audit-log.html": "/admin-audit-log",
     "/static/admin-account.html": "/admin-account",
+    "/static/autofill-review.html": "/autofill-review",
 }
 
 GLOBAL_SYSTEM_FOOTER_STYLE = """
@@ -209,6 +222,8 @@ app.include_router(composer.router)
 app.include_router(form_edit.router)
 app.include_router(admin.router)
 app.include_router(payment.router)
+app.include_router(autofill.router)
+app.include_router(memory.router)
 
 # Mount static files from backend/app/static
 static_dir = os.path.join(os.path.dirname(__file__), "static")
@@ -492,21 +507,18 @@ async def home_page(request: Request, db: Session = Depends(get_db)):
 
 @app.get("/composer", tags=["ui"])
 async def composer_page(request: Request, db: Session = Depends(get_db)):
-    """Serve the document composer page"""
-    from fastapi.responses import HTMLResponse
-
+    """Temporarily hide composer UI and redirect users to home."""
     user, auth_response = _authorize_user_ui(request, db)
     if auth_response:
         return auth_response
 
-    _record_user_activity(db, user.id, request, description="Opened document composer")
-
-    try:
-        with open(os.path.join(static_dir, "composer.html"), "r", encoding="utf-8") as f:
-            return HTMLResponse(content=f.read())
-    except Exception as e:
-        logger.error(f"Error loading composer.html: {e}")
-        raise
+    _record_user_activity(
+        db,
+        user.id,
+        request,
+        description="Composer temporarily hidden; redirected to home",
+    )
+    return RedirectResponse(url="/home", status_code=303)
 
 
 @app.get("/payment", tags=["ui"])
@@ -526,6 +538,24 @@ async def payment_page(request: Request, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error loading payment.html: {e}")
         return HTMLResponse(content="<h1>Payment page not found</h1>", status_code=404)
+
+
+@app.get("/autofill-review", tags=["ui"])
+async def autofill_review_page(request: Request, db: Session = Depends(get_db)):
+    """Serve review/edit/confirm UI for new LLM autofill pipeline."""
+    from fastapi.responses import HTMLResponse
+
+    user, auth_response = _authorize_user_ui(request, db)
+    if auth_response:
+        return auth_response
+
+    _record_user_activity(db, user.id, request, description="Opened autofill review page")
+    try:
+        with open(os.path.join(static_dir, "autofill-review.html"), "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    except Exception as e:
+        logger.error(f"Error loading autofill-review.html: {e}")
+        return HTMLResponse(content="<h1>Autofill review page not found</h1>", status_code=404)
 
 
 # ==================== ADMIN PAGES ====================

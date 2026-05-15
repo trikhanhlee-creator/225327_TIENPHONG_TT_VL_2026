@@ -81,7 +81,7 @@
 
                 <form id="loginForm" class="space-y-6" novalidate>
                     <div class="space-y-1">
-                        <label class="font-label-bold text-label-bold text-on-surface-variant block" for="loginUsername">Tên đăng nhập</label>
+                        <label class="font-label-bold text-label-bold text-on-surface-variant block" for="loginUsername">Tên đăng nhập hoặc Email</label>
                         <div class="relative group">
                             <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                 <span class="material-symbols-outlined text-outline text-[20px]">person</span>
@@ -110,6 +110,23 @@
                     <button id="loginBtn" class="w-full py-3 px-4 bg-gradient-to-r from-primary to-primary-container text-on-primary font-button text-button rounded-lg shadow-md hover:shadow-lg active:scale-[0.98] transition-all duration-200" type="submit">
                         Đăng nhập
                     </button>
+                    <div class="relative py-1">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-outline-variant/40"></div>
+                        </div>
+                        <div class="relative flex justify-center">
+                            <span class="bg-white px-3 text-xs text-on-surface-variant">hoặc</span>
+                        </div>
+                    </div>
+                    <button id="googleLoginBtn" class="w-full py-3 px-4 bg-white text-on-surface font-button text-button rounded-lg border border-outline-variant/60 hover:border-primary hover:bg-surface-container-low transition-all duration-200 flex items-center justify-center gap-2" type="button">
+                        <svg aria-hidden="true" class="w-5 h-5" viewBox="0 0 48 48">
+                            <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.21 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.84 1.154 7.955 3.045l5.657-5.657C34.045 6.053 29.27 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.651-.389-3.917z"/>
+                            <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 16.108 19.001 13 24 13c3.059 0 5.84 1.154 7.955 3.045l5.657-5.657C34.045 6.053 29.27 4 24 4c-7.682 0-14.365 4.337-17.694 10.691z"/>
+                            <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.191-5.238C29.144 35.091 26.683 36 24 36c-5.19 0-9.625-3.328-11.284-7.946l-6.522 5.024C9.485 39.556 16.227 44 24 44z"/>
+                            <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.046 12.046 0 0 1-4.085 5.571l.003-.002 6.191 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.651-.389-3.917z"/>
+                        </svg>
+                        <span>Đăng nhập với Google</span>
+                    </button>
                 </form>
 
                 <div class="mt-8">
@@ -135,12 +152,14 @@
 
     <script>
         const REMEMBER_LOGIN_KEY = "autofill-remember-login";
-        const REMEMBER_USERNAME_KEY = "autofill-remember-username";
+        const REMEMBER_IDENTIFIER_KEY = "autofill-remember-identifier";
         const loginMessage = document.getElementById("loginMessage");
         const rememberCheckbox = document.getElementById("remember");
         const loginForm = document.getElementById("loginForm");
         const loginBtn = document.getElementById("loginBtn");
+        const googleLoginBtn = document.getElementById("googleLoginBtn");
         const registerLink = document.getElementById("registerLink");
+        let lastLoginIdentifier = "";
 
         function setMessage(target, text, type) {
             target.textContent = text;
@@ -162,31 +181,142 @@
             return params.get(name);
         }
 
+        function isValidEmail(email) {
+            if (!email || email.length > 254) {
+                return false;
+            }
+            const parts = email.split("@");
+            if (parts.length !== 2) {
+                return false;
+            }
+            const local = parts[0];
+            const domain = parts[1];
+            if (!local || !domain) {
+                return false;
+            }
+            if (local.startsWith(".") || local.endsWith(".") || local.includes("..")) {
+                return false;
+            }
+            if (domain.startsWith(".") || domain.endsWith(".") || domain.includes("..")) {
+                return false;
+            }
+            if (!domain.includes(".")) {
+                return false;
+            }
+            if (!/^[A-Za-z0-9.!#$%&*+/=?^_`{|}~-]+$/.test(local)) {
+                return false;
+            }
+            if (!/^[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+$/.test(domain)) {
+                return false;
+            }
+            const tld = domain.split(".").pop();
+            return !!tld && /^[A-Za-z]{2,}$/.test(tld);
+        }
+
+        function appendResendVerificationAction() {
+            if (document.getElementById("resendVerificationBtn")) {
+                return;
+            }
+            const actionWrap = document.createElement("div");
+            actionWrap.className = "mt-3";
+
+            const button = document.createElement("button");
+            button.type = "button";
+            button.id = "resendVerificationBtn";
+            button.className = "text-primary hover:underline text-sm font-medium bg-transparent border-0 p-0 cursor-pointer";
+            button.textContent = "Gửi lại email xác thực";
+
+            button.addEventListener("click", handleResendVerification);
+            actionWrap.appendChild(button);
+            loginMessage.appendChild(actionWrap);
+        }
+
+        async function handleResendVerification() {
+            const button = document.getElementById("resendVerificationBtn");
+            if (!button) {
+                return;
+            }
+
+            const candidate = (lastLoginIdentifier || document.getElementById("loginUsername").value || "").trim().toLowerCase();
+            if (!isValidEmail(candidate)) {
+                setMessage(loginMessage, "Vui lòng nhập đúng email đã đăng ký để gửi lại xác thực.", "error");
+                return;
+            }
+
+            button.disabled = true;
+            const originalText = button.textContent;
+            button.textContent = "Đang gửi...";
+            try {
+                const response = await fetch("/api/auth/resend-verification", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ identifier: candidate })
+                });
+                const data = await parseApiResponse(response);
+                setMessage(loginMessage, data.message || "Đã gửi lại email xác thực.", "success");
+            } catch (error) {
+                const msg = error && error.message === "Failed to fetch"
+                    ? "Không thể kết nối máy chủ. Vui lòng kiểm tra server và thử lại."
+                    : (error.message || "Gửi lại email xác thực thất bại.");
+                setMessage(loginMessage, msg, "error");
+            } finally {
+                button.disabled = false;
+                button.textContent = originalText;
+            }
+        }
+
         function getNextUrl() {
             return "/home";
         }
 
-        function loadRememberedUsername() {
+        function getGoogleStartUrl() {
+            const next = getNextUrl();
+            return "/api/auth/google/start?next=" + encodeURIComponent(next);
+        }
+
+        async function refreshGoogleButtonState() {
+            try {
+                const response = await fetch("/api/auth/google/config", {
+                    method: "GET",
+                    credentials: "include",
+                    cache: "no-store"
+                });
+                if (!response.ok) {
+                    return;
+                }
+                const data = await response.json();
+                if (!data || !data.enabled) {
+                    googleLoginBtn.disabled = true;
+                    googleLoginBtn.classList.add("opacity-60", "cursor-not-allowed");
+                    googleLoginBtn.title = "Google OAuth chưa được cấu hình trên server";
+                }
+            } catch (_error) {
+                // Keep silent: button still works when endpoint unavailable.
+            }
+        }
+
+        function loadRememberedIdentifier() {
             const enabled = localStorage.getItem(REMEMBER_LOGIN_KEY) === "1";
-            const username = localStorage.getItem(REMEMBER_USERNAME_KEY) || "";
+            const identifier = localStorage.getItem(REMEMBER_IDENTIFIER_KEY) || "";
             document.getElementById("loginPassword").value = "";
             if (!enabled) {
                 rememberCheckbox.checked = false;
                 document.getElementById("loginUsername").value = "";
                 return;
             }
-            document.getElementById("loginUsername").value = username;
+            document.getElementById("loginUsername").value = identifier;
             rememberCheckbox.checked = true;
         }
 
-        function persistRememberedUsername(username) {
+        function persistRememberedIdentifier(identifier) {
             if (!rememberCheckbox.checked) {
                 localStorage.removeItem(REMEMBER_LOGIN_KEY);
-                localStorage.removeItem(REMEMBER_USERNAME_KEY);
+                localStorage.removeItem(REMEMBER_IDENTIFIER_KEY);
                 return;
             }
             localStorage.setItem(REMEMBER_LOGIN_KEY, "1");
-            localStorage.setItem(REMEMBER_USERNAME_KEY, username || "");
+            localStorage.setItem(REMEMBER_IDENTIFIER_KEY, identifier || "");
         }
 
         async function parseApiResponse(response) {
@@ -207,10 +337,11 @@
             event.preventDefault();
             clearMessage(loginMessage);
 
-            const username = document.getElementById("loginUsername").value.trim();
+            const identifier = document.getElementById("loginUsername").value.trim();
             const password = document.getElementById("loginPassword").value.trim();
-            if (!username || !password) {
-                setMessage(loginMessage, "Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.", "error");
+            lastLoginIdentifier = identifier;
+            if (!identifier || !password) {
+                setMessage(loginMessage, "Vui lòng nhập đầy đủ tên đăng nhập/email và mật khẩu.", "error");
                 return;
             }
 
@@ -222,10 +353,10 @@
                     method: "POST",
                     credentials: "include",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ identifier, password })
                 });
                 await parseApiResponse(response);
-                persistRememberedUsername(username);
+                persistRememberedIdentifier(identifier);
                 setMessage(loginMessage, "Đăng nhập thành công. Đang chuyển hướng...", "success");
                 window.location.replace(getNextUrl());
             } catch (error) {
@@ -233,6 +364,9 @@
                     ? "Không thể kết nối máy chủ. Vui lòng kiểm tra server và thử lại."
                     : (error.message || "Đăng nhập thất bại.");
                 setMessage(loginMessage, msg, "error");
+                if ((error.message || "").includes("xác thực")) {
+                    appendResendVerificationAction();
+                }
             } finally {
                 loginBtn.disabled = false;
                 loginBtn.textContent = originalLabel;
@@ -244,12 +378,48 @@
         });
 
         loginForm.addEventListener("submit", handleLoginSubmit);
+        googleLoginBtn.addEventListener("click", () => {
+            googleLoginBtn.disabled = true;
+            const originalText = googleLoginBtn.textContent;
+            googleLoginBtn.textContent = "Đang chuyển tới Google...";
+            window.location.assign(getGoogleStartUrl());
+            setTimeout(() => {
+                googleLoginBtn.disabled = false;
+                googleLoginBtn.textContent = originalText;
+            }, 2000);
+        });
 
         window.addEventListener("load", () => {
-            loadRememberedUsername();
+            loadRememberedIdentifier();
+            void refreshGoogleButtonState();
             const next = getQueryParam("next");
             if (next) {
                 registerLink.href = "/register?next=" + encodeURIComponent(next);
+            }
+            const verifiedState = getQueryParam("verified");
+            if (verifiedState === "success") {
+                setMessage(loginMessage, "Xác thực email thành công. Bạn có thể đăng nhập ngay.", "success");
+            } else if (verifiedState === "already") {
+                setMessage(loginMessage, "Email đã được xác thực trước đó. Bạn có thể đăng nhập.", "success");
+            } else if (verifiedState === "expired") {
+                setMessage(loginMessage, "Liên kết xác thực đã hết hạn. Vui lòng gửi lại email xác thực.", "error");
+                appendResendVerificationAction();
+            } else if (verifiedState === "invalid") {
+                setMessage(loginMessage, "Liên kết xác thực không hợp lệ.", "error");
+            }
+
+            const googleState = getQueryParam("google");
+            if (googleState === "not_configured") {
+                setMessage(loginMessage, "Đăng nhập Google chưa được cấu hình trên hệ thống.", "error");
+            } else if (googleState === "email_not_registered") {
+                setMessage(loginMessage, "Email Google này chưa được đăng ký trong hệ thống. Vui lòng đăng ký trước.", "error");
+            } else if (googleState === "email_not_verified") {
+                setMessage(loginMessage, "Email của tài khoản này chưa xác thực trong hệ thống.", "error");
+                appendResendVerificationAction();
+            } else if (googleState === "account_disabled") {
+                setMessage(loginMessage, "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.", "error");
+            } else if (googleState === "invalid_state" || googleState === "missing_code" || googleState === "token_error" || googleState === "invalid_email" || googleState === "oauth_error") {
+                setMessage(loginMessage, "Đăng nhập Google thất bại. Vui lòng thử lại.", "error");
             }
         });
     </script>

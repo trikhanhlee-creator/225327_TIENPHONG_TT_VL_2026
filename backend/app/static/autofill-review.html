@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autofill Review</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fb;
+            color: #111827;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        h1 {
+            font-size: 24px;
+            margin: 0 0 8px;
+        }
+        .muted {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 14px;
+        }
+        .row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        input[type="text"], select {
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 8px 10px;
+            min-width: 180px;
+        }
+        button {
+            border: 0;
+            border-radius: 8px;
+            padding: 9px 14px;
+            cursor: pointer;
+            background: #2563eb;
+            color: #fff;
+            font-weight: 600;
+        }
+        button.secondary {
+            background: #111827;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border-bottom: 1px solid #e5e7eb;
+            padding: 8px;
+            text-align: left;
+            font-size: 14px;
+            vertical-align: top;
+        }
+        th {
+            background: #f9fafb;
+        }
+        .status {
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .ok { color: #047857; }
+        .err { color: #b91c1c; }
+        .small { font-size: 12px; color: #6b7280; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h1>LLM Autofill Review</h1>
+        <div class="muted">Workflow demo: Upload form -> Parse field -> Run autofill -> Review/Edit -> Confirm feedback</div>
+        <div class="row">
+            <select id="sourceType">
+                <option value="word">Word</option>
+                <option value="excel">Excel</option>
+                <option value="document">Document</option>
+            </select>
+            <input id="sourceRef" type="text" placeholder="source_ref (optional)">
+            <input id="formFile" type="file">
+            <button id="uploadBtn" onclick="uploadAndParse()">Upload + Parse</button>
+            <button class="secondary" id="runBtn" onclick="runAutofill()" disabled>Run Autofill</button>
+        </div>
+        <div id="parseInfo" class="small"></div>
+        <div id="statusBox" class="status"></div>
+    </div>
+
+    <div class="card">
+        <h2 style="margin-top:0;">Review & Confirm</h2>
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>Field</th>
+                    <th>Suggested Value</th>
+                    <th>Final Value</th>
+                    <th>Decision</th>
+                    <th>Confidence</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <div class="row" style="margin-top:12px;">
+            <button id="confirmBtn" onclick="confirmFeedback()" disabled>Confirm Feedback</button>
+            <button class="secondary" id="metricBtn" onclick="loadMetrics()">Load Metrics</button>
+        </div>
+        <div id="metricsBox" class="small" style="margin-top:10px;"></div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = window.location.origin;
+    let currentFormInstanceId = null;
+    let currentRunId = null;
+    let latestSuggestions = [];
+
+    function setStatus(text, ok = true) {
+        const box = document.getElementById("statusBox");
+        box.className = `status ${ok ? "ok" : "err"}`;
+        box.textContent = text;
+    }
+
+    async function uploadAndParse() {
+        const sourceType = document.getElementById("sourceType").value;
+        const sourceRef = document.getElementById("sourceRef").value.trim();
+        const fileInput = document.getElementById("formFile");
+        if (!fileInput.files.length) {
+            setStatus("Vui lòng chọn file upload.", false);
+            return;
+        }
+
+        document.getElementById("uploadBtn").disabled = true;
+        try {
+            const form = new FormData();
+            form.append("file", fileInput.files[0]);
+            const qs = new URLSearchParams();
+            qs.set("source_type", sourceType);
+            if (sourceRef) qs.set("source_ref", sourceRef);
+
+            const response = await fetch(`${API_BASE}/api/autofill/upload-and-parse?${qs.toString()}`, {
+                method: "POST",
+                body: form,
+                credentials: "include"
+            });
+            const data = await response.json();
+            if (!response.ok || data.status !== "success") {
+                throw new Error(data.detail || data.message || "Upload thất bại");
+            }
+
+            currentFormInstanceId = data.form_instance_id;
+            document.getElementById("runBtn").disabled = false;
+            document.getElementById("parseInfo").textContent =
+                `form_instance_id=${data.form_instance_id}, fields=${data.fields_count}, source_ref=${data.source_ref}`;
+            setStatus("Upload + parse thành công.");
+        } catch (err) {
+            setStatus(`Lỗi parse: ${err.message}`, false);
+        } finally {
+            document.getElementById("uploadBtn").disabled = false;
+        }
+    }
+
+    async function runAutofill() {
+        if (!currentFormInstanceId) {
+            setStatus("Chưa có form_instance_id.", false);
+            return;
+        }
+        document.getElementById("runBtn").disabled = true;
+        try {
+            const response = await fetch(`${API_BASE}/api/autofill/run/${currentFormInstanceId}`, {
+                method: "POST",
+                credentials: "include"
+            });
+            const data = await response.json();
+            if (!response.ok || data.status !== "success") {
+                throw new Error(data.detail || data.message || "Run autofill thất bại");
+            }
+            currentRunId = data.run_id;
+            latestSuggestions = Array.isArray(data.suggestions) ? data.suggestions : [];
+            renderSuggestionRows(latestSuggestions);
+            document.getElementById("confirmBtn").disabled = latestSuggestions.length === 0;
+            setStatus(
+                `Run thành công: run_id=${data.run_id}, prefilled=${data.prefilled_fields}/${data.total_fields}, fallback=${data.fallback_used}`
+            );
+        } catch (err) {
+            setStatus(`Lỗi run autofill: ${err.message}`, false);
+        } finally {
+            document.getElementById("runBtn").disabled = false;
+        }
+    }
+
+    function renderSuggestionRows(items) {
+        const tbody = document.querySelector("#resultTable tbody");
+        tbody.innerHTML = "";
+        items.forEach((item, idx) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>
+                    <div>${escapeHtml(item.label || item.field_key || "")}</div>
+                    <div class="small">field_id=${item.field_id || ""}</div>
+                </td>
+                <td>${escapeHtml(item.suggested_value || "")}</td>
+                <td><input type="text" id="final_${idx}" value="${escapeHtmlAttr(item.suggested_value || "")}" style="min-width:220px;"></td>
+                <td>
+                    <select id="decision_${idx}">
+                        <option value="accepted">accepted</option>
+                        <option value="edited">edited</option>
+                        <option value="rejected">rejected</option>
+                    </select>
+                </td>
+                <td>${Number(item.confidence || 0).toFixed(2)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function confirmFeedback() {
+        if (!currentRunId) {
+            setStatus("Chưa có run_id.", false);
+            return;
+        }
+        const items = latestSuggestions.map((item, idx) => {
+            const finalValue = document.getElementById(`final_${idx}`).value;
+            const decision = document.getElementById(`decision_${idx}`).value;
+            return {
+                form_field_id: item.field_id,
+                final_value: finalValue,
+                decision,
+                confidence: item.confidence || 0,
+                note: "Submitted from autofill-review page"
+            };
+        }).filter((x) => Number(x.form_field_id) > 0);
+
+        if (!items.length) {
+            setStatus("Không có item hợp lệ để confirm.", false);
+            return;
+        }
+        document.getElementById("confirmBtn").disabled = true;
+        try {
+            const response = await fetch(`${API_BASE}/api/autofill/review-confirm/${currentRunId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                credentials: "include",
+                body: JSON.stringify({ items })
+            });
+            const data = await response.json();
+            if (!response.ok || data.status !== "success") {
+                throw new Error(data.detail || data.message || "Confirm thất bại");
+            }
+            setStatus(`Đã lưu feedback: ${data.feedback_saved} mục.`);
+        } catch (err) {
+            setStatus(`Lỗi confirm feedback: ${err.message}`, false);
+            document.getElementById("confirmBtn").disabled = false;
+        }
+    }
+
+    async function loadMetrics() {
+        const box = document.getElementById("metricsBox");
+        box.textContent = "Đang tải metrics...";
+        try {
+            const response = await fetch(`${API_BASE}/api/autofill/metrics/overview`, {
+                method: "GET",
+                credentials: "include"
+            });
+            const data = await response.json();
+            if (!response.ok || data.status !== "success") {
+                throw new Error(data.detail || data.message || "Không tải được metrics");
+            }
+            const m = data.metrics || {};
+            box.textContent =
+                `runs=${m.total_runs || 0}, avg_latency_ms=${m.avg_latency_ms || 0}, ` +
+                `coverage=${m.avg_prefill_coverage || 0}, fallback_rate=${m.fallback_rate || 0}, ` +
+                `acceptance_rate=${m.acceptance_rate || 0}`;
+        } catch (err) {
+            box.textContent = `Lỗi metrics: ${err.message}`;
+        }
+    }
+
+    function escapeHtml(value) {
+        return String(value || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function escapeHtmlAttr(value) {
+        return escapeHtml(value).replace(/'/g, "&#39;");
+    }
+</script>
+</body>
+</html>

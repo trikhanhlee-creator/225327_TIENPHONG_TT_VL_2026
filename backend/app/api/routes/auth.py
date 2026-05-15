@@ -1,10 +1,14 @@
 """
 Authentication routes for user login
 """
-from fastapi import APIRouter, HTTPException, Response, Request, Depends
-from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi import APIRouter, Response, Request, Depends
+from fastapi.responses import JSONResponse, RedirectResponse
 import os
 import re
+import secrets
+import smtplib
+import ssl
+from email.message import EmailMessage
 from typing import Optional, Tuple
 from datetime import datetime, timedelta
 import json
@@ -12,12 +16,16 @@ import base64
 import hashlib
 import hmac
 import time
+from urllib.parse import quote, urlencode
+from urllib.request import urlopen
 from sqlalchemy.orm import Session
 from sqlalchemy import func, or_
 
 from app.db.session import get_db
-from app.db.models import User, UserActivity
+from app.db.models import User, UserActivity, EmailVerification
 from app.core.security import get_password_hash, verify_password
+from app.core.config import settings
+from app.core.logger import logger
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -29,6 +37,171 @@ GUEST_MODE_COOKIE = "guest_mode"
 SESSION_COOKIE_NAME = "session_id"
 SESSION_COOKIE_SECURE = os.getenv("SESSION_COOKIE_SECURE", "false").strip().lower() in {"1", "true", "yes"}
 NO_STORE_HEADER_VALUE = "no-store, no-cache, must-revalidate, private"
+EMAIL_VERIFICATION_TTL_HOURS = int(os.getenv("EMAIL_VERIFICATION_TTL_HOURS", "24"))
+GOOGLE_AUTH_BASE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_ENDPOINT = "https://www.googleapis.com/oauth2/v3/userinfo"
+google_oauth_states: dict[str, dict] = {}
+
+
+def _normalize_email(raw_email: str) -> str:
+    return (raw_email or "").strip().lower()
+
+
+def _is_valid_email(email: str) -> bool:
+    """Strict-enough email validator for auth flows."""
+    if not email or len(email) > 254 or email.count("@") != 1:
+        return False
+
+    local_part, domain_part = email.rsplit("@", 1)
+    if not local_part or not domain_part:
+        return False
+    if local_part.startswith(".") or local_part.endswith(".") or ".." in local_part:
+        return False
+    if domain_part.startswith(".") or domain_part.endswith(".") or ".." in domain_part:
+        return False
+    if "." not in domain_part:
+        return False
+
+    if not re.fullmatch(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+", local_part):
+        return False
+    if not re.fullmatch(r"[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+", domain_part):
+        return False
+
+    tld = domain_part.rsplit(".", 1)[-1]
+    return len(tld) >= 2 and tld.isalpha()
+
+
+def _is_mail_delivery_configured() -> bool:
+    return bool(settings.SMTP_HOST and settings.SMTP_FROM_EMAIL)
+
+
+def _is_google_oauth_configured() -> bool:
+    return bool(settings.GOOGLE_OAUTH_CLIENT_ID and settings.GOOGLE_OAUTH_CLIENT_SECRET)
+
+
+def _cleanup_expired_google_states() -> None:
+    now = int(time.time())
+    expired_keys = [
+        state
+        for state, payload in google_oauth_states.items()
+        if int(payload.get("expires_at", 0)) <= now
+    ]
+    for key in expired_keys:
+        google_oauth_states.pop(key, None)
+
+
+def _build_google_auth_url(state: str) -> str:
+    query = urlencode(
+        {
+            "client_id": settings.GOOGLE_OAUTH_CLIENT_ID,
+            "redirect_uri": settings.GOOGLE_OAUTH_REDIRECT_URI,
+            "response_type": "code",
+            "scope": "openid email profile",
+            "access_type": "online",
+            "prompt": "select_account",
+            "state": state,
+        }
+    )
+    return f"{GOOGLE_AUTH_BASE_URL}?{query}"
+
+
+def _build_verification_link(token: str) -> str:
+    base_url = (settings.APP_BASE_URL or "http://localhost:8000").rstrip("/")
+    return f"{base_url}/api/auth/verify-email?token={quote(token)}"
+
+
+def _get_latest_email_verification(db: Session, user_id: int, email: str) -> Optional[EmailVerification]:
+    normalized_email = _normalize_email(email)
+    return (
+        db.query(EmailVerification)
+        .filter(
+            EmailVerification.user_id == user_id,
+            func.lower(EmailVerification.email) == normalized_email,
+        )
+        .order_by(EmailVerification.created_at.desc())
+        .first()
+    )
+
+
+def _is_user_email_verified(db: Session, user: User) -> bool:
+    # Admin accounts are treated as privileged and bypass email verification.
+    if bool(user.is_admin):
+        return True
+
+    latest = _get_latest_email_verification(db, user.id, user.email)
+    # Legacy accounts (created before verification flow) are treated as verified.
+    if not latest:
+        return True
+    return bool(latest.is_verified)
+
+
+def _create_email_verification_request(db: Session, user: User) -> EmailVerification:
+    db.query(EmailVerification).filter(
+        EmailVerification.user_id == user.id,
+        func.lower(EmailVerification.email) == _normalize_email(user.email),
+        EmailVerification.is_verified == False,  # noqa: E712
+    ).delete(synchronize_session=False)
+
+    verification = EmailVerification(
+        user_id=user.id,
+        email=_normalize_email(user.email),
+        token=secrets.token_urlsafe(48),
+        expires_at=datetime.utcnow() + timedelta(hours=EMAIL_VERIFICATION_TTL_HOURS),
+        is_verified=False,
+    )
+    db.add(verification)
+    db.commit()
+    db.refresh(verification)
+    return verification
+
+
+def _send_verification_email(recipient_email: str, username: str, verification_link: str) -> None:
+    if not _is_mail_delivery_configured():
+        raise RuntimeError("Email delivery is not configured")
+
+    msg = EmailMessage()
+    msg["Subject"] = "Xac thuc email tai khoan AutoFill AI"
+    sender_name = (settings.SMTP_FROM_NAME or "AutoFill AI").strip() or "AutoFill AI"
+    msg["From"] = f"{sender_name} <{settings.SMTP_FROM_EMAIL}>"
+    msg["To"] = recipient_email
+    text_body = (
+        f"Chao {username},\n\n"
+        "Cam on ban da dang ky AutoFill AI.\n"
+        "Vui long xac thuc email bang cach mo lien ket duoi day:\n"
+        f"{verification_link}\n\n"
+        f"Lien ket co hieu luc trong {EMAIL_VERIFICATION_TTL_HOURS} gio.\n"
+        "Neu ban khong thuc hien yeu cau nay, vui long bo qua email.\n"
+    )
+    msg.set_content(text_body)
+
+    smtp_host = settings.SMTP_HOST
+    smtp_port = int(settings.SMTP_PORT)
+    context = ssl.create_default_context()
+    if settings.SMTP_USE_SSL:
+        with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=15, context=context) as server:
+            if settings.SMTP_USERNAME:
+                server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD or "")
+            server.send_message(msg)
+        return
+
+    with smtplib.SMTP(smtp_host, smtp_port, timeout=15) as server:
+        if settings.SMTP_USE_TLS:
+            server.starttls(context=context)
+        if settings.SMTP_USERNAME:
+            server.login(settings.SMTP_USERNAME, settings.SMTP_PASSWORD or "")
+        server.send_message(msg)
+
+
+def _send_or_raise_verification_email(db: Session, user: User) -> EmailVerification:
+    verification = _create_email_verification_request(db, user)
+    try:
+        link = _build_verification_link(verification.token)
+        _send_verification_email(user.email, user.username, link)
+        return verification
+    except Exception as exc:
+        logger.error(f"Failed to send verification email to {user.email}: {exc}")
+        raise
 
 
 def _get_session_secret() -> str:
@@ -210,31 +383,158 @@ async def start_guest_mode():
     _set_guest_mode_cookie(response)
     return response
 
+
+@router.get("/google/start")
+async def google_oauth_start(next: str = "/home"):
+    """Start Google OAuth login flow."""
+    if not _is_google_oauth_configured():
+        return RedirectResponse(url="/login?google=not_configured", status_code=303)
+
+    safe_next = (next or "/home").strip()
+    if not safe_next.startswith("/") or safe_next.startswith("//"):
+        safe_next = "/home"
+
+    _cleanup_expired_google_states()
+    state = secrets.token_urlsafe(24)
+    google_oauth_states[state] = {
+        "next": safe_next,
+        "created_at": int(time.time()),
+        "expires_at": int(time.time()) + int(settings.GOOGLE_OAUTH_STATE_TTL_SECONDS),
+    }
+
+    return RedirectResponse(url=_build_google_auth_url(state), status_code=303)
+
+
+@router.get("/google/config")
+async def google_oauth_config_status():
+    """Expose Google OAuth readiness for login UI."""
+    ready = _is_google_oauth_configured()
+    return JSONResponse(
+        status_code=200,
+        content={
+            "enabled": ready,
+            "configured": ready,
+            "missing": [] if ready else [
+                name for name, value in {
+                    "GOOGLE_OAUTH_CLIENT_ID": settings.GOOGLE_OAUTH_CLIENT_ID,
+                    "GOOGLE_OAUTH_CLIENT_SECRET": settings.GOOGLE_OAUTH_CLIENT_SECRET,
+                }.items() if not value
+            ],
+        },
+    )
+
+
+@router.get("/google/callback")
+async def google_oauth_callback(code: str = "", state: str = "", db: Session = Depends(get_db)):
+    """Google OAuth callback: only allow existing registered emails."""
+    if not _is_google_oauth_configured():
+        return RedirectResponse(url="/login?google=not_configured", status_code=303)
+
+    _cleanup_expired_google_states()
+    state_payload = google_oauth_states.pop((state or "").strip(), None)
+    if not state_payload:
+        return RedirectResponse(url="/login?google=invalid_state", status_code=303)
+
+    next_url = state_payload.get("next", "/home")
+    if not code:
+        return RedirectResponse(url="/login?google=missing_code", status_code=303)
+
+    try:
+        token_payload = urlencode(
+            {
+                "code": code,
+                "client_id": settings.GOOGLE_OAUTH_CLIENT_ID,
+                "client_secret": settings.GOOGLE_OAUTH_CLIENT_SECRET,
+                "redirect_uri": settings.GOOGLE_OAUTH_REDIRECT_URI,
+                "grant_type": "authorization_code",
+            }
+        ).encode("utf-8")
+
+        token_request = urlopen(
+            GOOGLE_TOKEN_ENDPOINT,
+            data=token_payload,
+            timeout=15,
+        )
+        token_response = json.loads(token_request.read().decode("utf-8"))
+        access_token = (token_response.get("access_token") or "").strip()
+        if not access_token:
+            return RedirectResponse(url="/login?google=token_error", status_code=303)
+
+        userinfo_request = urlopen(
+            f"{GOOGLE_USERINFO_ENDPOINT}?{urlencode({'access_token': access_token})}",
+            timeout=15,
+        )
+        profile = json.loads(userinfo_request.read().decode("utf-8"))
+        email = _normalize_email(profile.get("email", ""))
+        email_verified = bool(profile.get("email_verified"))
+        if not email or not _is_valid_email(email) or not email_verified:
+            return RedirectResponse(url="/login?google=invalid_email", status_code=303)
+
+        user = db.query(User).filter(func.lower(User.email) == email).first()
+        if not user:
+            return RedirectResponse(url="/login?google=email_not_registered", status_code=303)
+        if not user.is_active:
+            return RedirectResponse(url="/login?google=account_disabled", status_code=303)
+        if not _is_user_email_verified(db, user):
+            return RedirectResponse(url="/login?google=email_not_verified", status_code=303)
+
+        user.last_login = datetime.utcnow()
+        db.add(UserActivity(
+            user_id=user.id,
+            activity_type="login_google",
+            feature="auth",
+            path="/google/callback",
+            method="GET",
+            description="User login successful via Google OAuth",
+        ))
+        db.commit()
+        db.refresh(user)
+
+        user_info = {
+            "user_id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "is_admin": bool(user.is_admin),
+            "login_time": datetime.utcnow().isoformat(),
+        }
+        response = RedirectResponse(url=next_url, status_code=303)
+        session_id = _set_session_cookie(response, user.id)
+        _clear_guest_mode_cookie(response)
+        sessions[session_id] = user_info
+        return response
+    except Exception as exc:
+        logger.error(f"Google OAuth callback failed: {exc}")
+        return RedirectResponse(url="/login?google=oauth_error", status_code=303)
+
 @router.post("/login")
 async def login(request: Request, db: Session = Depends(get_db)):
     """Handle user login"""
     try:
         data = await request.json()
-        username = data.get("username", "").strip()
+        identifier = (data.get("identifier") or data.get("username") or "").strip()
         password = data.get("password", "").strip()
         
-        if not username or not password:
+        if not identifier or not password:
             return _no_store_json_response(
                 status_code=400,
-                content={"error": "Tên đăng nhập và mật khẩu không được để trống"}
+                content={"error": "Tên đăng nhập/email và mật khẩu không được để trống"}
             )
-        
-        # Support login by username or email
-        user = db.query(User).filter(
-            or_(
-                func.lower(User.username) == username.lower(),
-                func.lower(User.email) == username.lower(),
-            )
-        ).first()
+
+        if "@" in identifier:
+            email = _normalize_email(identifier)
+            if not _is_valid_email(email):
+                return _no_store_json_response(
+                    status_code=400,
+                    content={"error": "Email đăng nhập không đúng định dạng"}
+                )
+            user = db.query(User).filter(func.lower(User.email) == email).first()
+        else:
+            user = db.query(User).filter(func.lower(User.username) == identifier.lower()).first()
+
         if not user:
             return _no_store_json_response(
                 status_code=401,
-                content={"error": "Tên đăng nhập hoặc mật khẩu không chính xác"}
+                content={"error": "Thông tin đăng nhập không chính xác"}
             )
 
         # Support legacy plaintext values while migrating existing data
@@ -242,13 +542,40 @@ async def login(request: Request, db: Session = Depends(get_db)):
         if not password_ok:
             return _no_store_json_response(
                 status_code=401,
-                content={"error": "Tên đăng nhập hoặc mật khẩu không chính xác"}
+                content={"error": "Thông tin đăng nhập không chính xác"}
             )
 
         if not user.is_active:
             return _no_store_json_response(
                 status_code=403,
                 content={"error": "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên."}
+            )
+
+        if not _is_user_email_verified(db, user):
+            email_sent = False
+            email_error = None
+            try:
+                _send_or_raise_verification_email(db, user)
+                email_sent = True
+            except Exception as exc:
+                email_error = str(exc)
+
+            if email_sent:
+                return _no_store_json_response(
+                    status_code=403,
+                    content={
+                        "error": "Email chưa được xác thực. Chúng tôi đã gửi lại email xác thực, vui lòng kiểm tra hộp thư.",
+                        "needs_email_verification": True,
+                    },
+                )
+
+            logger.warning(f"Could not resend verification email for {user.email}: {email_error}")
+            return _no_store_json_response(
+                status_code=403,
+                content={
+                    "error": "Email chưa được xác thực. Hệ thống chưa thể gửi email xác thực, vui lòng liên hệ quản trị viên.",
+                    "needs_email_verification": True,
+                },
             )
 
         user.last_login = datetime.utcnow()
@@ -303,7 +630,7 @@ async def signup(request: Request, db: Session = Depends(get_db)):
         data = await request.json()
         full_name = data.get("full_name", "").strip()
         username = data.get("username", "").strip()
-        email = data.get("email", "").strip()
+        email = _normalize_email(data.get("email", ""))
         password = data.get("password", "").strip()
         
         if not full_name:
@@ -316,11 +643,11 @@ async def signup(request: Request, db: Session = Depends(get_db)):
                 content={"error": "Vui lòng điền đầy đủ tên đăng nhập, email và mật khẩu"}
             )
 
-        # Basic email format validation
-        if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", email):
+        # Strict email format validation
+        if not _is_valid_email(email):
             return JSONResponse(
                 status_code=400,
-                content={"error": "Email không hợp lệ"}
+                content={"error": "Email không hợp lệ. Vui lòng nhập đúng địa chỉ email (ví dụ: ten@domain.com)"}
             )
         
         # Check username length
@@ -335,6 +662,14 @@ async def signup(request: Request, db: Session = Depends(get_db)):
             return JSONResponse(
                 status_code=400,
                 content={"error": "Mật khẩu phải có tối thiểu 6 ký tự"}
+            )
+
+        if not _is_mail_delivery_configured():
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "error": "Hệ thống chưa cấu hình gửi email xác thực. Vui lòng liên hệ quản trị viên.",
+                },
             )
         
         # Check if username already exists
@@ -365,6 +700,16 @@ async def signup(request: Request, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(new_user)
 
+        try:
+            _send_or_raise_verification_email(db, new_user)
+        except Exception:
+            db.delete(new_user)
+            db.commit()
+            return JSONResponse(
+                status_code=500,
+                content={"error": "Không thể gửi email xác thực. Vui lòng thử lại sau."},
+            )
+
         # Keep extended profile info aligned with /session response shape
         user_profile_cache[new_user.id] = {
             "full_name": full_name,
@@ -377,7 +722,7 @@ async def signup(request: Request, db: Session = Depends(get_db)):
             status_code=201,
             content={
                 "success": True,
-                "message": "Đăng ký thành công! Vui lòng đăng nhập.",
+                "message": "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản trước khi đăng nhập.",
                 "user": {
                     "full_name": full_name,
                     "username": username,
@@ -390,6 +735,100 @@ async def signup(request: Request, db: Session = Depends(get_db)):
         return JSONResponse(
             status_code=500,
             content={"error": f"Lỗi đăng ký: {str(e)}"}
+        )
+
+
+@router.get("/verify-email")
+async def verify_email(token: str = "", db: Session = Depends(get_db)):
+    """Verify account email from verification link."""
+    safe_token = (token or "").strip()
+    if not safe_token:
+        return RedirectResponse(url="/login?verified=invalid", status_code=303)
+
+    verification = db.query(EmailVerification).filter(EmailVerification.token == safe_token).first()
+    if not verification:
+        return RedirectResponse(url="/login?verified=invalid", status_code=303)
+
+    if verification.is_verified:
+        return RedirectResponse(url="/login?verified=already", status_code=303)
+
+    if verification.expires_at and verification.expires_at < datetime.utcnow():
+        return RedirectResponse(url="/login?verified=expired", status_code=303)
+
+    user = db.query(User).filter(User.id == verification.user_id).first()
+    if not user:
+        return RedirectResponse(url="/login?verified=invalid", status_code=303)
+
+    verification.is_verified = True
+    user.updated_at = datetime.utcnow()
+    db.add(UserActivity(
+        user_id=user.id,
+        activity_type="email_verified",
+        feature="auth",
+        path="/verify-email",
+        method="GET",
+        description="User email verified successfully",
+    ))
+    db.commit()
+    return RedirectResponse(url="/login?verified=success", status_code=303)
+
+
+@router.post("/resend-verification")
+async def resend_verification(request: Request, db: Session = Depends(get_db)):
+    """Resend email verification link to an unverified account."""
+    try:
+        if not _is_mail_delivery_configured():
+            return JSONResponse(
+                status_code=503,
+                content={"error": "Hệ thống chưa cấu hình gửi email xác thực."},
+            )
+
+        data = await request.json()
+        identifier = (data.get("identifier") or data.get("email") or "").strip()
+        if not identifier:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Vui lòng nhập email đã đăng ký."},
+            )
+
+        normalized_email = _normalize_email(identifier)
+        if not _is_valid_email(normalized_email):
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Email không hợp lệ."},
+            )
+
+        user = db.query(User).filter(func.lower(User.email) == normalized_email).first()
+        if not user:
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "success": True,
+                    "message": "Nếu email đã đăng ký, chúng tôi đã gửi lại email xác thực.",
+                },
+            )
+
+        if _is_user_email_verified(db, user):
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "success": True,
+                    "message": "Email đã được xác thực, bạn có thể đăng nhập ngay.",
+                },
+            )
+
+        _send_or_raise_verification_email(db, user)
+        return JSONResponse(
+            status_code=200,
+            content={
+                "success": True,
+                "message": "Đã gửi lại email xác thực. Vui lòng kiểm tra hộp thư.",
+            },
+        )
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Gửi lại email xác thực thất bại: {str(e)}"},
         )
 
 @router.post("/logout")

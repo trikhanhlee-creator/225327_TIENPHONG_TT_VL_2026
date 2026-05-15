@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     # API Configuration
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "AutoFill AI System"
+    APP_BASE_URL: str = os.getenv("APP_BASE_URL", "http://localhost:8000")
     
     # CORS Configuration
     BACKEND_CORS_ORIGINS: list = [
@@ -52,6 +53,37 @@ class Settings(BaseSettings):
 
     COMPOSER_MAX_SUGGESTIONS: int = 3
     COMPOSER_SUGGESTION_LENGTH: int = 10
+
+    # Email verification / SMTP
+    SMTP_HOST: str = os.getenv("SMTP_HOST", "")
+    SMTP_PORT: int = int(os.getenv("SMTP_PORT", "587"))
+    SMTP_USERNAME: str = os.getenv("SMTP_USERNAME", "")
+    SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
+    SMTP_FROM_EMAIL: str = os.getenv("SMTP_FROM_EMAIL", "")
+    SMTP_FROM_NAME: str = os.getenv("SMTP_FROM_NAME", "AutoFill AI")
+    SMTP_USE_TLS: bool = os.getenv("SMTP_USE_TLS", "true").lower() in {"1", "true", "yes", "on"}
+    SMTP_USE_SSL: bool = os.getenv("SMTP_USE_SSL", "false").lower() in {"1", "true", "yes", "on"}
+
+    # RAG / semantic memory (embeddings stored in DB; cosine search in-process)
+    RAG_ENABLED: bool = os.getenv("RAG_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+    RAG_EMBEDDING_MODEL: str = os.getenv("RAG_EMBEDDING_MODEL", "text-embedding-3-small")
+    RAG_SEMANTIC_TOP_K: int = int(os.getenv("RAG_SEMANTIC_TOP_K", "5"))
+    RAG_MAX_CHUNKS_SCAN: int = int(os.getenv("RAG_MAX_CHUNKS_SCAN", "2000"))
+    RAG_CHUNK_CHAR_LIMIT: int = int(os.getenv("RAG_CHUNK_CHAR_LIMIT", "480"))
+    RAG_CHUNK_OVERLAP: int = int(os.getenv("RAG_CHUNK_OVERLAP", "64"))
+    RAG_EMBED_BATCH_SIZE: int = int(os.getenv("RAG_EMBED_BATCH_SIZE", "64"))
+
+    # Google OAuth (login with Google for existing accounts)
+    GOOGLE_OAUTH_CLIENT_ID: str = os.getenv("GOOGLE_OAUTH_CLIENT_ID", os.getenv("GOOGLE_CLIENT_ID", ""))
+    GOOGLE_OAUTH_CLIENT_SECRET: str = os.getenv(
+        "GOOGLE_OAUTH_CLIENT_SECRET",
+        os.getenv("GOOGLE_CLIENT_SECRET", ""),
+    )
+    GOOGLE_OAUTH_REDIRECT_URI: str = os.getenv(
+        "GOOGLE_OAUTH_REDIRECT_URI",
+        os.getenv("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/auth/google/callback"),
+    )
+    GOOGLE_OAUTH_STATE_TTL_SECONDS: int = int(os.getenv("GOOGLE_OAUTH_STATE_TTL_SECONDS", "600"))
     
     class Config:
         env_file = ".env"

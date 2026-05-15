@@ -22,9 +22,13 @@ from app.services.file_parser import FileParserFactory, FileField
 from app.core.logger import logger
 from app.core.file_utils import extract_clean_filename
 from app.core.auth import get_current_user
+from app.services.autofill.orchestrator import AutofillOrchestrator
+from app.services.autofill.memory_service import UserMemoryService
 import re
 
 router = APIRouter(prefix="/api/word", tags=["word"])
+autofill_orchestrator = AutofillOrchestrator()
+template_form_instance_map: dict[int, int] = {}
 
 SUBMISSION_META_KEY = "__autofill_meta__"
 
@@ -38,6 +42,11 @@ class WordDocxExportRequest(BaseModel):
     submission_ids: list[int]
     file_name: str | None = None
     user_id: int | None = None
+
+
+class WordFieldLabelUpdateRequest(BaseModel):
+    field_name: str
+    new_label: str
 
 
 def _iter_doc_paragraphs(doc: Document) -> Iterable:
@@ -211,6 +220,62 @@ def _sanitize_field_label(text: str) -> str:
     return " ".join(word[:1].upper() + word[1:].lower() for word in value.split())
 
 
+def _normalize_custom_field_label(text: str) -> str:
+    """Normalize user custom label while preserving intended casing."""
+    value = (text or "").strip()
+    value = re.sub(r"\s+", " ", value).strip()
+    return value
+
+
+def _build_field_label_snapshot(template_fields: list[dict]) -> dict[str, str]:
+    snapshot: dict[str, str] = {}
+    for field_data in template_fields:
+        field_name = str(field_data.get("name") or "").strip()
+        if not field_name:
+            continue
+
+        field_label = _normalize_custom_field_label(str(field_data.get("label") or ""))
+        snapshot[field_name] = field_label or field_name
+    return snapshot
+
+
+def _normalize_label_snapshot(raw_snapshot: object) -> dict[str, str]:
+    if not isinstance(raw_snapshot, dict):
+        return {}
+
+    normalized: dict[str, str] = {}
+    for raw_name, raw_label in raw_snapshot.items():
+        field_name = str(raw_name or "").strip()
+        if not field_name:
+            continue
+
+        field_label = _normalize_custom_field_label(str(raw_label or ""))
+        if not field_label:
+            field_label = field_name
+        normalized[field_name] = field_label
+    return normalized
+
+
+def _classify_field_label_state(
+    current_labels: dict[str, str],
+    submitted_labels: dict[str, str]
+) -> tuple[str, bool, int]:
+    if not submitted_labels:
+        return "unknown", False, 0
+
+    diff_count = 0
+    for field_name, current_label in current_labels.items():
+        submitted_label = submitted_labels.get(field_name)
+        if not submitted_label:
+            continue
+        if submitted_label != current_label:
+            diff_count += 1
+
+    if diff_count > 0:
+        return "before_rename", True, diff_count
+    return "after_rename", False, 0
+
+
 def _to_field_name(label: str) -> str:
     """Create a snake_case field name from any label string."""
     value = (label or "").lower().strip()
@@ -243,9 +308,15 @@ def parse_template_fields(fields_json_raw: str | None) -> list[dict]:
     normalized: list[dict] = []
     for idx, item in enumerate(payload):
         if isinstance(item, dict):
-            raw_label = item.get("label") or item.get("name") or f"Field {idx + 1}"
-            label = _sanitize_field_label(str(raw_label)) or f"Field {idx + 1}"
-            name = _to_field_name(str(item.get("name") or label))
+            raw_name = str(item.get("name") or "").strip()
+            raw_label = _normalize_custom_field_label(str(item.get("label") or ""))
+            if raw_label:
+                label = raw_label
+            else:
+                fallback_label = raw_name or f"Field {idx + 1}"
+                label = _sanitize_field_label(fallback_label) or f"Field {idx + 1}"
+
+            name = _to_field_name(raw_name or label)
             field_type = item.get("field_type") or "text"
             order = item.get("order", idx)
         elif isinstance(item, str):
@@ -260,7 +331,8 @@ def parse_template_fields(fields_json_raw: str | None) -> list[dict]:
             "name": str(name),
             "label": str(label),
             "field_type": str(field_type),
-            "order": int(order) if isinstance(order, (int, float)) else idx
+            "order": int(order) if isinstance(order, (int, float)) else idx,
+            "label_updated_at": str(item.get("label_updated_at") or "").strip() if isinstance(item, dict) else ""
         })
 
     return normalized
@@ -468,6 +540,110 @@ def ensure_template_fields_exist(db: Session, form_id: int, fields_json: list[di
     return field_by_name
 
 
+@router.post("/autofill/{template_id}")
+async def run_word_template_autofill(
+    template_id: int,
+    user_id: int | None = Query(None, description="ID của user (optional, admin only)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Run LLM autofill for a Word template canonical form instance."""
+    effective_user_id = resolve_effective_user_id(current_user, user_id)
+    template = db.query(WordTemplate).filter(
+        WordTemplate.id == template_id,
+        WordTemplate.user_id == effective_user_id,
+    ).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template không tồn tại")
+
+    form_instance_id = template_form_instance_map.get(template_id)
+    if not form_instance_id:
+        if not os.path.exists(template.file_path):
+            raise HTTPException(status_code=404, detail="File template không tồn tại")
+        _, form_instance_id = await autofill_orchestrator.parse_and_prepare_schema(
+            db=db,
+            user_id=effective_user_id,
+            file_path=template.file_path,
+            source_type="word",
+            source_ref=str(template.id),
+            original_filename=template.original_filename,
+        )
+        template_form_instance_map[template_id] = form_instance_id
+
+    result = await autofill_orchestrator.run_autofill(
+        db=db,
+        user_id=effective_user_id,
+        form_instance_id=form_instance_id,
+    )
+    return {
+        "status": "success",
+        "template_id": template_id,
+        "form_instance_id": form_instance_id,
+        **result,
+    }
+
+
+@router.get("/autofill-status/{template_id}")
+async def get_word_autofill_status(
+    template_id: int,
+    user_id: int | None = Query(None, description="ID của user (optional, admin only)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Quick endpoint to help UI know whether LLM form instance is ready."""
+    effective_user_id = resolve_effective_user_id(current_user, user_id)
+    template = db.query(WordTemplate).filter(
+        WordTemplate.id == template_id,
+        WordTemplate.user_id == effective_user_id,
+    ).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template không tồn tại")
+    return {
+        "status": "success",
+        "template_id": template_id,
+        "form_instance_id": template_form_instance_map.get(template_id),
+        "ready": bool(template_form_instance_map.get(template_id)),
+    }
+
+
+def _sync_word_field_placeholder(
+    db: Session,
+    form_id: int,
+    field_name: str,
+    field_label: str
+) -> None:
+    """Best effort: keep `fields.placeholder` aligned with label edits."""
+    bind = db.get_bind()
+    inspector = inspect(bind)
+    if not inspector.has_table("fields"):
+        return
+
+    columns = {col["name"] for col in inspector.get_columns("fields")}
+    assignments: list[str] = []
+    params: dict[str, object] = {
+        "form_id": form_id,
+        "field_name": field_name,
+    }
+
+    if "placeholder" in columns:
+        assignments.append("placeholder = :placeholder")
+        params["placeholder"] = field_label
+    if "updated_at" in columns:
+        assignments.append("updated_at = CURRENT_TIMESTAMP")
+
+    if not assignments:
+        return
+
+    db.execute(
+        text(
+            f"UPDATE fields SET {', '.join(assignments)} "
+            "WHERE form_id = :form_id AND field_name = :field_name"
+        ),
+        params
+    )
+    db.commit()
+
+
 def resolve_effective_user_id(current_user: User, requested_user_id: int | None) -> int:
     """Resolve target user scope. Non-admin users can only access their own data."""
     if requested_user_id is None:
@@ -548,6 +724,20 @@ async def upload_word_template(
         fields_json = parse_template_fields(template.fields_json)
         word_form_id = get_or_create_word_form_id(db, effective_user_id)
         ensure_template_fields_exist(db, word_form_id, fields_json)
+        form_instance_id = None
+        try:
+            _, form_instance_id = await autofill_orchestrator.parse_and_prepare_schema(
+                db=db,
+                user_id=effective_user_id,
+                file_path=file_path,
+                source_type="word",
+                source_ref=str(template.id),
+                original_filename=file.filename,
+            )
+            if form_instance_id:
+                template_form_instance_map[template.id] = form_instance_id
+        except Exception as parse_error:
+            logger.warning(f"Unable to build canonical form instance for Word template {template.id}: {parse_error}")
         
         auto_generated = len(fields) == 1 and "nội dung" in [f.to_dict() for f in fields][0].get("label", "").lower()
         
@@ -558,6 +748,7 @@ async def upload_word_template(
             "file_type": file_ext,
             "fields_count": len(fields),
             "fields": [f.to_dict() for f in fields],
+            "form_instance_id": form_instance_id,
             "auto_generated_fields": auto_generated,
             "message": "Upload và parse thành công" if not auto_generated else "Upload thành công. Không tìm thấy trường cấu trúc, đã tạo trường mặc định."
         }
@@ -660,8 +851,88 @@ async def get_template_detail(
         "filename": extract_clean_filename(template.original_filename),
         "fields": enriched_fields,
         "form_id": form_id,
+        "form_instance_id": template_form_instance_map.get(template.id),
         "created_at": template.created_at.isoformat() if template.created_at else None,
         "submissions_count": submissions_count
+    }
+
+
+@router.put("/template/{template_id}/field-label")
+async def update_template_field_label(
+    template_id: int,
+    request: WordFieldLabelUpdateRequest,
+    user_id: int | None = Query(None, description="ID của user (optional, admin only)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update display label for a template field without changing submitted keys."""
+    effective_user_id = resolve_effective_user_id(current_user, user_id)
+
+    template = db.query(WordTemplate).filter(
+        WordTemplate.id == template_id,
+        WordTemplate.user_id == effective_user_id
+    ).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template không tồn tại")
+
+    target_field_name = str(request.field_name or "").strip()
+    if not target_field_name:
+        raise HTTPException(status_code=400, detail="field_name không hợp lệ")
+
+    new_label = _normalize_custom_field_label(request.new_label)
+    if not new_label:
+        raise HTTPException(status_code=400, detail="new_label không hợp lệ")
+
+    fields_json = parse_template_fields(template.fields_json)
+    if not fields_json:
+        raise HTTPException(status_code=404, detail="Template không có trường để cập nhật")
+
+    target_found = False
+    for field_data in fields_json:
+        field_name = str(field_data.get("name") or "").strip()
+        if field_name != target_field_name:
+            continue
+
+        field_data["label"] = new_label
+        field_data["label_updated_at"] = datetime.utcnow().isoformat()
+        target_found = True
+        break
+
+    if not target_found:
+        raise HTTPException(status_code=404, detail="Không tìm thấy trường cần đổi tên")
+
+    template.fields_json = json.dumps(fields_json, ensure_ascii=False)
+    db.commit()
+    db.refresh(template)
+
+    try:
+        form_id = get_or_create_word_form_id(db, effective_user_id)
+        _sync_word_field_placeholder(db, form_id, target_field_name, new_label)
+    except Exception as sync_error:
+        db.rollback()
+        logger.warning(f"Unable to sync word field placeholder for '{target_field_name}': {sync_error}")
+        form_id = get_or_create_word_form_id(db, effective_user_id)
+
+    enriched_fields = parse_template_fields(template.fields_json)
+    field_by_name = ensure_template_fields_exist(db, form_id, enriched_fields)
+    response_fields = []
+    for idx, field_data in enumerate(enriched_fields):
+        field_name = str(field_data.get("name") or "").strip()
+        field_label = str(field_data.get("label") or field_name).strip()
+        response_fields.append({
+            **field_data,
+            "field_id": field_by_name.get(field_name, -1),
+            "field_index": idx,
+            "field_label": field_label,
+        })
+
+    return {
+        "status": "success",
+        "template_id": template.id,
+        "field_name": target_field_name,
+        "field_label": new_label,
+        "fields": response_fields,
+        "message": "Đã cập nhật tên trường thành công"
     }
 
 
@@ -696,6 +967,13 @@ async def submit_form(
         request_data = {}
 
     data, submission_meta = _split_submission_payload(request_data)
+
+    template_fields_for_snapshot = parse_template_fields(template.fields_json)
+    label_snapshot = _build_field_label_snapshot(template_fields_for_snapshot)
+    if label_snapshot:
+        if not isinstance(submission_meta, dict):
+            submission_meta = {}
+        submission_meta["field_label_snapshot"] = label_snapshot
     logger.info(f"Received form data: {data}")
     
     try:
@@ -714,7 +992,7 @@ async def submit_form(
         
         # Lưu entries
         try:
-            fields_json = parse_template_fields(template.fields_json)
+            fields_json = template_fields_for_snapshot
             logger.info(f"Template has {len(fields_json)} fields")
             field_by_name = ensure_template_fields_exist(db, form_id, fields_json)
             entries_to_insert: list[Entry] = []
@@ -749,6 +1027,24 @@ async def submit_form(
                 db.add_all(entries_to_insert)
                 db.commit()
                 logger.info(f"Saved {len(entries_to_insert)} entries for submission {submission.id}")
+                for entry in entries_to_insert:
+                    try:
+                        normalized_field = db.query(Field).filter(Field.id == entry.field_id).first()
+                        field_key = normalized_field.field_name if normalized_field else ""
+                        if field_key:
+                            UserMemoryService.upsert_memory_value(
+                                db=db,
+                                user_id=effective_user_id,
+                                field_key=field_key,
+                                value_text=entry.value,
+                                memory_type="entry",
+                                source_ref=f"word_submission:{submission.id}",
+                                confidence=0.7,
+                                is_confirmed=False,
+                            )
+                    except Exception as memory_error:
+                        logger.warning(f"Unable to sync Word entry to memory: {memory_error}")
+                db.commit()
         
         except Exception as e:
             logger.error(f"Error saving entries: {str(e)}", exc_info=True)
@@ -787,12 +1083,22 @@ async def get_submissions(
     normalized_items = []
     for s in submissions:
         data_map, meta = _load_submission_payload(s.submission_data)
+        template_fields = parse_template_fields(s.template.fields_json if s.template else None)
+        current_label_snapshot = _build_field_label_snapshot(template_fields)
+        submitted_label_snapshot = _normalize_label_snapshot(meta.get("field_label_snapshot") if isinstance(meta, dict) else None)
+        label_state, has_renamed_fields, renamed_field_count = _classify_field_label_state(
+            current_label_snapshot,
+            submitted_label_snapshot
+        )
         normalized_items.append(
             {
                 "id": s.id,
                 "template_id": s.template_id,
                 "template_name": s.template.template_name,
                 "data": data_map,
+                "field_label_state": label_state,
+                "has_renamed_fields": has_renamed_fields,
+                "renamed_field_count": renamed_field_count,
                 "history_group_id": str(meta.get("group_id") or "").strip() or None,
                 "created_at": s.created_at.isoformat()
             }
@@ -819,12 +1125,38 @@ async def get_submission_detail(
         raise HTTPException(status_code=404, detail="Submission không tồn tại")
     
     data_map, meta = _load_submission_payload(submission.submission_data)
+    template_fields = parse_template_fields(submission.template.fields_json if submission.template else None)
+    template_field_map: dict[str, dict] = {}
+    current_label_snapshot = _build_field_label_snapshot(template_fields)
+    submitted_label_snapshot = _normalize_label_snapshot(meta.get("field_label_snapshot") if isinstance(meta, dict) else None)
+    label_state, has_renamed_fields, renamed_field_count = _classify_field_label_state(
+        current_label_snapshot,
+        submitted_label_snapshot
+    )
+    if template_fields:
+        form_id = get_or_create_word_form_id(db, effective_user_id)
+        field_by_name = ensure_template_fields_exist(db, form_id, template_fields)
+        for field_data in template_fields:
+            field_name = str(field_data.get("name") or "").strip()
+            if not field_name:
+                continue
+            template_field_map[field_name] = {
+                "field_id": field_by_name.get(field_name, -1),
+                "field_label": str(field_data.get("label") or field_name).strip(),
+                "field_type": str(field_data.get("field_type") or "text").strip() or "text",
+            }
 
     return {
         "id": submission.id,
         "template_id": submission.template_id,
         "template_name": submission.template.template_name,
         "data": data_map,
+        "template_fields": template_field_map,
+        "field_label_state": label_state,
+        "has_renamed_fields": has_renamed_fields,
+        "renamed_field_count": renamed_field_count,
+        "submitted_field_labels": submitted_label_snapshot,
+        "current_field_labels": current_label_snapshot,
         "history_group_id": str(meta.get("group_id") or "").strip() or None,
         "created_at": submission.created_at.isoformat(),
         "updated_at": submission.created_at.isoformat()
@@ -982,7 +1314,16 @@ async def update_submission(
 
         _, current_meta = _load_submission_payload(submission.submission_data)
         incoming_data_map, incoming_meta = _split_submission_payload(incoming_payload)
-        effective_meta = incoming_meta if incoming_meta else current_meta
+        effective_meta = dict(current_meta or {})
+        if incoming_meta:
+            effective_meta.update(incoming_meta)
+
+        # Khi người dùng chỉnh sửa submission, cập nhật mốc label snapshot theo template hiện tại
+        # để phân loại đúng "sau đổi tên" cho các trang đã được chỉnh sửa.
+        template_fields_for_snapshot = parse_template_fields(submission.template.fields_json if submission.template else None)
+        label_snapshot = _build_field_label_snapshot(template_fields_for_snapshot)
+        if label_snapshot:
+            effective_meta["field_label_snapshot"] = label_snapshot
 
         submission.submission_data = json.dumps(
             _compose_submission_payload(incoming_data_map, effective_meta),

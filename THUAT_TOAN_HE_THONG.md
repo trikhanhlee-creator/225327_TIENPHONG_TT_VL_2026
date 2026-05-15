@@ -2,38 +2,50 @@
 
 ## 1) Tổng quan
 
-Hệ thống đang dùng kiến trúc **hybrid** gồm:
-- Thuật toán rule-based (dễ kiểm soát, chạy nhanh, dễ debug)
-- Heuristic parsing cho tài liệu biểu mẫu
-- AI orchestration có failover để đảm bảo luôn có gợi ý
+Hệ thống đang dùng kiến trúc **hybrid**:
 
-Các khối logic chính nằm trong:
-- `backend/app/ai/rule_engine.py`
-- `backend/app/api/routes/suggestions.py`
-- `backend/app/services/file_parser.py`
-- `backend/app/api/routes/excel.py`
-- `backend/app/services/ai_composer_service.py`
-- `backend/app/api/routes/word.py`
+- Thuật toán rule-based (lịch sử nhập, matching trường, fuzzy Excel)
+- Heuristic parsing cho tài liệu biểu mẫu (Word/Excel/PDF/…)
+- **Pipeline Autofill đa-agent** (LLM + fallback deterministic)
+- **RAG tùy chọn**: embedding vector + cosine similarity trên chunks bộ nhớ
+- AI Composer (`AIComposerService`) với failover provider/model cho soạn thảo và JSON tasks
+
+Các khối logic chính (tham chiếu mã nguồn):
+
+| Khu vực | File / thư mục |
+|--------|----------------|
+| Gợi ý theo field + cross-field | `backend/app/ai/rule_engine.py`, `backend/app/api/routes/suggestions.py` |
+| Parse đa định dạng | `backend/app/services/file_parser.py` |
+| Excel session + fuzzy map | `backend/app/api/routes/excel.py` |
+| Word template + export | `backend/app/api/routes/word.py` |
+| Soạn thảo AI + failover | `backend/app/services/ai_composer_service.py` |
+| Autofill agent + orchestrator | `backend/app/services/autofill/` |
+| API Autofill / Memory | `backend/app/api/routes/autofill.py`, `backend/app/api/routes/memory.py` |
+| Cấu hình AI & RAG | `backend/app/core/config.py` |
+| Model OpenRouter (API khác) | `backend/app/api/providers/config.py` |
 
 ---
 
 ## 2) Thuật toán gợi ý theo lịch sử nhập liệu (same-field suggestions)
 
 ### Mục tiêu
+
 Gợi ý giá trị cho cùng một trường dựa trên lịch sử của người dùng.
 
-### Cách hoạt động
-1. Lấy toàn bộ `Entry` theo `user_id + field_id`
-2. Tính tần suất xuất hiện từng giá trị (`frequency`)
-3. Tính thời gian sử dụng gần nhất (`recency`)
-4. Xếp hạng theo:
-   - `frequency` giảm dần
-   - nếu bằng nhau thì `recency` mới hơn đứng trước
-5. Trả về top-K gợi ý
+### `RuleEngine` (service layer)
+
+1. Lấy `Entry` theo `user_id + field_id`
+2. Tính **tần suất** (`frequency`) và **thời gian dùng gần nhất** (`recency`) cho từng giá trị
+3. Xếp hạng: `frequency` giảm dần; nếu hòa thì `recency` mới hơn đứng trước
+4. Trả top-K; trong code có kiểm tra tối thiểu số entry khi gọi qua `SuggestionService`
+
+### API `/api/suggestions` (FastAPI)
+
+Một số endpoint lấy trực tiếp `Entry` và sort theo `(frequency, latest_time)` — hành vi có thể khác nhẹ so với `RuleEngine` (ví dụ ngưỡng số lần nhập). Về bản chất vẫn là **thống kê lịch sử + sort**.
 
 ### Đặc điểm
-- Nhanh, ít tốn tài nguyên
-- Không cần vector DB/embedding cho trường hợp cơ bản
+
+- Nhanh, không bắt buộc embedding
 - Dễ giải thích kết quả
 
 ---
@@ -41,141 +53,192 @@ Gợi ý giá trị cho cùng một trường dựa trên lịch sử của ngư
 ## 3) Thuật toán gợi ý liên thông giữa các trường (cross-field suggestions)
 
 ### Mục tiêu
-Gợi ý cho trường hiện tại bằng cách tận dụng dữ liệu từ các trường tương tự (không chỉ đúng một field_id).
 
-### Pipeline
-1. **Chuẩn hóa tên trường**
-   - lowercase, bỏ dấu tiếng Việt, bỏ ký tự đặc biệt
-2. **Tính độ tương đồng field**
-   - exact match, containment, token overlap
-3. **Phân loại loại trường**
-   - `name`, `date`, `email`, `phone`, `identifier`, `general`
-4. **Lọc giá trị nhiễu**
-   - loại giá trị rác, sai định dạng theo category
-5. **Xử lý đặc biệt cho họ tên**
-   - có thể ghép `Họ + Tên` thành `Họ và tên`
-6. **Xếp hạng đa tín hiệu**
-   - similarity, frequency, latest_time, persona/template context
+Gợi ý cho trường hiện tại bằng dữ liệu từ các trường tương tự trên toàn lịch sử (Word/Excel/form).
 
-### Công thức similarity token-based
-\[
-score = 0.55 \cdot recall + 0.35 \cdot precision + 0.10 \cdot jaccard
-\]
+### Pipeline (tóm tắt)
+
+1. Chuẩn hóa tên trường (bỏ dấu, token hóa)
+2. Similarity token-based (exact / containment / kết hợp recall, precision, Jaccard)
+3. Phân loại category: `name`, `date`, `email`, `phone`, `identifier`, `general`
+4. Lọc nhiễu và xung đột “persona” (ví dụ ngữ cảnh giảng viên vs sinh viên)
+5. Xử lý họ tên: ghép họ + tên, tách full name khi cần
+6. Xếp hạng đa tín hiệu: template hits, persona, similarity, frequency, `latest_time`
 
 ---
 
-## 4) Thuật toán parse tài liệu đa định dạng
+## 4) Pipeline Autofill đa-agent (parse → hiểu trường → truy xuất → quyết định)
 
-## 4.1 DOCX Parser
-- Dùng regex phát hiện placeholder: `...`, `___`, `---`, checkbox, mẫu ngày-tháng-năm
-- Tách heading và field bằng heuristic:
-  - style, alignment, độ dài, từ khóa
-- Loại các dòng không phải field (footer, câu mô tả dài)
-- Trích label từ ngữ cảnh quanh placeholder
-- Chuẩn hóa label -> tạo `field_name` dạng snake_case
-- Loại trùng field (dedupe)
+Module: `backend/app/services/autofill/`, điều phối bởi `AutofillOrchestrator`.
 
-## 4.2 PDF/TXT/CSV Parser
-- Chọn dòng có dấu hiệu label (`:`, `.`, `_`, `-`, ...)
-- Lọc theo độ dài và tỷ lệ text hữu ích
-- Chuẩn hóa và suy luận type field
+### Luồng chuẩn bị form
 
-## 4.3 XLSX/XLS Parser
-- Tìm header row tốt nhất trong các dòng đầu
-- Ưu tiên dòng có nhiều keyword field
-- Fallback theo dòng có nhiều ô text nhất
-- Hỗ trợ merged header bằng cách nhìn lên dòng trên
-- Bỏ các dòng chỉ mang tính nhãn/đơn vị (ví dụ `%`)
+1. **Parse file** → schema dạng chuẩn (`LLMFormParseAgent`)
+2. **Hiểu trường** (aliases, kiểu, ngữ nghĩa bổ sung) → `LLMFieldUnderstandingAgent`
+3. **Lưu** `FormInstance` + các `FormInstanceField` trong DB
 
----
+### Luồng chạy autofill (theo từng field)
 
-## 5) Thuật toán fuzzy mapping field với Excel tham chiếu
+Đối với mỗi ô trong form đã parse:
 
-### Mục tiêu
-Map field từ form sang cột trong file Excel để sinh options tự động.
+1. **Truy xuất ứng viên** — `LLMMemoryRetrievalAgent.retrieve_for_field` (xem mục 5)
+2. **Quyết định giá trị** — `LLMAutofillDecisionAgent.decide`:
+   - Gọi LLM (qua `LLMClient` → `AIComposerService`) để chọn `{value, confidence, reason, source_index}` trong danh sách ứng viên
+   - Nếu JSON không hợp lệ: **fallback deterministic** — lấy ứng viên đầu sau khi sort
+3. **Ghi nhận** `AutofillRun` / `AutofillSuggestion` và thời gian chạy
 
-### Bước xử lý
-1. Chuẩn hóa key field/header
-2. Tính `match_score`
-   - exact: 100
-   - containment: cao (có penalty độ dài)
-   - token overlap: trung bình-khá
-3. Chọn header có điểm cao nhất (qua ngưỡng)
-4. Trích danh sách giá trị phân biệt + row index
-5. Đánh dấu `is_unique` để hỗ trợ UI/validation
+### Học từ phản hồi người dùng
 
-### Xử lý tên đầy đủ
-- Nếu có cột full name thì dùng trực tiếp
-- Nếu chỉ có họ/đệm/tên thì ghép thành full name
+`LLMFeedbackLearningAgent`: cập nhật điểm / bản ghi `UserMemoryItem` khi user **accept/edit/reject**, và có thể kích hoạt **reindex chunk** cho RAG (xem `MemoryChunkIndexer`).
 
 ---
 
-## 6) Thuật toán Dot-Line Detector (legacy form)
+## 5) Thuật toán truy xuất bộ nhớ (unified memory + legacy + RAG)
 
-- Nhận diện placeholder bằng regex:
-  - `\.{2,}`, `_{2,}`, `-{2,}`, `─{2,}`
-- Trích label từ phần text trước placeholder
-- Suy luận `field_type` theo từ khóa (`ngày`, `email`, `điện thoại`, ...)
-- Sinh `field_name` chuẩn hóa
-- Bỏ trùng label
+Thực hiện trong `LLMMemoryRetrievalAgent`.
 
----
+### Nguồn 1: `UserMemoryItem` (bộ nhớ thống nhất)
 
-## 7) Thuật toán AI Composer (viết tiếp/viết lại)
+- Lọc theo `user_id` và `field_key` khớp
+- Thứ tự ưu tiên: `is_confirmed` giảm dần → `score` giảm dần → `updated_at` mới nhất  
+- Ghép vào danh sách `MemoryCandidate` (value, score, confidence, metadata)
 
-### 7.1 Provider failover
-- Theo profile: OpenRouter -> OpenAI -> Gemini (hoặc cấu hình khác)
-- Nếu provider/model lỗi, tự động thử provider/model kế tiếp
+### Nguồn 2: Legacy `Entry` + `Field`
 
-### 7.2 Prompt theo mode
-- `continuation`: gợi ý viết tiếp
-- `rewrite`: viết lại phrase/sentence/document theo instruction
+- So khớp tên field: `field.field_name` chữ thường, space → `_`, phải bằng `field_key` của ô đang điền
+- Cho mỗi giá trị: đếm tần suất + thời gian gần nhất
+- **Điểm heuristic**:  
+  \(\text{score} = \text{freq} \times 1.5 + \frac{\max(0,\, 30 - \text{recency_days})}{30}\)  
+  `confidence` tăng theo tần suất (có clamp)
 
-### 7.3 Parse và chuẩn hóa output
-- Trích JSON từ phản hồi model
-- Chuẩn hóa về `{text, confidence, reason}`
-- Lọc duplicate, lọc câu lặp context, lọc gợi ý kém chất lượng
+### Nguồn 3: Gợi ý nhẹ từ hoạt động (`UserActivity`)
 
-### 7.4 Local fallback
-Khi AI provider lỗi toàn bộ:
-- Hệ thống dùng luật local để tạo gợi ý fallback
-- Vẫn đảm bảo trả kết quả cho người dùng
+- Nếu `activity_count > 20`: cộng tối đa **+0.05** vào `confidence` của mọi ứng viên hiện có (tín hiệu “user tích cực”).
 
----
+### Nguồn 4: RAG ngữ nghĩa (khi `RAG_ENABLED`)
 
-## 8) Thuật toán export DOCX giữ layout template
+1. Tạo chuỗi truy vấn từ `field_key`, `label`, `field_type`, `aliases`
+2. **Embedding** đồng bộ batch qua OpenAI (`embed_texts_sync` → model `RAG_EMBEDDING_MODEL`, cần API key OpenAI phù hợp trong config)
+3. `MemoryChunkIndexer.semantic_search_for_user`:
+   - Lấy tối đa `RAG_MAX_CHUNKS_SCAN` chunk gần đây của user
+   - Tính **cosine similarity** giữa vector truy vấn và vector lưu trong `embedding_json`
+   - Top-K theo similarity; đưa vào candidates với `memory_type="rag"`, score ~ `similarity × 5`
 
-### Mục tiêu
-Điền dữ liệu nhưng vẫn giữ định dạng tài liệu gốc.
+### Hậu xử lý chung
 
-### Cách làm
-1. Duyệt paragraph trong body và table
-2. Nhận diện placeholder và thay lần lượt theo dữ liệu submit
-3. Với dòng ngày-tháng-năm, parse ngày để thay đúng format
-4. Nếu không thể thay theo template, fallback export dạng `Label: Value`
+- Loại candidate rỗng
+- Sort theo `(score, confidence)` giảm dần
+- **Dedupe** theo giá trị (lower-case), giữ top `top_k`
+
+**Lưu ý**: RAG trong repo hiện **quét và chấm cosine trong Python** trên một tập chunk giới hạn — phù hợp pilot; production lớn thường chuyển sang vector DB / ANN.
 
 ---
 
-## 9) Đánh giá nhanh
+## 6) Index chunk & embedding (chuẩn bị RAG)
+
+`MemoryChunkIndexer`:
+
+- Chia `value_text` của `UserMemoryItem` thành các đoạn (giới hạn ký tự + overlap — `RAG_CHUNK_CHAR_LIMIT`, `RAG_CHUNK_OVERLAP`)
+- Prefix chunk bằng `field_key:` để giữ ngữ cảnh trường
+- Gọi `embed_texts_sync`, lưu `UserMemoryChunk` (text, embedding JSON, model, dimension)
+- Cosine similarity dùng công thức chuẩn dot-product / (norms)
+
+Biến môi trường chính (xem `backend/app/core/config.py`):  
+`RAG_ENABLED`, `RAG_EMBEDDING_MODEL`, `RAG_SEMANTIC_TOP_K`, `RAG_MAX_CHUNKS_SCAN`, `RAG_CHUNK_*`, `RAG_EMBED_BATCH_SIZE`.
+
+---
+
+## 7) LLM Client cho agent (JSON)
+
+`LLMClient` không tự triển khai provider riêng: **tái sử dụng** `AIComposerService.get_text_suggestions` (mode rewrite, ép trả JSON), rồi parse/extract JSON từ chuỗi trả về.
+
+---
+
+## 8) Thuật toán parse tài liệu đa định dạng
+
+### 8.1 DOCX
+
+- Regex placeholder (`...`, `___`, checkbox, template ngày-tháng-năm, …)
+- Heuristic heading vs field (style, alignment, độ dài, tiền tố)
+- Loại footer / đoạn dài không phải ô nhập
+- Chuẩn hóa label → `field_name` snake_case, dedupe
+
+### 8.2 PDF / TXT / CSV
+
+- Heuristic dòng label (separator, độ dài, tỷ lệ chữ/số)
+
+### 8.3 XLSX / XLS
+
+- Chọn header row trong ~10 dòng đầu (ưu tiên keyword trường phổ biến)
+- Hỗ trợ ô header merge (nhìn dòng trên)
+- Bỏ hàng chỉ chứa nhãn phụ (vd. `%`)
+
+---
+
+## 9) Thuật toán fuzzy mapping field với Excel tham chiếu
+
+- Chuẩn hóa key (không phân biệt dấu, ký tự an toàn)
+- Điểm match: exact 100; substring với penalty độ dài; overlap token có trần điểm
+- Ngưỡng chấp nhận ghép cột (trong code có ngưỡng tối thiểu)
+- Trường hợp **họ và tên**: ghép họ + đệm + tên nếu không có một cột full name
+
+---
+
+## 10) Thuật toán Dot-Line Detector (form replacement legacy)
+
+- Regex: `\.{2,}`, `_{2,}`, `-{2,}`, `─{2,}`
+- Trích label, suy luận `field_type` từ keyword, sinh `field_name`, dedupe label
+
+---
+
+## 11) Thuật toán AI Composer (viết tiếp / viết lại)
+
+### Provider failover
+
+- Thứ tự thử provider theo `AI_PROFILE` / `AI_PROVIDER` (OpenRouter, OpenAI, Gemini tùy cấu hình)
+- Với OpenRouter / OpenAI: có thể thử **chuỗi model** fallback khi model trước lỗi
+
+### Mode
+
+- `continuation`, `rewrite` (phrase / sentence / document)
+- Chuẩn hóa output JSON khi được yêu cầu
+
+### Local fallback
+
+- Khi không có client hoặc tất cả provider lỗi: gợi ý mock / rewrite cục bộ theo rule
+
+---
+
+## 12) Thuật toán export DOCX giữ layout template
+
+- Duyệt paragraph trong body và bảng
+- Chuẩn hóa dòng chữ ký ngày-tháng-năm (nếu có giá trị ngày)
+- Thay placeholder theo thứ tự field đã parse
+- Fallback: xuất dạng `Nhãn: Giá trị`
+
+---
+
+## 13) Đánh giá nhanh
 
 ### Ưu điểm
-- Tốc độ tốt, dễ vận hành production
-- Độ ổn định cao nhờ nhiều lớp fallback
-- Dễ audit logic vì phần lớn là rule/heuristic minh bạch
+
+- Tách bạch rule-based và LLM; có fallback deterministic khi LLM thất bại
+- Có lớp bộ nhớ thống nhất + tùy chọn RAG embedding
+- Failover API giúp composer/autofill ít bị “đứng” khi một model lỗi
 
 ### Hạn chế
-- Heuristic có thể giảm độ chính xác với biểu mẫu dị biệt
-- Chưa dùng semantic embedding đồng nhất cho toàn bộ pipeline mapping
+
+- Heuristic parse vẫn có thể sai trên mẫu biểu rất tự do
+- RAG hiện scan giới hạn chunk — độ phức tạp tuyến tính với số chunk quét; cần nâng cấp nếu dữ liệu lớn
+- Embedding RAG đang qua OpenAI trong `embedding_service`; cần key và quota phù hợp khi `RAG_ENABLED=true`
 
 ### Hướng nâng cấp
-- Tách ngưỡng scoring ra config để tuning
-- Bổ sung benchmark dataset cho parsing/matching
-- Thêm semantic reranker để tăng chất lượng gợi ý khó
+
+- Vector index (HNSW, pgvector, …), tách scoring threshold ra config
+- Benchmark parse + match + RAG recall/precision trên bộ biểu mẫu thật
 
 ---
 
-## 10) Kết luận
+## 14) Kết luận
 
-Hệ thống Autofill AI đang áp dụng mô hình thuật toán **hybrid thực dụng**:  
-rule-based cho độ ổn định + AI cho chất lượng ngôn ngữ + failover cho độ sẵn sàng dịch vụ.  
-Thiết kế này phù hợp cho giai đoạn scale nhanh và vẫn giữ đường nâng cấp rõ ràng lên semantic/ML sau này.
+Autofill AI kết hợp **lịch sử có cấu trúc**, **matching trường thông minh**, **pipeline autofill đa-agent**, và **tùy chọn RAG embedding**, cùng lớp **AI Composer có failover**. Kiến trúc **hybrid** giúp cân bằng khả giải thích, chi phí vận hành và chất lượng gợi ý khi có LLM.

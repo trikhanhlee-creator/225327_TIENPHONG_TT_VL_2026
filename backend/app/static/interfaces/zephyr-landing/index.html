@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/interfaces/zephyr-landing/landing.css?v=20260506-1">
+    <link rel="stylesheet" href="/static/interfaces/zephyr-landing/landing.css?v=20260514-2">
 </head>
 <body class="dark-mode">
     <div class="aurora" aria-hidden="true"></div>
@@ -68,7 +68,7 @@
                     Giảm nhập liệu thủ công, tăng tốc xử lý biểu mẫu và kiểm soát toàn bộ quy trình trên một nền tảng.
                 </p>
                 <div class="hero-actions">
-                    <a class="btn btn-primary btn-large" href="/login?mode=login&next=%2Fcomposer">Bắt đầu ngay</a>
+                    <a class="btn btn-primary btn-large" href="/login?mode=login&next=%2Fword-upload">Bắt đầu ngay</a>
                     <a class="btn btn-outline btn-large" href="/login?mode=login">Đăng nhập để tiếp tục</a>
                 </div>
                 <p id="usageModeHint" class="usage-hint">Bạn đang ở chế độ dùng miễn phí mặc định.</p>
@@ -76,7 +76,7 @@
             <aside class="hero-board" aria-label="Thống kê hệ thống">
                 <article class="board-card">
                     <h3>Đầu vào linh hoạt</h3>
-                    <p><strong>Word, Excel, Composer</strong> trong cùng một pipeline nhập liệu.</p>
+                    <p><strong>Word và Excel</strong> trong cùng một pipeline nhập liệu.</p>
                 </article>
                 <article class="board-card accent">
                     <h3>Tác vụ trọng tâm</h3>
@@ -120,14 +120,8 @@
                     <p>Ánh xạ dữ liệu nhiều cột vào biểu mẫu tự động.</p>
                     <a href="/login?mode=login&next=%2Fexcel">Đăng nhập để mở Excel Upload</a>
                 </article>
-                <article class="feature-card">
+                <article class="feature-card feature-card-wide">
                     <span class="feature-no">03</span>
-                    <h3>AI Composer theo ngữ cảnh</h3>
-                    <p>Soạn tài liệu có gợi ý thông minh theo ngữ cảnh.</p>
-                    <a href="/login?mode=login&next=%2Fcomposer">Đăng nhập để mở Composer</a>
-                </article>
-                <article class="feature-card">
-                    <span class="feature-no">04</span>
                     <h3>Quản trị tập trung</h3>
                     <p>Quản lý người dùng, biểu mẫu và báo cáo trên một màn hình.</p>
                     <a href="/login?mode=login&next=%2Fadmin-dashboard">Đăng nhập để mở Dashboard</a>
@@ -141,7 +135,7 @@
                 <article>
                     <span>01</span>
                     <h3>Nhập tài liệu nguồn</h3>
-                    <p>Upload Word hoặc Excel, hoặc bắt đầu từ Composer.</p>
+                    <p>Upload Word hoặc Excel để bắt đầu quy trình xử lý.</p>
                 </article>
                 <article>
                     <span>02</span>
@@ -205,11 +199,11 @@
             <div class="faq-list">
                 <details>
                     <summary>Có cần đăng nhập để sử dụng hệ thống không?</summary>
-                    <p>Có. Bạn cần đăng nhập để truy cập Word Upload, Excel Upload và AI Composer.</p>
+                    <p>Có. Bạn cần đăng nhập để truy cập Word Upload và Excel Upload.</p>
                 </details>
                 <details>
                     <summary>Hệ thống hỗ trợ định dạng nào?</summary>
-                    <p>Hỗ trợ Word Upload, Excel Upload và AI Composer.</p>
+                    <p>Hỗ trợ Word Upload và Excel Upload.</p>
                 </details>
             </div>
         </section>
@@ -220,7 +214,7 @@
                 Trải nghiệm ngay, không cần cấu hình phức tạp.
             </p>
             <div class="hero-actions">
-                <a class="btn btn-primary btn-large" href="/login?mode=login&next=%2Fcomposer">Bắt đầu ngay</a>
+                <a class="btn btn-primary btn-large" href="/login?mode=login&next=%2Fword-upload">Bắt đầu ngay</a>
                 <a class="btn btn-outline btn-large" href="/login?mode=login&next=%2Fword-upload">Đăng nhập để tải Word</a>
                 <a class="btn btn-outline btn-large" href="/login?mode=login&next=%2Fexcel">Đăng nhập để tải Excel</a>
             </div>
@@ -235,10 +229,10 @@
                 </h2>
                 <p class="about-banner-lead">
                     Nền tảng tự động hóa tài liệu cho doanh nghiệp Việt Nam,<br>
-                    kết hợp Word Upload, Excel Upload và AI Composer để xử lý biểu mẫu nhanh hơn, nhất quán hơn.
+                    kết hợp Word Upload và Excel Upload để xử lý biểu mẫu nhanh hơn, nhất quán hơn.
                 </p>
                 <div class="about-banner-actions" aria-label="Bắt đầu ngay">
-                    <a class="btn btn-primary" href="/login?mode=login&next=%2Fcomposer">Bắt đầu ngay</a>
+                    <a class="btn btn-primary" href="/login?mode=login&next=%2Fword-upload">Bắt đầu ngay</a>
                 </div>
             </div>
 
@@ -307,7 +301,6 @@
                 <h4>Sản phẩm</h4>
                 <ul>
                     <li><a href="/home">Trang Chủ</a></li>
-                    <li><a href="/composer">Composer AI</a></li>
                     <li><a href="/word-upload">Word Upload</a></li>
                     <li><a href="/excel">Excel Upload</a></li>
                     <li><a href="/docs">API Docs</a></li>
@@ -349,7 +342,6 @@
                 <h4>Điều hướng</h4>
                 <ul>
                     <li><a href="/home">Trang Chủ</a></li>
-                    <li><a href="/composer">Composer AI</a></li>
                     <li><a href="/word-upload">Word Upload</a></li>
                     <li><a href="/excel">Excel Upload</a></li>
                     <li><a href="/payment">Thanh toán</a></li>

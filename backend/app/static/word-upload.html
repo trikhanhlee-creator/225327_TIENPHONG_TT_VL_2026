@@ -852,6 +852,58 @@
             letter-spacing: 0.3px;
         }
 
+        .editable-field-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .field-label-text {
+            flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .field-label-edit-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid color-mix(in srgb, var(--wu-brand) 48%, var(--wu-border));
+            background: color-mix(in srgb, var(--wu-brand-soft) 16%, var(--wu-surface-elevated));
+            color: var(--wu-brand);
+            font-size: 14px;
+            line-height: 1;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+
+        .field-label-edit-icon {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .field-label-edit-btn:hover:not(:disabled) {
+            border-color: color-mix(in srgb, var(--wu-brand) 64%, var(--wu-border));
+            background: color-mix(in srgb, var(--wu-brand-soft) 22%, var(--wu-surface-elevated));
+            transform: translateY(-1px);
+        }
+
+        .field-label-edit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .form-group input,
         .form-group textarea,
         .form-group select {
@@ -1430,8 +1482,196 @@
             transform: translateY(0);
         }
 
+        .rename-mini-modal-content {
+            max-width: 420px;
+            width: calc(100% - 28px);
+            padding: 18px 18px 14px;
+            border-radius: 14px;
+            text-align: left;
+            background: linear-gradient(145deg, #182038 0%, #202a44 100%);
+            border: 1px solid rgba(134, 160, 255, 0.25);
+            box-shadow: 0 16px 36px rgba(3, 8, 24, 0.48);
+        }
+
+        .rename-mini-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #d6e3ff;
+            margin-bottom: 10px;
+        }
+
+        .rename-mini-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(90, 103, 216, 0.22);
+            color: #9eb6ff;
+            font-size: 12px;
+            line-height: 1;
+        }
+
+        .rename-mini-label {
+            display: block;
+            font-size: 13px;
+            color: #c6d3ef;
+            margin-bottom: 8px;
+        }
+
+        .rename-mini-input {
+            width: 100%;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid rgba(138, 160, 236, 0.35);
+            background: rgba(11, 18, 35, 0.55);
+            color: #f5f8ff;
+            font-size: 14px;
+            padding: 0 12px;
+            outline: none;
+        }
+
+        .rename-mini-input:focus {
+            border-color: #7f9cff;
+            box-shadow: 0 0 0 3px rgba(127, 156, 255, 0.2);
+        }
+
+        .rename-mini-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .rename-mini-btn {
+            min-width: 78px;
+            height: 34px;
+            border-radius: 9px;
+            border: 1px solid transparent;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .rename-mini-btn.cancel {
+            background: rgba(148, 163, 184, 0.15);
+            color: #d4ddf0;
+            border-color: rgba(148, 163, 184, 0.35);
+        }
+
+        .rename-mini-btn.cancel:hover {
+            background: rgba(148, 163, 184, 0.25);
+        }
+
+        .rename-mini-btn.confirm {
+            background: linear-gradient(135deg, #4f68d9 0%, #6380f1 100%);
+            color: #fff;
+            box-shadow: 0 6px 16px rgba(83, 112, 227, 0.36);
+        }
+
+        .rename-mini-btn.confirm:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(83, 112, 227, 0.42);
+        }
+
+        body.light-mode .rename-mini-modal-content {
+            background: #ffffff;
+            border: 1px solid #d8e2ff;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+        }
+
+        body.light-mode .rename-mini-header {
+            color: #1e3a8a;
+        }
+
+        body.light-mode .rename-mini-icon {
+            background: rgba(37, 99, 235, 0.12);
+            color: #1d4ed8;
+        }
+
+        body.light-mode .rename-mini-label {
+            color: #334155;
+        }
+
+        body.light-mode .rename-mini-input {
+            background: #f8fbff;
+            color: #0f172a;
+            border-color: #c6d2f3;
+        }
+
+        body.light-mode .rename-mini-input:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        body.light-mode .rename-mini-btn.cancel {
+            background: #f1f5f9;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+
+        body.light-mode .rename-mini-btn.cancel:hover {
+            background: #e2e8f0;
+        }
+
         .export-modal-content {
             max-width: 620px;
+        }
+
+        .rename-scope-modal-content {
+            max-width: 580px;
+        }
+
+        .rename-scope-note {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #9fb2d8;
+            line-height: 1.6;
+        }
+
+        .rename-scope-actions {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+            width: 100%;
+        }
+
+        .rename-scope-actions .modal-btn {
+            width: 100%;
+            min-width: 0;
+            min-height: 42px;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .rename-scope-actions .scope-all {
+            background: linear-gradient(135deg, #4f68d9 0%, #6380f1 100%);
+            color: #fff;
+            box-shadow: 0 6px 18px rgba(83, 112, 227, 0.34);
+        }
+
+        .rename-scope-actions .scope-all:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 22px rgba(83, 112, 227, 0.44);
+        }
+
+        .rename-scope-actions .scope-current {
+            background: linear-gradient(135deg, rgba(72, 198, 188, 0.25), rgba(72, 198, 188, 0.16));
+            color: #9ef0e3;
+            border: 1px solid rgba(128, 234, 219, 0.4);
+            box-shadow: 0 4px 12px rgba(72, 198, 188, 0.2);
+        }
+
+        .rename-scope-actions .scope-current:hover {
+            transform: translateY(-1px);
+            background: linear-gradient(135deg, rgba(72, 198, 188, 0.35), rgba(72, 198, 188, 0.22));
         }
 
         .export-actions {
@@ -1464,6 +1704,10 @@
                 grid-template-columns: 1fr;
             }
 
+            .rename-scope-actions {
+                grid-template-columns: 1fr;
+            }
+
             .export-cancel-wrap {
                 margin-top: 12px;
             }
@@ -1487,6 +1731,21 @@
 
         body.light-mode .modal-body {
             color: #475569;
+        }
+
+        body.light-mode .rename-scope-note {
+            color: #64748b;
+        }
+
+        body.light-mode .rename-scope-actions .scope-current {
+            color: #0f766e;
+            border-color: #99f6e4;
+            background: linear-gradient(135deg, #ccfbf1, #e6fffb);
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.16);
+        }
+
+        body.light-mode .rename-scope-actions .scope-current:hover {
+            background: linear-gradient(135deg, #b7f7ea, #ddfff8);
         }
 
         body.light-mode .export-config label {
@@ -2016,7 +2275,7 @@
         }
 
         #mainView.main-grid {
-            grid-template-columns: minmax(292px, 352px) minmax(0, 1fr);
+            grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
             gap: 18px;
             align-items: start;
         }
@@ -2046,11 +2305,34 @@
             background: linear-gradient(170deg, var(--wu-brand-soft), var(--wu-accent));
         }
 
+        #mainView .panel.upload-focus-panel {
+            position: sticky;
+            top: 96px;
+            border: 1px solid color-mix(in srgb, var(--wu-brand-soft) 60%, var(--wu-border));
+            box-shadow: 0 16px 34px rgba(11, 125, 180, 0.16);
+            background:
+                radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--wu-brand-soft) 18%, transparent), transparent 48%),
+                linear-gradient(150deg, var(--wu-surface), var(--wu-surface-strong));
+        }
+
+        .upload-priority-note {
+            margin: -4px 0 12px;
+            font-size: 13px;
+            color: var(--wu-text-muted);
+        }
+
         .upload-area {
             border: 2px dashed color-mix(in srgb, var(--wu-brand-soft) 72%, var(--wu-brand));
             background: color-mix(in srgb, var(--wu-brand-soft) 13%, var(--wu-surface-strong));
             border-radius: 14px;
-            padding: 30px 20px;
+            padding: 34px 20px;
+            min-height: 190px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28), 0 10px 20px rgba(11, 125, 180, 0.08);
         }
 
         .upload-area:hover {
@@ -2064,13 +2346,55 @@
             background: color-mix(in srgb, var(--wu-brand-soft) 24%, var(--wu-surface-strong));
         }
 
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            background: color-mix(in srgb, var(--wu-brand-soft) 28%, var(--wu-surface-strong));
+            color: color-mix(in srgb, var(--wu-brand) 84%, #0d3d53);
+            border: 1px solid color-mix(in srgb, var(--wu-brand-soft) 75%, var(--wu-border));
+        }
+
         .upload-text,
         .upload-hint {
             color: var(--wu-text-muted);
+            text-align: center;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            margin-bottom: 0;
         }
 
         .upload-text strong {
             color: var(--wu-text-main);
+        }
+
+        .upload-hint {
+            margin-top: 0;
+            font-size: 12px;
+            letter-spacing: 0.2px;
+        }
+
+        .upload-cta {
+            margin-top: 4px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid color-mix(in srgb, var(--wu-brand-soft) 75%, var(--wu-brand));
+            background: color-mix(in srgb, var(--wu-brand-soft) 18%, var(--wu-surface-strong));
+            color: color-mix(in srgb, var(--wu-brand) 85%, #0d3d53);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            pointer-events: none;
+        }
+
+        body.dark-mode #mainView .panel.upload-focus-panel {
+            box-shadow: 0 16px 34px rgba(0, 0, 0, 0.34);
         }
 
         .template-bulk-actions,
@@ -2225,6 +2549,54 @@
             align-items: center;
             gap: 6px;
             font-weight: 700;
+        }
+
+        .label-change-badge {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 8px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            line-height: 1.3;
+            border: 1px solid transparent;
+        }
+
+        .label-change-badge.before {
+            color: #ffcf7a;
+            background: rgba(245, 158, 11, 0.2);
+            border-color: rgba(245, 158, 11, 0.5);
+        }
+
+        .label-change-badge.after {
+            color: #8fd3ff;
+            background: rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.45);
+        }
+
+        .label-change-badge.unknown {
+            color: #cbd5e1;
+            background: rgba(148, 163, 184, 0.18);
+            border-color: rgba(148, 163, 184, 0.35);
+        }
+
+        body.light-mode .label-change-badge.before {
+            color: #92400e;
+            background: #ffedd5;
+            border-color: #fdba74;
+        }
+
+        body.light-mode .label-change-badge.after {
+            color: #1d4ed8;
+            background: #dbeafe;
+            border-color: #93c5fd;
+        }
+
+        body.light-mode .label-change-badge.unknown {
+            color: #475569;
+            background: #f1f5f9;
+            border-color: #cbd5e1;
         }
 
         .history-time-value {
@@ -2385,7 +2757,7 @@
 
         @media (max-width: 1280px) {
             #mainView.main-grid {
-                grid-template-columns: minmax(270px, 320px) minmax(0, 1fr);
+                grid-template-columns: minmax(290px, 352px) minmax(0, 1fr);
             }
         }
 
@@ -2394,7 +2766,8 @@
                 grid-template-columns: 1fr;
             }
 
-            #mainView .panel:first-child {
+            #mainView .panel:first-child,
+            #mainView .panel.upload-focus-panel {
                 position: static;
             }
         }
@@ -2447,18 +2820,21 @@
         <!-- Main View -->
         <div id="mainView" class="main-grid">
             <!-- Upload Panel -->
-            <div class="panel">
+            <div class="panel upload-focus-panel">
                 <h2>Upload File Word</h2>
+                <p class="upload-priority-note">Ưu tiên thao tác upload trước để tạo template và mở toàn bộ luồng xử lý.</p>
                 
                 <div class="message" id="uploadMessage"></div>
 
                 <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon" aria-hidden="true">⬆</div>
                     <div class="upload-text">
                         <strong>Nhấp hoặc kéo file</strong> để upload
                     </div>
                     <div class="upload-hint">
                         Hỗ trợ: .docx
                     </div>
+                    <div class="upload-cta">Chọn file Word ngay</div>
                     <input type="file" id="uploadInput" accept=".docx" />
                 </div>
 
@@ -3317,11 +3693,31 @@
                         return;  // Skip this field for now
                     }
                     
-                    const fieldLabel = formatExportFieldName(field.label || field.name || '');
+                    const fieldLabel = String(field.label || '').trim()
+                        || formatExportFieldName(field.name || '')
+                        || String(field.name || '');
 
                     validFields.push(`
                     <div class="form-group">
-                        <label for="field_${idx}">${escapeHtml(fieldLabel)}</label>
+                        <label for="field_${idx}" class="editable-field-label">
+                            <span class="field-label-text">${escapeHtml(fieldLabel)}</span>
+                            <button
+                                type="button"
+                                class="field-label-edit-btn"
+                                title="Chỉnh sửa tên trường"
+                                aria-label="Chỉnh sửa tên trường ${escapeHtml(fieldLabel)}"
+                                data-field-name-encoded="${escapeHtml(encodeURIComponent(String(field.name || '')))}"
+                                data-field-label-encoded="${escapeHtml(encodeURIComponent(fieldLabel))}"
+                                onclick="promptRenameWordFieldFromButton(this)"
+                            >
+                                <svg class="field-label-edit-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5" />
+                                    <path d="M14 6l4 4" />
+                                    <path d="M16 4l4 4" />
+                                    <path d="M10 14l8-8a1.5 1.5 0 0 1 2 2l-8 8-3 1z" />
+                                </svg>
+                            </button>
+                        </label>
                         <div class="form-field-wrapper">
                             <input 
                                 type="${field.field_type === 'email' ? 'email' : field.field_type === 'date' ? 'date' : field.field_type === 'number' ? 'number' : 'text'}"
@@ -3532,7 +3928,7 @@
                         <td class="history-cell-link" onclick="viewSubmissionDetail(${s.id})">
                             <span class="history-template-name">
                                 <span class="template-file-icon">📄</span>
-                                ${escapeHtml(getCleanFilename(s.template_name))}
+                                ${escapeHtml(getCleanFilename(s.template_name))}${getFieldLabelStateBadge(s)}
                             </span>
                             ${Number(s.page_count || 1) > 1 ? ` <span class="suggestion-meta">(${Number(s.page_count)} trang)</span>` : ''}
                         </td>
@@ -3866,14 +4262,35 @@
                 const fields = data.data || {};
                 
                 const fieldElements = Object.entries(fields).map(([key, value], idx) => {
-                    const formattedFieldName = formatExportFieldName(key) || key;
+                    const templateMeta = (data.template_fields && data.template_fields[key]) ? data.template_fields[key] : null;
+                    const formattedFieldName = String(templateMeta?.field_label || '').trim()
+                        || formatExportFieldName(key)
+                        || String(key || '');
                     const fieldName = escapeHtml(formattedFieldName);
                     const fieldValue = escapeHtml(String(value || ''));
                     const fieldId = `sub_field_${idx}`;
-                    const suggestionFieldId = Number(`${data.id}${idx + 1}`);
+                    const suggestionFieldId = Number(templateMeta?.field_id || `${data.id}${idx + 1}`);
                     return `
                     <div class="form-group">
-                        <label for="${fieldId}">${fieldName}</label>
+                        <label for="${fieldId}" class="editable-field-label">
+                            <span class="field-label-text">${fieldName}</span>
+                            <button
+                                type="button"
+                                class="field-label-edit-btn"
+                                title="Chỉnh sửa tên trường"
+                                aria-label="Chỉnh sửa tên trường ${fieldName}"
+                                data-field-name-encoded="${escapeHtml(encodeURIComponent(String(key || '')))}"
+                                data-field-label-encoded="${escapeHtml(encodeURIComponent(String(formattedFieldName || key)))}"
+                                onclick="promptRenameWordFieldFromButton(this)"
+                            >
+                                <svg class="field-label-edit-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M12 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5" />
+                                    <path d="M14 6l4 4" />
+                                    <path d="M16 4l4 4" />
+                                    <path d="M10 14l8-8a1.5 1.5 0 0 1 2 2l-8 8-3 1z" />
+                                </svg>
+                            </button>
+                        </label>
                         <div class="form-field-wrapper">
                             <input 
                                 type="text"
@@ -3931,9 +4348,16 @@
             }
             
             try {
-                const data = collectSubmissionEditValues();
-                await updateSubmissionRecord(currentSubmission.id, data, currentSubmission.history_group_id);
-                showMessage('submissionMessage', `✅ Cập nhật dữ liệu #${currentSubmission.id} thành công!`, 'success');
+                const saveResult = await saveSubmissionWithScope();
+                if (saveResult?.cancelled) {
+                    showMessage('submissionMessage', 'ℹ️ Đã hủy lưu thay đổi.', 'info');
+                    return;
+                }
+
+                const successMessage = saveResult?.scope === 'all'
+                    ? `✅ Đã cập nhật ${saveResult.updatedCount} trang trong nhóm lịch sử.`
+                    : `✅ Cập nhật dữ liệu #${currentSubmission.id} thành công!`;
+                showMessage('submissionMessage', successMessage, 'success');
                 
                 setTimeout(() => {
                     backToMain();
@@ -3967,6 +4391,131 @@
                 }
             );
             return parseApiResponse(response);
+        }
+
+        function shouldAskRenameScopeForCurrentSubmission() {
+            if (!currentSubmission || Number(currentSubmission.id || 0) <= 0) {
+                return false;
+            }
+
+            const state = String(currentSubmission.field_label_state || 'unknown').trim().toLowerCase();
+            if (state !== 'before_rename') {
+                return false;
+            }
+
+            const currentId = Number(currentSubmission.id || 0);
+            const groupedIds = submissionHistoryOrder
+                .map((id) => Number(id))
+                .filter((id) => Number.isInteger(id) && id > 0);
+
+            return groupedIds.length > 1 && groupedIds.includes(currentId);
+        }
+
+        function showRenameScopeModal({ title, body, note }) {
+            const modal = document.getElementById('renameScopeModal');
+            const titleNode = document.getElementById('renameScopeTitle');
+            const bodyNode = document.getElementById('renameScopeBody');
+            const noteNode = document.getElementById('renameScopeNote');
+            const allBtn = document.getElementById('renameScopeAllBtn');
+            const currentBtn = document.getElementById('renameScopeCurrentBtn');
+            const cancelBtn = document.getElementById('renameScopeCancelBtn');
+
+            if (!modal || !titleNode || !bodyNode || !noteNode || !allBtn || !currentBtn || !cancelBtn) {
+                return Promise.resolve('current');
+            }
+
+            titleNode.textContent = String(title || 'Chọn phạm vi cập nhật');
+            bodyNode.textContent = String(body || '');
+            noteNode.textContent = String(note || '');
+            modal.classList.add('show');
+
+            return new Promise((resolve) => {
+                let settled = false;
+
+                const cleanup = () => {
+                    modal.classList.remove('show');
+                    allBtn.removeEventListener('click', onAll);
+                    currentBtn.removeEventListener('click', onCurrent);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    modal.removeEventListener('click', onBackdropClick);
+                };
+
+                const done = (value) => {
+                    if (settled) return;
+                    settled = true;
+                    cleanup();
+                    resolve(value);
+                };
+
+                const onAll = () => done('all');
+                const onCurrent = () => done('current');
+                const onCancel = () => done('cancel');
+                const onBackdropClick = (event) => {
+                    if (event.target === modal) {
+                        done('cancel');
+                    }
+                };
+
+                allBtn.addEventListener('click', onAll);
+                currentBtn.addEventListener('click', onCurrent);
+                cancelBtn.addEventListener('click', onCancel);
+                modal.addEventListener('click', onBackdropClick);
+            });
+        }
+
+        async function saveSubmissionWithScope() {
+            const data = collectSubmissionEditValues();
+            const groupId = String(currentSubmission?.history_group_id || '').trim();
+
+            if (!shouldAskRenameScopeForCurrentSubmission()) {
+                await updateSubmissionRecord(currentSubmission.id, data, groupId);
+                currentSubmission.field_label_state = 'after_rename';
+                currentSubmission.renamed_field_count = 0;
+                return { scope: 'current', updatedCount: 1 };
+            }
+
+            const scope = await showRenameScopeModal({
+                title: 'Phát hiện form đã đổi tên trường',
+                body: 'Bạn đang sửa dữ liệu thuộc nhóm nhiều trang được tạo trước khi đổi tên trường. Chọn phạm vi áp dụng cập nhật tên trường:',
+                note: 'Sửa trang hiện tại: chỉ cập nhật bản ghi đang mở. Sửa hết các trang: cập nhật toàn bộ các trang trong nhóm này.'
+            });
+
+            if (scope === 'cancel') {
+                return { cancelled: true };
+            }
+
+            if (scope === 'all') {
+                let updatedCount = 0;
+                const targetIds = submissionHistoryOrder
+                    .map((id) => Number(id))
+                    .filter((id) => Number.isInteger(id) && id > 0);
+
+                for (const targetId of targetIds) {
+                    let detail = submissionDetailCache[targetId];
+                    if (!detail) {
+                        const response = await fetch(`${API_BASE}/api/word/submission/${targetId}`);
+                        detail = await parseApiResponse(response);
+                        submissionDetailCache[targetId] = detail;
+                    }
+
+                    const detailData = targetId === Number(currentSubmission.id)
+                        ? data
+                        : { ...(detail?.data || {}) };
+                    const detailGroupId = String(detail?.history_group_id || groupId || '').trim();
+
+                    await updateSubmissionRecord(targetId, detailData, detailGroupId);
+                    updatedCount += 1;
+                }
+
+                currentSubmission.field_label_state = 'after_rename';
+                currentSubmission.renamed_field_count = 0;
+                return { scope: 'all', updatedCount };
+            }
+
+            await updateSubmissionRecord(currentSubmission.id, data, groupId);
+            currentSubmission.field_label_state = 'after_rename';
+            currentSubmission.renamed_field_count = 0;
+            return { scope: 'current', updatedCount: 1 };
         }
 
         async function addSubmissionHistoryPage(event) {
@@ -4112,6 +4661,20 @@
             return `${baseName}_${submission?.id || ''}`.replace(/_+$/, '');
         }
 
+        function getFieldLabelStateBadge(item) {
+            const state = String(item?.field_label_state || 'unknown').trim().toLowerCase();
+            const renamedCount = Number(item?.renamed_field_count || 0);
+
+            if (state === 'before_rename') {
+                const suffix = renamedCount > 0 ? ` (${renamedCount})` : '';
+                return `<span class="label-change-badge before" title="Form được điền trước lần đổi tên trường gần nhất">Trước đổi tên${suffix}</span>`;
+            }
+            if (state === 'after_rename') {
+                return `<span class="label-change-badge after" title="Form được điền sau khi tên trường đã được cập nhật">Sau đổi tên</span>`;
+            }
+            return '';
+        }
+
         function sanitizeExportFilename(rawName, fallbackName) {
             const filename = String(rawName || '').trim();
             const normalized = filename
@@ -4147,6 +4710,170 @@
                     return `${firstChar}${remaining}`;
                 })
                 .join(' ');
+        }
+
+        async function promptRenameWordField(fieldName, currentLabel) {
+            const normalizedFieldName = String(fieldName || '').trim();
+            if (!normalizedFieldName) {
+                return;
+            }
+
+            const rawNextLabel = await showRenameMiniPopup({
+                title: 'Đổi tên trường',
+                label: 'Tên trường mới',
+                value: String(currentLabel || '').trim()
+            });
+            if (rawNextLabel === null) {
+                return;
+            }
+
+            const nextLabel = String(rawNextLabel || '').trim();
+            if (!nextLabel) {
+                alert('Tên trường không được để trống.');
+                return;
+            }
+            if (nextLabel === String(currentLabel || '').trim()) {
+                return;
+            }
+            if (!currentTemplate || !currentTemplate.id) {
+                alert('Không tìm thấy template để cập nhật trường.');
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `${API_BASE}/api/word/template/${currentTemplate.id}/field-label`,
+                    {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            field_name: normalizedFieldName,
+                            new_label: nextLabel
+                        })
+                    }
+                );
+                const result = await parseApiResponse(response);
+
+                if (Array.isArray(result.fields)) {
+                    currentTemplate.fields = result.fields;
+                }
+
+                if (currentSubmission?.template_fields && currentSubmission.template_fields[normalizedFieldName]) {
+                    currentSubmission.template_fields[normalizedFieldName].field_label = nextLabel;
+                }
+
+                applyWordFieldLabelToDom(normalizedFieldName, nextLabel);
+
+                if (document.getElementById('submissionView').classList.contains('active')) {
+                    showMessage('submissionMessage', '✅ Đã cập nhật tên trường.', 'success');
+                } else {
+                    showMessage('formMessage', '✅ Đã cập nhật tên trường.', 'success');
+                }
+            } catch (error) {
+                const message = error?.message || 'Không thể cập nhật tên trường.';
+                if (document.getElementById('submissionView').classList.contains('active')) {
+                    showMessage('submissionMessage', `❌ ${message}`, 'error');
+                } else {
+                    showMessage('formMessage', `❌ ${message}`, 'error');
+                }
+            }
+        }
+
+        function promptRenameWordFieldFromButton(button) {
+            const encodedFieldName = button?.getAttribute('data-field-name-encoded') || '';
+            const encodedFieldLabel = button?.getAttribute('data-field-label-encoded') || '';
+            const fieldName = decodeURIComponent(encodedFieldName || '');
+            const fieldLabel = decodeURIComponent(encodedFieldLabel || '');
+            return promptRenameWordField(fieldName, fieldLabel);
+        }
+
+        function applyWordFieldLabelToDom(fieldName, newLabel) {
+            const normalizedFieldName = String(fieldName || '').trim();
+            const normalizedLabel = String(newLabel || '').trim();
+            if (!normalizedFieldName || !normalizedLabel) {
+                return;
+            }
+
+            const encodedFieldName = encodeURIComponent(normalizedFieldName);
+            const encodedLabel = encodeURIComponent(normalizedLabel);
+            const selector = `.field-label-edit-btn[data-field-name-encoded="${cssEscapeValue(encodedFieldName)}"]`;
+
+            document.querySelectorAll(selector).forEach((button) => {
+                button.setAttribute('data-field-label-encoded', encodedLabel);
+                button.setAttribute('aria-label', `Chỉnh sửa tên trường ${normalizedLabel}`);
+
+                const labelText = button.closest('label')?.querySelector('.field-label-text');
+                if (labelText) {
+                    labelText.textContent = normalizedLabel;
+                }
+            });
+        }
+
+        function showRenameMiniPopup({ title, label, value }) {
+            const modal = document.getElementById('renameMiniModal');
+            const titleNode = document.getElementById('renameMiniTitle');
+            const labelNode = document.getElementById('renameMiniLabel');
+            const inputNode = document.getElementById('renameMiniInput');
+            const cancelBtn = document.getElementById('renameMiniCancelBtn');
+            const confirmBtn = document.getElementById('renameMiniConfirmBtn');
+
+            if (!modal || !titleNode || !labelNode || !inputNode || !cancelBtn || !confirmBtn) {
+                return Promise.resolve(window.prompt(String(label || 'Nhập tên mới:'), String(value || '')));
+            }
+
+            titleNode.textContent = String(title || 'Đổi tên');
+            labelNode.textContent = String(label || 'Tên mới');
+            inputNode.value = String(value || '');
+            modal.classList.add('show');
+
+            return new Promise((resolve) => {
+                let settled = false;
+
+                const cleanup = () => {
+                    modal.classList.remove('show');
+                    cancelBtn.removeEventListener('click', onCancel);
+                    confirmBtn.removeEventListener('click', onConfirm);
+                    inputNode.removeEventListener('keydown', onKeyDown);
+                    modal.removeEventListener('click', onBackdropClick);
+                };
+
+                const done = (nextValue) => {
+                    if (settled) return;
+                    settled = true;
+                    cleanup();
+                    resolve(nextValue);
+                };
+
+                const onCancel = () => done(null);
+                const onConfirm = () => done(inputNode.value);
+                const onKeyDown = (event) => {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        done(null);
+                        return;
+                    }
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        done(inputNode.value);
+                    }
+                };
+                const onBackdropClick = (event) => {
+                    if (event.target === modal) {
+                        done(null);
+                    }
+                };
+
+                cancelBtn.addEventListener('click', onCancel);
+                confirmBtn.addEventListener('click', onConfirm);
+                inputNode.addEventListener('keydown', onKeyDown);
+                modal.addEventListener('click', onBackdropClick);
+
+                requestAnimationFrame(() => {
+                    inputNode.focus();
+                    inputNode.select();
+                });
+            });
         }
 
         async function requestDocxExportBlob(submissionIds) {
@@ -5540,6 +6267,38 @@
             <div id="modalBody" class="modal-body"></div>
             <div class="modal-footer">
                 <button class="modal-btn modal-btn-ok" onclick="closeModal()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="renameMiniModal" class="modal">
+        <div class="rename-mini-modal-content" role="dialog" aria-modal="true" aria-labelledby="renameMiniTitle">
+            <div class="rename-mini-header">
+                <span class="rename-mini-icon">✏</span>
+                <span id="renameMiniTitle">Đổi tên trường</span>
+            </div>
+            <label id="renameMiniLabel" for="renameMiniInput" class="rename-mini-label">Tên trường mới</label>
+            <input id="renameMiniInput" class="rename-mini-input" type="text" maxlength="120" autocomplete="off" />
+            <div class="rename-mini-actions">
+                <button id="renameMiniCancelBtn" type="button" class="rename-mini-btn cancel">Hủy</button>
+                <button id="renameMiniConfirmBtn" type="button" class="rename-mini-btn confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="renameScopeModal" class="modal">
+        <div class="modal-content rename-scope-modal-content" role="dialog" aria-modal="true" aria-labelledby="renameScopeTitle">
+            <div id="renameScopeTitle" class="modal-header">Phát hiện form đã đổi tên trường</div>
+            <div class="modal-body">
+                <p id="renameScopeBody">Bạn muốn áp dụng cập nhật tên trường cho phạm vi nào?</p>
+                <p id="renameScopeNote" class="rename-scope-note"></p>
+            </div>
+            <div class="modal-footer rename-scope-actions">
+                <button id="renameScopeAllBtn" type="button" class="modal-btn scope-all">Sửa hết các trang</button>
+                <button id="renameScopeCurrentBtn" type="button" class="modal-btn scope-current">Chỉ trang hiện tại</button>
+            </div>
+            <div class="modal-footer export-cancel-wrap">
+                <button id="renameScopeCancelBtn" type="button" class="modal-btn modal-btn-cancel">Hủy</button>
             </div>
         </div>
     </div>

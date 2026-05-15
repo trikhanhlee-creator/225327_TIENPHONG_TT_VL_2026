@@ -221,6 +221,104 @@
             color: var(--primary);
         }
 
+        .mini-rename-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1300;
+            background: rgba(0, 0, 0, 0.38);
+            align-items: center;
+            justify-content: center;
+            padding: 14px;
+        }
+
+        .mini-rename-modal.show {
+            display: flex;
+        }
+
+        .mini-rename-card {
+            width: min(420px, calc(100vw - 28px));
+            border-radius: 14px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            box-shadow: 0 16px 34px rgba(12, 22, 46, 0.22);
+            padding: 14px;
+        }
+
+        .mini-rename-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .mini-rename-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: color-mix(in srgb, var(--primary) 14%, var(--surface-soft));
+            font-size: 12px;
+        }
+
+        .mini-rename-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .mini-rename-input {
+            width: 100%;
+            height: 38px;
+            border: 1px solid var(--line-strong);
+            border-radius: 9px;
+            background: var(--surface-soft);
+            color: var(--text);
+            font-size: 14px;
+            padding: 0 10px;
+            outline: none;
+        }
+
+        .mini-rename-input:focus {
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+        }
+
+        .mini-rename-actions {
+            margin-top: 10px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .mini-rename-btn {
+            min-width: 76px;
+            height: 33px;
+            border-radius: 8px;
+            border: 1px solid transparent;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .mini-rename-btn.cancel {
+            background: color-mix(in srgb, var(--muted) 14%, var(--surface-soft));
+            color: var(--text);
+            border-color: var(--line);
+        }
+
+        .mini-rename-btn.confirm {
+            background: linear-gradient(90deg, var(--primary), #547ce8);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
         .form-grid {
             display: grid;
             grid-template-columns: 1fr;
@@ -242,6 +340,54 @@
             font-size: 13px;
             font-weight: 700;
             color: var(--text);
+        }
+
+        .editable-field-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .editable-field-label .label-text {
+            flex: 1;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .field-label-edit-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            border: 1px solid var(--line-strong);
+            background: color-mix(in srgb, var(--primary) 14%, var(--surface-soft));
+            color: var(--primary);
+            font-size: 13px;
+            line-height: 1;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .field-label-edit-icon {
+            width: 15px;
+            height: 15px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .field-label-edit-btn:hover {
+            background: color-mix(in srgb, var(--primary) 18%, var(--surface-soft));
+        }
+
+        .field-label-edit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .form-group input,
@@ -386,6 +532,21 @@
     </section>
 </div>
 
+<div id="miniRenameModal" class="mini-rename-modal">
+    <div class="mini-rename-card" role="dialog" aria-modal="true" aria-labelledby="miniRenameTitle">
+        <div class="mini-rename-header">
+            <span class="mini-rename-icon">✏</span>
+            <span id="miniRenameTitle">Đổi tên trường</span>
+        </div>
+        <label id="miniRenameLabel" class="mini-rename-label" for="miniRenameInput">Tên trường mới</label>
+        <input id="miniRenameInput" class="mini-rename-input" type="text" maxlength="120" autocomplete="off">
+        <div class="mini-rename-actions">
+            <button id="miniRenameCancelBtn" type="button" class="mini-rename-btn cancel">Hủy</button>
+            <button id="miniRenameConfirmBtn" type="button" class="mini-rename-btn confirm">OK</button>
+        </div>
+    </div>
+</div>
+
 <script>
 const rawSessionId = '{{SESSION_ID}}';
 
@@ -503,7 +664,23 @@ function buildForm() {
         const fullClass = isLong ? 'form-group full' : 'form-group';
         return `
             <div class="${fullClass}">
-                <label>${escapeHtml(header)}</label>
+                <label class="editable-field-label">
+                    <span class="label-text">${escapeHtml(header)}</span>
+                    <button
+                        type="button"
+                        class="field-label-edit-btn"
+                        title="Chỉnh sửa tên trường"
+                        aria-label="Chỉnh sửa tên trường ${escapeHtml(header)}"
+                        onclick="promptRenameExcelField(${index})"
+                    >
+                        <svg class="field-label-edit-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5" />
+                            <path d="M14 6l4 4" />
+                            <path d="M16 4l4 4" />
+                            <path d="M10 14l8-8a1.5 1.5 0 0 1 2 2l-8 8-3 1z" />
+                        </svg>
+                    </button>
+                </label>
                 <div class="field-input-wrap">
                     ${input}
                     <div class="field-inline-reference" data-reference-wrap="${index}">
@@ -875,6 +1052,127 @@ function collectFormData() {
         data[el.dataset.field] = el.value;
     });
     return data;
+}
+
+async function promptRenameExcelField(fieldIndex) {
+    const index = Number(fieldIndex);
+    if (!Number.isInteger(index) || index < 0 || index >= state.headers.length) {
+        return;
+    }
+
+    const currentHeader = String(state.headers[index] || '').trim();
+    if (!currentHeader) {
+        return;
+    }
+
+    const rawNextHeader = await showMiniRenamePopup({
+        title: 'Đổi tên trường',
+        label: 'Tên trường mới',
+        value: currentHeader
+    });
+    if (rawNextHeader === null) {
+        return;
+    }
+
+    const nextHeader = String(rawNextHeader || '').trim();
+    if (!nextHeader) {
+        showMessage('error', 'Tên trường không được để trống.');
+        return;
+    }
+    if (nextHeader === currentHeader) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/excel/field-label', {
+            method: 'PUT',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                session_id: state.sessionId,
+                field_name: currentHeader,
+                new_label: nextHeader
+            })
+        });
+        await parseApiResponse(response);
+
+        const previousRow = state.currentRowIndex;
+        state.referenceOptions = {};
+        state.referenceFilename = '';
+        updateReferenceInfo('Đã đổi tên trường. Vui lòng upload lại file tham chiếu nếu cần gợi ý.');
+
+        await loadSessionData();
+        goToRow(previousRow);
+        showMessage('success', `✅ Đã đổi tên trường "${currentHeader}" thành "${nextHeader}".`);
+    } catch (error) {
+        showMessage('error', error.message || 'Không thể đổi tên trường.');
+    }
+}
+
+function showMiniRenamePopup({ title, label, value }) {
+    const modal = document.getElementById('miniRenameModal');
+    const titleNode = document.getElementById('miniRenameTitle');
+    const labelNode = document.getElementById('miniRenameLabel');
+    const inputNode = document.getElementById('miniRenameInput');
+    const cancelBtn = document.getElementById('miniRenameCancelBtn');
+    const confirmBtn = document.getElementById('miniRenameConfirmBtn');
+
+    if (!modal || !titleNode || !labelNode || !inputNode || !cancelBtn || !confirmBtn) {
+        return Promise.resolve(window.prompt(String(label || 'Nhập tên mới:'), String(value || '')));
+    }
+
+    titleNode.textContent = String(title || 'Đổi tên');
+    labelNode.textContent = String(label || 'Tên mới');
+    inputNode.value = String(value || '');
+    modal.classList.add('show');
+
+    return new Promise((resolve) => {
+        let settled = false;
+
+        const cleanup = () => {
+            modal.classList.remove('show');
+            cancelBtn.removeEventListener('click', onCancel);
+            confirmBtn.removeEventListener('click', onConfirm);
+            inputNode.removeEventListener('keydown', onKeyDown);
+            modal.removeEventListener('click', onBackdropClick);
+        };
+
+        const done = (nextValue) => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            resolve(nextValue);
+        };
+
+        const onCancel = () => done(null);
+        const onConfirm = () => done(inputNode.value);
+        const onKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                done(null);
+                return;
+            }
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                done(inputNode.value);
+            }
+        };
+        const onBackdropClick = (event) => {
+            if (event.target === modal) {
+                done(null);
+            }
+        };
+
+        cancelBtn.addEventListener('click', onCancel);
+        confirmBtn.addEventListener('click', onConfirm);
+        inputNode.addEventListener('keydown', onKeyDown);
+        modal.addEventListener('click', onBackdropClick);
+
+        requestAnimationFrame(() => {
+            inputNode.focus();
+            inputNode.select();
+        });
+    });
 }
 
 function hasAnyValue(rowData) {

@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const setGuestMode = () => {
         if (usageModeHint) {
-            usageModeHint.textContent = 'Bạn cần đăng nhập để sử dụng các tính năng Word, Excel và Composer.';
+            usageModeHint.textContent = 'Bạn cần đăng nhập để sử dụng các tính năng Word Upload và Excel Upload.';
         }
         if (authStatusText) {
             authStatusText.textContent = 'Khách truy cập: vui lòng đăng nhập trước khi bắt đầu thao tác.';

@@ -494,7 +494,8 @@ body.light-mode .aurora {
 }
 
 .feature-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
 }
 
 .feature-card {
@@ -504,7 +505,7 @@ body.light-mode .aurora {
     background: var(--bg-surface-2);
     display: flex;
     flex-direction: column;
-    min-height: 190px;
+    min-height: 176px;
 }
 
 .feature-card h3 {
@@ -1071,6 +1072,14 @@ body.light-mode .aurora {
 
     .feature-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .feature-card-wide,
+    .feature-grid .feature-card:last-child:nth-child(odd) {
+        grid-column: 1 / -1;
+        width: min(100%, 760px);
+        justify-self: center;
     }
 
     .proof-strip {
@@ -1122,6 +1131,13 @@ body.light-mode .aurora {
     .use-cases-grid,
     .gallery-grid {
         grid-template-columns: 1fr;
+    }
+
+    .feature-card-wide,
+    .feature-grid .feature-card:last-child:nth-child(odd) {
+        grid-column: auto;
+        width: 100%;
+        justify-self: stretch;
     }
 
     .landing-prefooter {
