@@ -25,6 +25,17 @@ class LLMClient:
         Reuses composer service to avoid duplicating provider/failover code.
         """
         try:
+            text = await self._composer.complete_json_response(
+                f"Return strict JSON only for task: {task_name}\n\n{prompt}",
+                max_tokens=8192,
+            )
+            parsed = self._extract_json(text)
+            if parsed is not None:
+                return parsed
+        except Exception as exc:
+            logger.warning(f"LLMClient complete_json (large) failed [{task_name}]: {exc}")
+
+        try:
             suggestions = await self._composer.get_text_suggestions(
                 context=prompt,
                 max_suggestions=1,

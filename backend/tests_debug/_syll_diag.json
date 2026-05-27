@@ -1,0 +1,141 @@
+{
+  "count": 21,
+  "fields": [
+    {
+      "name": "họ_và_tên",
+      "field_type": "text",
+      "label": "Họ và tên",
+      "order": 0
+    },
+    {
+      "name": "ngày_sinh",
+      "field_type": "date",
+      "label": "Ngày sinh",
+      "order": 1
+    },
+    {
+      "name": "năm",
+      "field_type": "number",
+      "label": "năm",
+      "order": 2
+    },
+    {
+      "name": "nơi_sinh",
+      "field_type": "text",
+      "label": "Nơi sinh",
+      "order": 3
+    },
+    {
+      "name": "nguyên_quán",
+      "field_type": "text",
+      "label": "Nguyên quán",
+      "order": 4
+    },
+    {
+      "name": "nơi_đăng_ký_hộ_khẩu_thường_trú",
+      "field_type": "text",
+      "label": "Nơi đăng ký hộ khẩu thường trú",
+      "order": 5
+    },
+    {
+      "name": "địa_chỉ_hiện_tại",
+      "field_type": "text",
+      "label": "Địa chỉ hiện tại",
+      "order": 6
+    },
+    {
+      "name": "số_điện_thoại_liên_hệ",
+      "field_type": "phone",
+      "label": "Số điện thoại liên hệ",
+      "order": 7
+    },
+    {
+      "name": "dân_tộc",
+      "field_type": "text",
+      "label": "Dân tộc",
+      "order": 8
+    },
+    {
+      "name": "tôn_giáo",
+      "field_type": "text",
+      "label": "Tôn giáo",
+      "order": 9
+    },
+    {
+      "name": "số_cccdcmnd",
+      "field_type": "number",
+      "label": "Số CCCD/CMND",
+      "order": 10
+    },
+    {
+      "name": "nơi_cấp",
+      "field_type": "text",
+      "label": "nơi cấp",
+      "order": 11
+    },
+    {
+      "name": "trình_độ_văn_hóa",
+      "field_type": "text",
+      "label": "Trình độ văn hóa",
+      "order": 12
+    },
+    {
+      "name": "kết_nạp_đoàn_tncs_hcm",
+      "field_type": "text",
+      "label": "Kết nạp Đoàn TNCS HCM",
+      "order": 13
+    },
+    {
+      "name": "tại",
+      "field_type": "text",
+      "label": "tại",
+      "order": 14
+    },
+    {
+      "name": "khen_thưởng_kỷ_luật",
+      "field_type": "text",
+      "label": "Khen thưởng/ Kỷ luật",
+      "order": 15
+    },
+    {
+      "name": "trường_tốt_nghiệp",
+      "field_type": "text",
+      "label": "Trường tốt nghiệp",
+      "order": 16
+    },
+    {
+      "name": "nghề_nghiệp_hiện_nay",
+      "field_type": "text",
+      "label": "Nghề nghiệp hiện nay",
+      "order": 17
+    },
+    {
+      "name": "cơ_quan_công_tác",
+      "field_type": "text",
+      "label": "Cơ quan công tác",
+      "order": 18
+    },
+    {
+      "name": "năm_sinh",
+      "field_type": "number",
+      "label": "Năm sinh",
+      "order": 19
+    },
+    {
+      "name": "phương_nơi_đăng_ký_hộ_khẩu",
+      "field_type": "text",
+      "label": "phương nơi đăng ký hộ khẩu",
+      "order": 20
+    }
+  ],
+  "meta": {
+    "title": "MẪU SƠ YẾU LÍ LỊCH",
+    "file_type": ".docx",
+    "fields_count": 21,
+    "author": "User",
+    "created": "2026-05-18T14:24:00+00:00",
+    "modified": "2026-05-18T14:24:00+00:00",
+    "paragraphs_count": 48,
+    "tables_count": 3
+  }
+}

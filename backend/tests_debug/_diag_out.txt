@@ -1,0 +1,50 @@
+﻿..\.venv\Scripts\python.exe : 2026-05-24 18:43:54,884 - autofill_ai - INFO - OpenRouter client initialized with model: 
+google/gemma-3-4b-it:free
+At C:\Users\KHANH\AppData\Local\Temp\ps-script-87d054c9-7f02-40a4-9a25-0918d2395bcb.ps1:86 char:80
++ ... NG='utf-8'; ..\.venv\Scripts\python.exe tests_debug/_diag_don_xin_vie ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (2026-05-24 18:4...ma-3-4b-it:free:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+2026-05-24 18:43:55,884 - autofill_ai - INFO - OpenAI client initialized with model: gpt-4o-mini
+C:\Users\KHANH\autofill-ai-system\backend\app\services\ai_composer_service.py:223: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+2026-05-24 18:43:57,419 - autofill_ai - INFO - Gemini client initialized
+2026-05-24 18:43:57,419 - autofill_ai - INFO - Composer AI profile=gemini, failover=True, active provider=gemini, 
+order=['gemini']
+2026-05-24 18:44:17,686 - autofill_ai - INFO - LLMWordFormService: 15 fields for demoDonXinViec.docx (strategy=llm)
+=== BASELINE 9 ===
+  [] c├┤ng_ty_ß╗⌐ng_tuyß╗ân | C├┤ng ty ß╗⌐ng tuyß╗ân
+  [] hß╗ì_v├á_t├¬n | Hß╗ì v├á t├¬n
+  [] ng├áy_sinh | Ng├áy sinh
+  [] ─æß╗ïa_chß╗ë_hiß╗çn_tß║íi | ─Éß╗ïa chß╗ë hiß╗çn tß║íi
+  [] sß╗æ_─æiß╗çn_thoß║íi_li├¬n_hß╗ç | Sß╗æ ─æiß╗çn thoß║íi li├¬n hß╗ç
+  [] vß╗ï_tr├¡_ß╗⌐ng_tuyß╗ân | Vß╗ï tr├¡ ß╗⌐ng tuyß╗ân
+  [] xß║┐p_loß║íi_tß╗æt_nghiß╗çp | Xß║┐p loß║íi tß╗æt nghiß╗çp
+  [] tr╞░ß╗¥ng_tß╗æt_nghiß╗çp | Tr╞░ß╗¥ng tß╗æt nghiß╗çp
+  [] kh├│a_hß╗ìc_─æ├ú_tham_gia | Kh├│a hß╗ìc ─æ├ú tham gia
+=== ENHANCED 15 llm ===
+SECTION: '─É╞áN XIN VIß╗åC' (13)
+  cong_ty_kinh_gui | C├┤ng ty k├¡nh gß╗¡i | text
+  ho_va_ten | Hß╗ì v├á t├¬n | text
+  ngay_sinh | Ng├áy sinh | date
+  cho_o_hien_nay | Chß╗ù ß╗ƒ hiß╗çn nay | text
+  so_dien_thoai_lien_he | Sß╗æ ─æiß╗çn thoß║íi li├¬n hß╗ç | phone
+  vi_tri_ung_tuyen | Vß╗ï tr├¡ ß╗⌐ng tuyß╗ân | text
+  xep_loai_tot_nghiep | Xß║┐p loß║íi tß╗æt nghiß╗çp | text
+  truong_tot_nghiep | Tr╞░ß╗¥ng tß╗æt nghiß╗çp | text
+  khoa_hoc_da_tham_gia | Kh├│a hß╗ìc ─æ├ú tham gia | text
+  dia_diem_viet_don | ─Éß╗ïa ─æiß╗âm viß║┐t ─æ╞ín | text
+  ngay_viet_don | Ng├áy viß║┐t ─æ╞ín | number
+  thang_viet_don | Th├íng viß║┐t ─æ╞ín | number
+  nam_viet_don | N─âm viß║┐t ─æ╞ín | number
+SECTION: 'I. TH├öNG TIN Bß║óN TH├éN' (2)
+  c├┤ng_ty_ß╗⌐ng_tuyß╗ân | C├┤ng ty ß╗⌐ng tuyß╗ân | text
+  ─æß╗ïa_chß╗ë_hiß╗çn_tß║íi | ─Éß╗ïa chß╗ë hiß╗çn tß║íi | text

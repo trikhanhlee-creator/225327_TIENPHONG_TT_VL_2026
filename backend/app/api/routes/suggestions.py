@@ -15,7 +15,12 @@ from app.schemas.suggestion import (
     FieldStatisticsResponse
 )
 from app.core.auth import get_current_user
+from app.core.config import settings
 from app.core.logger import logger
+from app.services.autofill.rag_form_service import RagFormService
+from app.services.suggestion_value_filters import is_valid_field_suggestion_value
+
+_rag_form_service = RagFormService()
 
 router = APIRouter(
     prefix="/api/suggestions",
@@ -90,6 +95,39 @@ def _is_phone_field_key(field_key: str) -> bool:
     key = f" {field_key or ''} "
     markers = (" sdt ", " so dien thoai ", " dien thoai ", " phone ", " mobile ", " tel ")
     return any(marker in key for marker in markers)
+
+
+def _merge_rag_into_suggestion_stats(
+    db: Session,
+    *,
+    user_id: int,
+    field_name: str,
+    stats: dict,
+    top_k: int,
+) -> None:
+    if not settings.RAG_ENABLED:
+        return
+    try:
+        rag_items = _rag_form_service.suggest_values_for_field_name(
+            db,
+            user_id=user_id,
+            field_name=field_name,
+            top_k=top_k,
+        )
+    except Exception as exc:
+        logger.warning(f"RAG suggestion merge failed for {field_name}: {exc}")
+        return
+
+    for item in rag_items:
+        value = str(item.get("value") or "").strip()
+        if not value or not is_valid_field_suggestion_value(value):
+            continue
+        row = stats[value]
+        row["frequency"] = max(int(row.get("frequency") or 0), 1)
+        row["source_fields"].add("Bộ nhớ RAG")
+        row["similarity"] = max(float(row.get("similarity") or 0.0), min(0.98, float(item.get("score") or 0.0) / 1000.0 + 0.75))
+        row["persona_score"] = max(float(row.get("persona_score") or 0.0), float(item.get("confidence") or 0.0))
+        row["own_hits"] = max(int(row.get("own_hits") or 0), 1)
 
 
 def _is_identifier_field_key(field_key: str) -> bool:
@@ -284,23 +322,7 @@ def _value_conflicts_with_target_persona(value: str, target_tags: set[str], targ
 
 
 def _is_noise_suggestion_value(value: str) -> bool:
-    text = (value or "").strip()
-    if not text:
-        return True
-
-    # Filter technical/session-like strings that should not appear in name/address suggestions.
-    if re.match(r"^[a-z0-9]+_[0-9]{8,}$", text.lower()):
-        return True
-    if re.match(r"^\d{10,}$", text):
-        return True
-    if re.match(r"^[._\-\s]{3,}$", text):
-        return True
-    if text.lower() in {"n/a", "na", "null", "none", "khong", "không", "test", "unknown", "...", "-"}:
-        return True
-    if len(text) > 80:
-        return True
-
-    return False
+    return not is_valid_field_suggestion_value(value)
 
 
 def _is_fullname_key(field_key: str) -> bool:
@@ -651,6 +673,14 @@ async def get_cross_field_suggestions(
                     if latest_candidates:
                         item["latest_time"] = max(latest_candidates)
 
+        _merge_rag_into_suggestion_stats(
+            db,
+            user_id=effective_user_id,
+            field_name=field_name,
+            stats=stats,
+            top_k=top_k,
+        )
+
         if not stats:
             return {
                 "field_name": field_name,
@@ -750,9 +780,43 @@ async def get_suggestions(
         entry_count = len(entries)
         logger.info(f"Field {field_id} has {entry_count} entries")
         
-        # Logic: Nếu không có entries, không gợi ý
-        # Show suggestions from >= 1 entry (show history)
+        field_row = db.query(Field).filter(Field.id == field_id).first()
+        field_name_for_rag = field_row.field_name if field_row else ""
+
+        # Logic: Nếu không có entries, thử RAG trước khi trả rỗng
         if entry_count < 1:
+            rag_items = []
+            if settings.RAG_ENABLED and field_name_for_rag:
+                rag_items = _rag_form_service.suggest_values_for_field_name(
+                    db,
+                    user_id=effective_user_id,
+                    field_name=field_name_for_rag,
+                    field_label=(field_row.placeholder if field_row else None) or field_name_for_rag,
+                    top_k=top_k,
+                )
+            filtered_rag = [
+                item for item in rag_items
+                if is_valid_field_suggestion_value(str(item.get("value") or ""))
+            ] if rag_items else []
+            if filtered_rag:
+                return {
+                    "user_id": effective_user_id,
+                    "field_id": field_id,
+                    "suggestions": [
+                        {
+                            "value": item["value"],
+                            "frequency": 1,
+                            "latest_time": None,
+                            "source": item.get("source", "rag"),
+                            "confidence": item.get("confidence", 0.0),
+                        }
+                        for item in filtered_rag
+                    ],
+                    "total_count": len(filtered_rag),
+                    "entry_count": entry_count,
+                    "is_first_entry": True,
+                    "message": "Gợi ý từ bộ nhớ RAG",
+                }
             logger.info(f"No entries found ({entry_count} < 1), no suggestions")
             return {
                 "user_id": effective_user_id,
@@ -798,6 +862,33 @@ async def get_suggestions(
             }
             for value, stats in sorted_suggestions
         ]
+
+        if settings.RAG_ENABLED and field_name_for_rag and len(suggestions) < top_k:
+            existing_values = {item["value"] for item in suggestions}
+            rag_items = _rag_form_service.suggest_values_for_field_name(
+                db,
+                user_id=effective_user_id,
+                field_name=field_name_for_rag,
+                top_k=top_k,
+            )
+            for item in rag_items:
+                value = item.get("value")
+                if not value or value in existing_values:
+                    continue
+                if not is_valid_field_suggestion_value(str(value)):
+                    continue
+                existing_values.add(value)
+                suggestions.append(
+                    {
+                        "value": value,
+                        "frequency": 1,
+                        "latest_time": None,
+                        "source": item.get("source", "rag"),
+                        "confidence": item.get("confidence", 0.0),
+                    }
+                )
+                if len(suggestions) >= top_k:
+                    break
         
         logger.info(f"Generated {len(suggestions)} suggestions from {entry_count} entries")
         

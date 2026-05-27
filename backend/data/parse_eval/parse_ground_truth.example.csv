@@ -1,0 +1,6 @@
+form_id,field_key,field_type,form_type
+F001,full_name,text,DOCX
+F001,student_id,text,DOCX
+F001,birth_date,date,DOCX
+F002,ho_ten,text,PDF
+F002,ngay_sinh,date,PDF

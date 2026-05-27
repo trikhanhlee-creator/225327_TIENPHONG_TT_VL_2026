@@ -12,7 +12,17 @@ from app.services.autofill.memory_chunk_indexer import (
     cosine_similarity,
     split_text_chunks,
 )
-from app.services.autofill.memory_retrieval_agent import LLMMemoryRetrievalAgent
+from app.services.autofill.memory_retrieval_agent import (
+    LLMMemoryRetrievalAgent,
+    TIER_CONFIRMED,
+    TIER_ENTRY,
+    TIER_MEMORY,
+    TIER_RAG_FIELD,
+    _composite_score,
+    _extract_rag_value,
+    _rank_key,
+)
+from app.services.autofill.contracts import MemoryCandidate
 
 
 def test_cosine_similarity_orthogonal():
@@ -78,6 +88,53 @@ def test_semantic_search_scores_chunks():
     hits = MemoryChunkIndexer.semantic_search_for_user(db, user_id=1, query_vector=q, top_k=5)
     assert len(hits) == 1
     assert hits[0][1] > 0.99
+
+
+def test_extract_rag_value_from_prefixed_chunk():
+    assert _extract_rag_value("email: user@test.com", "email") == "user@test.com"
+    assert _extract_rag_value("full_name: Nguyen Van A\nother: x", "full_name") == "Nguyen Van A"
+
+
+def test_rank_confirmed_beats_rag():
+    confirmed = MemoryCandidate(
+        field_key="email",
+        value="a@b.com",
+        memory_type="confirmed",
+        score=_composite_score(tier=TIER_CONFIRMED, confidence=0.95, score=1.0, value="a@b.com"),
+        confidence=0.95,
+        metadata={"tier": TIER_CONFIRMED, "composite_score": _composite_score(tier=TIER_CONFIRMED, confidence=0.95, score=1.0, value="a@b.com")},
+    )
+    rag = MemoryCandidate(
+        field_key="email",
+        value="long rag chunk",
+        memory_type="rag",
+        score=_composite_score(tier=TIER_RAG_FIELD, confidence=0.99, score=5.0, similarity=0.99, value="long rag chunk"),
+        confidence=0.99,
+        metadata={"tier": TIER_RAG_FIELD, "composite_score": _composite_score(tier=TIER_RAG_FIELD, confidence=0.99, score=5.0, similarity=0.99, value="long rag chunk")},
+    )
+    ordered = sorted([rag, confirmed], key=_rank_key)
+    assert ordered[0].metadata["tier"] == TIER_CONFIRMED
+
+
+def test_rank_memory_beats_entry():
+    memory = MemoryCandidate(
+        field_key="name",
+        value="A",
+        memory_type="profile",
+        score=800,
+        confidence=0.8,
+        metadata={"tier": TIER_MEMORY, "composite_score": 900},
+    )
+    entry = MemoryCandidate(
+        field_key="name",
+        value="B",
+        memory_type="entry",
+        score=400,
+        confidence=0.9,
+        metadata={"tier": TIER_ENTRY, "composite_score": 500},
+    )
+    ordered = sorted([entry, memory], key=_rank_key)
+    assert ordered[0].metadata["tier"] == TIER_MEMORY
 
 
 @patch("app.services.autofill.memory_chunk_indexer.embed_texts_sync", return_value=[])

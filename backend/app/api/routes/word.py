@@ -2,37 +2,75 @@
 API Routes cho xử lý upload và submit form từ file Word/Document
 """
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Query
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Query, BackgroundTasks
 from fastapi.requests import Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import text, inspect
+from sqlalchemy import text, inspect, func
 from typing import List, Dict, Iterable
 import os
 import json
 import io
+import time
 from urllib.parse import quote
 from datetime import datetime
 from pydantic import BaseModel
 from docx import Document
 
-from app.db.session import get_db
+from app.db.session import get_db, SessionLocal
 from app.db.models import WordTemplate, WordSubmission, Entry, Field, User, Form
 from app.services.file_parser import FileParserFactory, FileField
+from app.services.doc_converter import DocConversionError, ensure_docx_for_processing
 from app.core.logger import logger
 from app.core.file_utils import extract_clean_filename
 from app.core.auth import get_current_user
+from app.core.config import settings
 from app.services.autofill.orchestrator import AutofillOrchestrator
 from app.services.autofill.memory_service import UserMemoryService
+from app.services.autofill.rag_form_service import RagFormService
+from app.services.autofill.llm_word_form_service import enhance_word_template_fields
+from app.services.autofill.contracts import CanonicalFormField
+from app.services.parse_eval_logger import log_parse_run
 import re
 
 router = APIRouter(prefix="/api/word", tags=["word"])
 autofill_orchestrator = AutofillOrchestrator()
+rag_form_service = RagFormService()
 template_form_instance_map: dict[int, int] = {}
 
 SUBMISSION_META_KEY = "__autofill_meta__"
 
+_FIELDS_TABLE_COLUMNS: set[str] | None = None
+
+
+def _background_index_word_upload(
+    *,
+    user_id: int,
+    file_path: str,
+    source_ref: str,
+) -> None:
+    """Index uploaded Word file for RAG without blocking the upload HTTP response."""
+    if not settings.RAG_ENABLED or not settings.RAG_INDEX_ON_UPLOAD:
+        return
+    db = SessionLocal()
+    try:
+        rag_form_service.index_uploaded_file(
+            db,
+            user_id=user_id,
+            file_path=file_path,
+            source_ref=source_ref,
+        )
+    except Exception as exc:
+        logger.warning("Background RAG index failed for %s: %s", source_ref, exc)
+        db.rollback()
+    finally:
+        db.close()
+
 PLACEHOLDER_RE = re.compile(r'(\.{3,}|_{3,}|…{2,}|-{3,}|─{3,}|‒{3,}|–{3,}|—{3,}|\u2026{2,})')
+CHECKBOX_RE = re.compile(r'(?:\[\s*\]|\(\s*\)|□|☐)')
+CHOICE_OPTION_RE = re.compile(
+    r'(\[\s*\]|\(\s*\)|□|☐)\s*([^\[\(□☐\n]{1,50}?)(?=\s*(?:\[\s*\]|\(\s*\)|□|☐)|$)'
+)
 DATE_TEMPLATE_RE = re.compile(
     r'ngày\s*[.\-_/…_‒–—]{1,}\s*tháng\s*[.\-_/…_‒–—]{1,}\s*năm\s*[.\-_/…_‒–—]{1,}',
     re.IGNORECASE
@@ -42,6 +80,7 @@ class WordDocxExportRequest(BaseModel):
     submission_ids: list[int]
     file_name: str | None = None
     user_id: int | None = None
+    fill_missing_from_rag: bool = True
 
 
 class WordFieldLabelUpdateRequest(BaseModel):
@@ -138,6 +177,58 @@ def _is_signature_date_line(text: str) -> bool:
     return not any(keyword in normalized for keyword in ("ngày nộp", "ngày ký", "ngày lập"))
 
 
+def _fill_choice_checkboxes(text: str, selected: str) -> str:
+    """Mark selected checkbox option in a line (e.g. [ ] Nam [ ] Nữ)."""
+    selected_norm = (selected or "").strip().lower()
+    if not selected_norm or not CHECKBOX_RE.search(text or ""):
+        return text
+
+    def _replace_option(match: re.Match) -> str:
+        marker = match.group(1)
+        option = (match.group(2) or "").strip()
+        option_norm = option.lower()
+        picked = (
+            option_norm == selected_norm
+            or selected_norm in option_norm
+            or option_norm in selected_norm
+        )
+        if "[" in marker:
+            new_marker = "[x]" if picked else "[ ]"
+        elif "(" in marker:
+            new_marker = "(x)" if picked else "( )"
+        else:
+            new_marker = "☑" if picked else "☐"
+        return f"{new_marker} {option}"
+
+    return CHOICE_OPTION_RE.sub(_replace_option, text)
+
+
+def _apply_choice_fields_to_paragraph(text: str, data_map: dict, template_fields: list[dict]) -> str:
+    updated = text
+    for field_data in template_fields:
+        if str(field_data.get("field_type") or "") != "choice":
+            continue
+
+        options = field_data.get("options") or []
+        if not isinstance(options, list) or len(options) < 1:
+            continue
+
+        if not any(str(opt) in updated for opt in options):
+            continue
+
+        field_name = str(field_data.get("name") or "").strip()
+        if not field_name:
+            continue
+
+        selected = _normalize_export_value(data_map.get(field_name))
+        if not selected:
+            continue
+
+        updated = _fill_choice_checkboxes(updated, selected)
+
+    return updated
+
+
 def _pick_submission_date_value(data_map: dict, ordered_field_names: list[str]) -> str:
     for field_name in ordered_field_names:
         lowered = field_name.lower()
@@ -170,6 +261,11 @@ def _fill_submission_into_template_docx(template_path: str, data_map: dict, temp
             continue
 
         new_text = original_text
+        choice_filled = _apply_choice_fields_to_paragraph(new_text, data_map, template_fields)
+        if choice_filled != new_text:
+            paragraph.text = choice_filled
+            replaced_count += 1
+            new_text = choice_filled
 
         # Keep signature footer date template stable, only replace if user has explicit date value.
         if _is_signature_date_line(original_text):
@@ -327,13 +423,22 @@ def parse_template_fields(fields_json_raw: str | None) -> list[dict]:
         else:
             continue
 
-        normalized.append({
+        field_payload = {
             "name": str(name),
             "label": str(label),
             "field_type": str(field_type),
             "order": int(order) if isinstance(order, (int, float)) else idx,
             "label_updated_at": str(item.get("label_updated_at") or "").strip() if isinstance(item, dict) else ""
-        })
+        }
+        if isinstance(item, dict):
+            options = item.get("options")
+            if isinstance(options, list) and options:
+                field_payload["options"] = [str(opt).strip() for opt in options if str(opt).strip()]
+            section = str(item.get("section") or "").strip()
+            if section:
+                field_payload["section"] = section
+
+        normalized.append(field_payload)
 
     return normalized
 
@@ -464,18 +569,26 @@ def ensure_forms_schema_compatibility(db: Session) -> None:
         raise
 
 
+def _get_fields_table_columns(db: Session) -> set[str]:
+    """Cache `fields` table columns to avoid repeated schema inspection."""
+    global _FIELDS_TABLE_COLUMNS
+    if _FIELDS_TABLE_COLUMNS is not None:
+        return _FIELDS_TABLE_COLUMNS
+
+    bind = db.get_bind()
+    inspector = inspect(bind)
+    if not inspector.has_table("fields"):
+        Field.__table__.create(bind=bind, checkfirst=True)
+    _FIELDS_TABLE_COLUMNS = {col["name"] for col in inspector.get_columns("fields")}
+    return _FIELDS_TABLE_COLUMNS
+
+
 def ensure_template_fields_exist(db: Session, form_id: int, fields_json: list[dict]) -> dict[str, int]:
     """Ensure template fields exist and return mapping by field_name -> field_id.
 
     Uses dynamic SQL to stay compatible with legacy `fields` table schemas.
     """
-    bind = db.get_bind()
-    inspector = inspect(bind)
-
-    if not inspector.has_table("fields"):
-        Field.__table__.create(bind=bind, checkfirst=True)
-
-    columns = {col["name"] for col in inspector.get_columns("fields")}
+    columns = _get_fields_table_columns(db)
 
     select_sql = "SELECT id, field_name FROM fields WHERE form_id = :form_id"
     existing_rows = db.execute(text(select_sql), {"form_id": form_id}).all()
@@ -538,6 +651,89 @@ def ensure_template_fields_exist(db: Session, form_id: int, fields_json: list[di
         field_by_name.update(refreshed_map)
 
     return field_by_name
+
+
+def persist_word_fields_for_learning(
+    db: Session,
+    *,
+    user_id: int,
+    template_id: int,
+    data_map: dict,
+    source_ref: str,
+    field_keys_filter: set[str] | None = None,
+) -> int:
+    """
+    Ghi Entry + UserMemoryItem (và chunk embedding RAG khi bật) cho các trường Word có giá trị.
+    Dùng cho submit mới, cập nhật submission (chỉ trường thay đổi), và khi người dùng áp gợi ý AI.
+    """
+    template = db.query(WordTemplate).filter(
+        WordTemplate.id == template_id,
+        WordTemplate.user_id == user_id,
+    ).first()
+    if not template:
+        logger.warning(
+            "persist_word_fields_for_learning: template %s not found for user %s",
+            template_id,
+            user_id,
+        )
+        return 0
+
+    fields_json = parse_template_fields(template.fields_json)
+    if not fields_json:
+        return 0
+
+    form_id = get_or_create_word_form_id(db, user_id)
+    field_by_name = ensure_template_fields_exist(db, form_id, fields_json)
+
+    entries_to_insert: list[Entry] = []
+    for field_data in fields_json:
+        field_name = str(field_data.get("name") or "").strip()
+        if not field_name:
+            continue
+        if field_keys_filter is not None and field_name not in field_keys_filter:
+            continue
+        value = _normalize_export_value(data_map.get(field_name))
+        if not value:
+            continue
+        field_id = field_by_name.get(field_name)
+        if not field_id:
+            continue
+        entries_to_insert.append(
+            Entry(
+                user_id=user_id,
+                field_id=field_id,
+                form_id=form_id,
+                value=value[:1000],
+            )
+        )
+
+    if not entries_to_insert:
+        return 0
+
+    db.add_all(entries_to_insert)
+    db.flush()
+
+    for entry in entries_to_insert:
+        try:
+            normalized_field = db.query(Field).filter(Field.id == entry.field_id).first()
+            field_key = normalized_field.field_name if normalized_field else ""
+            if not field_key:
+                continue
+            mem_conf = 0.78 if "ai_rewrite" in source_ref else 0.7
+            UserMemoryService.upsert_memory_value(
+                db=db,
+                user_id=user_id,
+                field_key=field_key,
+                value_text=entry.value[:1000],
+                memory_type="entry",
+                source_ref=source_ref,
+                confidence=mem_conf,
+                is_confirmed=("ai_rewrite" in source_ref),
+            )
+        except Exception as memory_error:
+            logger.warning("Unable to sync Word entry to memory: %s", memory_error)
+
+    return len(entries_to_insert)
 
 
 @router.post("/autofill/{template_id}")
@@ -660,15 +856,20 @@ def resolve_effective_user_id(current_user: User, requested_user_id: int | None)
 
 @router.post("/upload")
 async def upload_word_template(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     user_id: int | None = Query(None, description="ID của user (optional, admin only)"),
+    eval_form_id: str | None = Query(
+        None,
+        description="Form ID for parse experiment logs (e.g. F001). Defaults to template id.",
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Upload file (Word, PDF, Excel, CSV, Text) và parse thành template
     
     Hỗ trợ các định dạng:
-    - .docx (Word Document)
+    - .doc, .docx (Word Document)
     - .pdf (PDF File)
     - .xlsx, .xls (Excel File)
     - .csv (CSV File)
@@ -692,12 +893,28 @@ async def upload_word_template(
         with open(file_path, "wb") as f:
             content = await file.read()
             f.write(content)
-        
-        # Parse file bằng parser phù hợp
-        parser = FileParserFactory.create_parser(file_path)
-        fields = parser.parse()
-        metadata = parser.get_metadata()
-        
+
+        if file_ext == ".doc":
+            try:
+                file_path = ensure_docx_for_processing(file_path)
+                file_ext = ".docx"
+            except DocConversionError as conv_error:
+                raise HTTPException(status_code=400, detail=str(conv_error))
+
+        parse_started = time.perf_counter()
+        if file_ext in (".doc", ".docx"):
+            fields, metadata, parse_meta = await _parse_word_file_fields(
+                file_path=file_path,
+                file_ext=file_ext,
+                original_filename=file.filename,
+            )
+        else:
+            parser = FileParserFactory.create_parser(file_path)
+            fields = parser.parse()
+            metadata = parser.get_metadata()
+            parse_meta = {}
+        parse_latency_ms = (time.perf_counter() - parse_started) * 1000.0
+
         # Nếu vẫn không tìm được field nào, tạo một default field từ tên file
         if not fields:
             # Tạo field tạm thời dựa trên tên file
@@ -721,23 +938,48 @@ async def upload_word_template(
         db.commit()
         db.refresh(template)
 
+        experiment_form_id = (eval_form_id or "").strip() or str(template.id)
+        file_type_label = file_ext.lstrip(".").upper() if file_ext else "UNKNOWN"
+        parse_eval_log = log_parse_run(
+            form_id=experiment_form_id,
+            fields=fields,
+            latency_ms=parse_latency_ms,
+            source_file=file.filename,
+            file_type=file_type_label,
+        )
+
         fields_json = parse_template_fields(template.fields_json)
         word_form_id = get_or_create_word_form_id(db, effective_user_id)
         ensure_template_fields_exist(db, word_form_id, fields_json)
+
         form_instance_id = None
-        try:
-            _, form_instance_id = await autofill_orchestrator.parse_and_prepare_schema(
-                db=db,
+        if not getattr(settings, "WORD_SKIP_ORCHESTRATOR_ON_UPLOAD", True):
+            try:
+                schema, form_instance_id = await autofill_orchestrator.parse_and_prepare_schema(
+                    db=db,
+                    user_id=effective_user_id,
+                    file_path=file_path,
+                    source_type="word",
+                    source_ref=str(template.id),
+                    original_filename=file.filename,
+                )
+                if form_instance_id:
+                    template_form_instance_map[template.id] = form_instance_id
+            except Exception as parse_error:
+                logger.warning(
+                    "Unable to build canonical form instance for Word template %s: %s",
+                    template.id,
+                    parse_error,
+                )
+        elif settings.RAG_ENABLED and settings.RAG_INDEX_ON_UPLOAD:
+            background_tasks.add_task(
+                _background_index_word_upload,
                 user_id=effective_user_id,
                 file_path=file_path,
-                source_type="word",
                 source_ref=str(template.id),
-                original_filename=file.filename,
             )
-            if form_instance_id:
-                template_form_instance_map[template.id] = form_instance_id
-        except Exception as parse_error:
-            logger.warning(f"Unable to build canonical form instance for Word template {template.id}: {parse_error}")
+
+        fields_payload = [f.to_dict() for f in fields]
         
         auto_generated = len(fields) == 1 and "nội dung" in [f.to_dict() for f in fields][0].get("label", "").lower()
         
@@ -747,9 +989,13 @@ async def upload_word_template(
             "template_name": template.template_name,
             "file_type": file_ext,
             "fields_count": len(fields),
-            "fields": [f.to_dict() for f in fields],
+            "fields": fields_payload,
             "form_instance_id": form_instance_id,
+            "parse_strategy": parse_meta.get("strategy", "parser"),
             "auto_generated_fields": auto_generated,
+            "eval_form_id": experiment_form_id,
+            "parse_latency_ms": round(parse_latency_ms, 2),
+            "parse_eval_log": parse_eval_log,
             "message": "Upload và parse thành công" if not auto_generated else "Upload thành công. Không tìm thấy trường cấu trúc, đã tạo trường mặc định."
         }
     
@@ -758,12 +1004,60 @@ async def upload_word_template(
         raise HTTPException(status_code=500, detail=f"Lỗi: {str(e)}")
 
 
+async def _parse_word_file_fields(
+    file_path: str,
+    file_ext: str,
+    original_filename: str,
+) -> tuple[list[FileField], dict, dict]:
+    """Parse Word file with heuristic parser + optional LLM/template enhancement."""
+    parser = FileParserFactory.create_parser(file_path)
+    fields = parser.parse()
+    metadata = parser.get_metadata()
+    parse_meta: dict = {}
+
+    if file_ext in (".doc", ".docx") and settings.WORD_LLM_PARSE_ENABLED:
+        try:
+            fields, parse_meta = await enhance_word_template_fields(
+                file_path=file_path,
+                parser_fields=fields,
+                original_filename=original_filename,
+            )
+            if parse_meta.get("document_title"):
+                metadata["title"] = parse_meta["document_title"]
+        except Exception as llm_parse_error:
+            logger.warning(f"LLM Word form parse failed, using heuristic fields: {llm_parse_error}")
+
+    return fields, metadata, parse_meta
+
+
+def _build_sections_summary(fields_json: list[dict]) -> list[dict]:
+    """Group template fields by section for multi-page UI."""
+    buckets: dict[str, list[str]] = {}
+    order: list[str] = []
+
+    for field_data in fields_json:
+        name = str(field_data.get("name") or "").strip()
+        if not name:
+            continue
+        title = str(field_data.get("section") or "").strip() or "Thông tin chung"
+        if title not in buckets:
+            buckets[title] = []
+            order.append(title)
+        buckets[title].append(name)
+
+    return [
+        {"title": title, "field_count": len(buckets[title]), "field_names": buckets[title]}
+        for title in order
+    ]
+
+
 @router.get("/supported-formats")
 async def get_supported_formats():
     """Lấy danh sách các định dạng file được hỗ trợ"""
     return {
         "supported_extensions": FileParserFactory.get_supported_extensions(),
         "description": {
+            ".doc": "Word Document (97-2003, tự chuyển sang .docx)",
             ".docx": "Word Document",
             ".pdf": "PDF File", 
             ".xlsx": "Excel Spreadsheet (2007+)",
@@ -783,8 +1077,23 @@ async def get_user_templates(
     """Lấy danh sách template của user"""
     effective_user_id = resolve_effective_user_id(current_user, user_id)
 
-    templates = db.query(WordTemplate).filter(WordTemplate.user_id == effective_user_id).all()
-    
+    templates = (
+        db.query(WordTemplate)
+        .filter(WordTemplate.user_id == effective_user_id)
+        .order_by(WordTemplate.created_at.desc())
+        .all()
+    )
+    template_ids = [t.id for t in templates]
+    submission_counts: dict[int, int] = {}
+    if template_ids:
+        rows = (
+            db.query(WordSubmission.template_id, func.count(WordSubmission.id))
+            .filter(WordSubmission.template_id.in_(template_ids))
+            .group_by(WordSubmission.template_id)
+            .all()
+        )
+        submission_counts = {int(tid): int(cnt) for tid, cnt in rows}
+
     return {
         "templates": [
             {
@@ -793,7 +1102,7 @@ async def get_user_templates(
                 "filename": extract_clean_filename(t.original_filename),
                 "fields_count": len(parse_template_fields(t.fields_json)),
                 "created_at": t.created_at.isoformat(),
-                "submissions_count": len(t.submissions)
+                "submissions_count": submission_counts.get(t.id, 0),
             }
             for t in templates
         ]
@@ -803,6 +1112,10 @@ async def get_user_templates(
 @router.get("/template/{template_id}")
 async def get_template_detail(
     template_id: int,
+    include_hints: bool = Query(
+        False,
+        description="Bật RAG hints khi mở form (chậm với form nhiều trường; mặc định tắt)",
+    ),
     user_id: int | None = Query(None, description="ID của user (optional, admin only)"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
@@ -825,6 +1138,26 @@ async def get_template_detail(
     fields_json = parse_template_fields(template.fields_json)
     field_by_name = ensure_template_fields_exist(db, form_id, fields_json)
 
+    rag_hints: dict = {}
+    load_hints = include_hints or getattr(settings, "WORD_TEMPLATE_LOAD_RAG_HINTS", False)
+    if load_hints and settings.RAG_ENABLED:
+        canonical_fields = [
+            CanonicalFormField(
+                field_key=str(field_data.get("name") or "").strip().lower().replace(" ", "_"),
+                label=str(field_data.get("label") or field_data.get("name") or "").strip(),
+                field_type=str(field_data.get("field_type") or "text").strip() or "text",
+            )
+            for field_data in fields_json
+            if field_data.get("name")
+        ]
+        rag_hints = rag_form_service.build_field_hints(
+            db,
+            user_id=effective_user_id,
+            fields=canonical_fields,
+        )
+        if rag_hints:
+            fields_json = rag_form_service.merge_hints_into_template_fields(fields_json, rag_hints)
+
     # Enrich fields với database field IDs
     enriched_fields = []
     for idx, field_data in enumerate(fields_json):
@@ -839,19 +1172,26 @@ async def get_template_detail(
             "field_label": field_label
         })
     
-    try:
-        submissions_count = len(template.submissions)
-    except Exception as e:
-        logger.error(f"Error getting submissions count: {str(e)}")
-        submissions_count = 0
+    submissions_count = (
+        db.query(func.count(WordSubmission.id))
+        .filter(WordSubmission.template_id == template.id)
+        .scalar()
+        or 0
+    )
     
+    sections_summary = _build_sections_summary(enriched_fields)
+    use_section_pages = len(sections_summary) >= 2 and len(enriched_fields) >= 12
+
     return {
         "id": template.id,
         "name": template.template_name,
         "filename": extract_clean_filename(template.original_filename),
         "fields": enriched_fields,
+        "sections": sections_summary,
+        "use_section_pages": use_section_pages,
         "form_id": form_id,
         "form_instance_id": template_form_instance_map.get(template.id),
+        "rag_hints": rag_hints,
         "created_at": template.created_at.isoformat() if template.created_at else None,
         "submissions_count": submissions_count
     }
@@ -990,64 +1330,25 @@ async def submit_form(
         
         logger.info(f"Submission saved: {submission.id}")
         
-        # Lưu entries
+        # Lưu entries + memory RAG (thống nhất qua helper)
         try:
             fields_json = template_fields_for_snapshot
             logger.info(f"Template has {len(fields_json)} fields")
-            field_by_name = ensure_template_fields_exist(db, form_id, fields_json)
-            entries_to_insert: list[Entry] = []
-            
-            for field_data in fields_json:
-                field_name = field_data.get("name", "")
-                logger.info(f"Processing field: {field_name}")
-                
-                # Lấy giá trị từ form submit
-                value = data.get(field_name, "").strip()
-                if not value:
-                    logger.info(f"  Field {field_name} has no value, skipping")
-                    continue
-                
-                logger.info(f"  Field {field_name} value: '{value}'")
-                
-                field_id = field_by_name.get(field_name)
-                if not field_id:
-                    logger.warning(f"  Field mapping missing for {field_name}, skipping")
-                    continue
-                
-                # Lưu entry
-                entry = Entry(
-                    user_id=effective_user_id,
-                    field_id=field_id,
-                    form_id=form_id,
-                    value=value
-                )
-                entries_to_insert.append(entry)
-
-            if entries_to_insert:
-                db.add_all(entries_to_insert)
+            get_or_create_word_form_id(db, effective_user_id)
+            n_learning = persist_word_fields_for_learning(
+                db,
+                user_id=effective_user_id,
+                template_id=template_id,
+                data_map=data,
+                source_ref=f"word_submission:{submission.id}",
+            )
+            if n_learning:
                 db.commit()
-                logger.info(f"Saved {len(entries_to_insert)} entries for submission {submission.id}")
-                for entry in entries_to_insert:
-                    try:
-                        normalized_field = db.query(Field).filter(Field.id == entry.field_id).first()
-                        field_key = normalized_field.field_name if normalized_field else ""
-                        if field_key:
-                            UserMemoryService.upsert_memory_value(
-                                db=db,
-                                user_id=effective_user_id,
-                                field_key=field_key,
-                                value_text=entry.value,
-                                memory_type="entry",
-                                source_ref=f"word_submission:{submission.id}",
-                                confidence=0.7,
-                                is_confirmed=False,
-                            )
-                    except Exception as memory_error:
-                        logger.warning(f"Unable to sync Word entry to memory: {memory_error}")
-                db.commit()
+                logger.info(f"Saved {n_learning} field value(s) to learning store for submission {submission.id}")
         
         except Exception as e:
             logger.error(f"Error saving entries: {str(e)}", exc_info=True)
+            db.rollback()
             # Không throw error, submission đã lưu
         
         logger.info(f"Submit completed for submission {submission.id}")
@@ -1196,9 +1497,29 @@ async def export_submissions_docx(
         submission = ordered_submissions[0]
         template = submission.template
         template_path = (template.file_path or "") if template else ""
+        if template and template_path and os.path.exists(template_path):
+            if template_path.lower().endswith(".doc"):
+                try:
+                    template_path = ensure_docx_for_processing(template_path)
+                except DocConversionError as conv_error:
+                    logger.warning(f"Unable to convert .doc template for export: {conv_error}")
+                    template_path = ""
         if template and template_path.lower().endswith(".docx") and os.path.exists(template_path):
             data_map, _ = _load_submission_payload(submission.submission_data)
             template_fields = parse_template_fields(template.fields_json if template else None)
+
+            if payload.fill_missing_from_rag and settings.RAG_ENABLED and settings.RAG_FILL_ON_EXPORT:
+                data_map, rag_filled = rag_form_service.enrich_data_map(
+                    db,
+                    user_id=effective_user_id,
+                    template_fields=template_fields,
+                    data_map=data_map,
+                    only_empty=True,
+                )
+                if rag_filled:
+                    logger.info(
+                        f"Export RAG filled {rag_filled} empty fields for submission {submission.id}"
+                    )
 
             try:
                 rendered_doc, replaced_count = _fill_submission_into_template_docx(
@@ -1312,7 +1633,7 @@ async def update_submission(
         if incoming_payload is None or not isinstance(incoming_payload, dict):
             incoming_payload = {}
 
-        _, current_meta = _load_submission_payload(submission.submission_data)
+        old_data_map, current_meta = _load_submission_payload(submission.submission_data)
         incoming_data_map, incoming_meta = _split_submission_payload(incoming_payload)
         effective_meta = dict(current_meta or {})
         if incoming_meta:
@@ -1325,10 +1646,41 @@ async def update_submission(
         if label_snapshot:
             effective_meta["field_label_snapshot"] = label_snapshot
 
+        changed_keys: set[str] = set()
+        for key, new_raw in (incoming_data_map or {}).items():
+            key_ok = str(key).strip()
+            if not key_ok:
+                continue
+            old_v = _normalize_export_value(old_data_map.get(key_ok))
+            new_v = _normalize_export_value(new_raw)
+            if new_v and new_v != old_v:
+                changed_keys.add(key_ok)
+
         submission.submission_data = json.dumps(
             _compose_submission_payload(incoming_data_map, effective_meta),
             ensure_ascii=False
         )
+
+        if changed_keys and submission.template_id:
+            try:
+                get_or_create_word_form_id(db, effective_user_id)
+                n_learning = persist_word_fields_for_learning(
+                    db,
+                    user_id=effective_user_id,
+                    template_id=int(submission.template_id),
+                    data_map=incoming_data_map,
+                    source_ref=f"word_submission_update:{submission.id}",
+                    field_keys_filter=changed_keys,
+                )
+                if n_learning:
+                    logger.info(
+                        "Learning store: %s field(s) updated on submission %s",
+                        n_learning,
+                        submission.id,
+                    )
+            except Exception as learning_err:
+                logger.warning("Learning sync on submission update failed: %s", learning_err)
+
         db.commit()
         db.refresh(submission)
         

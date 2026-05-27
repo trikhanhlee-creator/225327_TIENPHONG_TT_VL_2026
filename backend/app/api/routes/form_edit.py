@@ -10,8 +10,12 @@ from typing import Optional, List
 from pydantic import BaseModel
 
 from app.db.session import get_db
+from app.db.models import User
 from app.core.logger import logger
+from app.core.auth import get_current_user
 from app.services.ai_composer_service import AIComposerService
+from app.api.routes.word import persist_word_fields_for_learning, resolve_effective_user_id
+from app.services.autofill.memory_service import UserMemoryService
 
 # Khởi tạo AI service
 ai_service = AIComposerService()
@@ -145,6 +149,14 @@ Yêu cầu:
 class ApplySuggestionRequest(BaseModel):
     """Schema cho apply suggestion request"""
     field_name: str
+    """Tên hiển thị / nhãn trường (cho log)."""
+
+    field_key: Optional[str] = None
+    """Khóa trường nội bộ Word (`data-field-name`), để map Field.id và memory."""
+
+    template_id: Optional[int] = None
+    """Template Word — bắt buộc để đồng bộ Entry + RAG."""
+
     original_value: str
     suggested_value: str
     applied: bool = True
@@ -155,14 +167,20 @@ class ApplySuggestionRequest(BaseModel):
 async def apply_field_suggestion(
     request: ApplySuggestionRequest,
     db: Session = Depends(get_db),
-    user_id: int = Query(None)
+    current_user: User = Depends(get_current_user),
+    user_id: int | None = Query(None, description="Admin: scope user id"),
 ):
     """
-    Ghi lại khi user chấp nhận hoặc xem một gợi ý (để tracking history)
-    
+    Ghi lại khi user chấp nhận hoặc xem một gợi ý.
+
+    Khi `applied=true` và có đủ `template_id` + `field_key`, ghi thêm Entry +
+    UserMemoryItem (embedding RAG nếu bật) để huấn luyện/gợi ý sau này.
+
     Request body:
     {
         "field_name": "Tên công ty",
+        "field_key": "ten_cong_ty",
+        "template_id": 12,
         "original_value": "abc xyz",
         "suggested_value": "ABC XYZ Corporation",
         "applied": true,
@@ -170,20 +188,60 @@ async def apply_field_suggestion(
     }
     """
     try:
+        effective_user_id = resolve_effective_user_id(current_user, user_id)
         action = "applied" if request.applied else "viewed"
-        logger.info(f"Suggestion {action} for {request.field_name}: '{request.original_value}' → '{request.suggested_value}'")
-        
-        # Có thể lưu vào database nếu cần tracking
-        # Ở đây chỉ log lại
-        
+        logger.info(
+            "Suggestion %s for %s (key=%s): '%s' → '%s'",
+            action,
+            request.field_name,
+            request.field_key,
+            request.original_value,
+            request.suggested_value,
+        )
+
+        learning_saved = 0
+        draft_saved_to_memory = False
+        fk = str(request.field_key or "").strip()
+        tid = int(request.template_id or 0)
+        if request.applied and fk and tid > 0:
+            try:
+                draft = str(request.original_value or "").strip()
+                if draft:
+                    UserMemoryService.upsert_memory_value(
+                        db=db,
+                        user_id=effective_user_id,
+                        field_key=fk,
+                        value_text=draft[:1000],
+                        memory_type="user_draft",
+                        source_ref=f"word_ai_rewrite_draft:{tid}",
+                        confidence=0.62,
+                        is_confirmed=False,
+                    )
+                    draft_saved_to_memory = True
+                learning_saved = persist_word_fields_for_learning(
+                    db,
+                    user_id=effective_user_id,
+                    template_id=tid,
+                    data_map={fk: request.suggested_value},
+                    source_ref=f"word_ai_rewrite:{tid}",
+                    field_keys_filter={fk},
+                )
+                if learning_saved or draft_saved_to_memory:
+                    db.commit()
+            except Exception as learning_exc:
+                db.rollback()
+                logger.warning("Learning persist on AI apply failed: %s", learning_exc)
+
         return {
             "success": True,
             "message": f"Suggestion {action} successfully",
             "field_name": request.field_name,
             "applied_value": request.suggested_value,
-            "confidence": request.confidence
+            "confidence": request.confidence,
+            "learning_entries_saved": learning_saved,
+            "draft_saved_to_memory": draft_saved_to_memory,
         }
-        
+
     except Exception as e:
         logger.error(f"Error applying suggestion: {str(e)}")
         raise HTTPException(

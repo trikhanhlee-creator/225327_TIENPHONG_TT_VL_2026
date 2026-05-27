@@ -1,0 +1,654 @@
+{
+  "meta": {
+    "strategy": "syll_template",
+    "llm_field_count": 82,
+    "parser_field_count": 21,
+    "final_field_count": 93
+  },
+  "fields": [
+    {
+      "name": "ho_va_ten",
+      "field_type": "text",
+      "label": "Họ và tên (chữ in hoa)",
+      "order": 0,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "gioi_tinh",
+      "field_type": "choice",
+      "label": "Giới tính",
+      "order": 1,
+      "options": [
+        "Nam",
+        "Nữ"
+      ],
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "ngay_sinh",
+      "field_type": "number",
+      "label": "Ngày sinh",
+      "order": 2,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "thang_sinh",
+      "field_type": "number",
+      "label": "Tháng sinh",
+      "order": 3,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "nam_sinh",
+      "field_type": "number",
+      "label": "Năm sinh",
+      "order": 4,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "noi_sinh",
+      "field_type": "text",
+      "label": "Nơi sinh",
+      "order": 5,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "nguyen_quan",
+      "field_type": "text",
+      "label": "Nguyên quán",
+      "order": 6,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "ho_khau_thuong_tru",
+      "field_type": "text",
+      "label": "Nơi đăng ký hộ khẩu thường trú",
+      "order": 7,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "cho_o_hien_nay",
+      "field_type": "text",
+      "label": "Chỗ ở hiện nay",
+      "order": 8,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "dien_thoai_lien_he",
+      "field_type": "phone",
+      "label": "Điện thoại liên hệ",
+      "order": 9,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "dan_toc",
+      "field_type": "text",
+      "label": "Dân tộc",
+      "order": 10,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "ton_giao",
+      "field_type": "text",
+      "label": "Tôn giáo",
+      "order": 11,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "so_cccd_cmnd",
+      "field_type": "text",
+      "label": "Số CCCD/CMND",
+      "order": 12,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "ngay_cap_cccd",
+      "field_type": "date",
+      "label": "Ngày cấp CCCD/CMND",
+      "order": 13,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "noi_cap_cccd",
+      "field_type": "text",
+      "label": "Nơi cấp CCCD/CMND",
+      "order": 14,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "trinh_do_van_hoa",
+      "field_type": "text",
+      "label": "Trình độ văn hóa",
+      "order": 15,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "ket_nap_doan",
+      "field_type": "text",
+      "label": "Kết nạp Đoàn TNCS HCM",
+      "order": 16,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "ket_nap_doan_tai",
+      "field_type": "text",
+      "label": "Kết nạp Đoàn - tại",
+      "order": 17,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "ket_nap_dang",
+      "field_type": "text",
+      "label": "Kết nạp Đảng CSVN",
+      "order": 18,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "ket_nap_dang_tai",
+      "field_type": "text",
+      "label": "Kết nạp Đảng - tại",
+      "order": 19,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "khen_thuong_ky_luat",
+      "field_type": "text",
+      "label": "Khen thưởng / Kỷ luật",
+      "order": 20,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "so_truong",
+      "field_type": "text",
+      "label": "Sở trường",
+      "order": 21,
+      "section": "I. THÔNG TIN BẢN THÂN"
+    },
+    {
+      "name": "cha_ho_ten",
+      "field_type": "text",
+      "label": "Họ và tên cha",
+      "order": 22,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "cha_nam_sinh",
+      "field_type": "number",
+      "label": "Năm sinh (cha)",
+      "order": 23,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "cha_nghe_nghiep",
+      "field_type": "text",
+      "label": "Nghề nghiệp hiện nay (cha)",
+      "order": 24,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "cha_co_quan",
+      "field_type": "text",
+      "label": "Cơ quan công tác (cha)",
+      "order": 25,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "cha_cho_o",
+      "field_type": "text",
+      "label": "Chỗ ở hiện nay (cha)",
+      "order": 26,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "me_ho_ten",
+      "field_type": "text",
+      "label": "Họ và tên mẹ",
+      "order": 27,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "me_nam_sinh",
+      "field_type": "number",
+      "label": "Năm sinh (mẹ)",
+      "order": 28,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "me_nghe_nghiep",
+      "field_type": "text",
+      "label": "Nghề nghiệp hiện nay (mẹ)",
+      "order": 29,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "me_co_quan",
+      "field_type": "text",
+      "label": "Cơ quan công tác (mẹ)",
+      "order": 30,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "me_cho_o",
+      "field_type": "text",
+      "label": "Chỗ ở hiện nay (mẹ)",
+      "order": 31,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "anh_chi_em_1_ho_ten",
+      "field_type": "text",
+      "label": "Họ và tên anh/chị/em ruột (1)",
+      "order": 32,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "anh_chi_em_1_nam_sinh",
+      "field_type": "number",
+      "label": "Năm sinh anh/chị/em (1)",
+      "order": 33,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "anh_chi_em_1_nghe_nghiep",
+      "field_type": "text",
+      "label": "Nghề nghiệp anh/chị/em (1)",
+      "order": 34,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "anh_chi_em_1_co_quan",
+      "field_type": "text",
+      "label": "Cơ quan công tác anh/chị/em (1)",
+      "order": 35,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "anh_chi_em_2_ho_ten",
+      "field_type": "text",
+      "label": "Họ và tên anh/chị/em ruột (2)",
+      "order": 36,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "anh_chi_em_2_nam_sinh",
+      "field_type": "number",
+      "label": "Năm sinh anh/chị/em (2)",
+      "order": 37,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "anh_chi_em_2_nghe_nghiep",
+      "field_type": "text",
+      "label": "Nghề nghiệp anh/chị/em (2)",
+      "order": 38,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "anh_chi_em_2_co_quan",
+      "field_type": "text",
+      "label": "Cơ quan công tác anh/chị/em (2)",
+      "order": 39,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "anh_chi_em_3_ho_ten",
+      "field_type": "text",
+      "label": "Họ và tên anh/chị/em ruột (3)",
+      "order": 40,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "anh_chi_em_3_nam_sinh",
+      "field_type": "number",
+      "label": "Năm sinh anh/chị/em (3)",
+      "order": 41,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "anh_chi_em_3_nghe_nghiep",
+      "field_type": "text",
+      "label": "Nghề nghiệp anh/chị/em (3)",
+      "order": 42,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "anh_chi_em_3_co_quan",
+      "field_type": "text",
+      "label": "Cơ quan công tác anh/chị/em (3)",
+      "order": 43,
+      "section": "II. QUAN HỆ GIA ĐÌNH"
+    },
+    {
+      "name": "dao_tao_1_thoi_gian",
+      "field_type": "text",
+      "label": "Đào tạo 1 - Thời gian",
+      "order": 44,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_1_truong",
+      "field_type": "text",
+      "label": "Đào tạo 1 - Trường/cơ sở",
+      "order": 45,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_1_nganh",
+      "field_type": "text",
+      "label": "Đào tạo 1 - Ngành học",
+      "order": 46,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_1_hinh_thuc",
+      "field_type": "text",
+      "label": "Đào tạo 1 - Hình thức",
+      "order": 47,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_1_bang",
+      "field_type": "text",
+      "label": "Đào tạo 1 - Văn bằng/chứng chỉ",
+      "order": 48,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_2_thoi_gian",
+      "field_type": "text",
+      "label": "Đào tạo 2 - Thời gian",
+      "order": 49,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_2_truong",
+      "field_type": "text",
+      "label": "Đào tạo 2 - Trường/cơ sở",
+      "order": 50,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_2_nganh",
+      "field_type": "text",
+      "label": "Đào tạo 2 - Ngành học",
+      "order": 51,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_2_hinh_thuc",
+      "field_type": "text",
+      "label": "Đào tạo 2 - Hình thức",
+      "order": 52,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_2_bang",
+      "field_type": "text",
+      "label": "Đào tạo 2 - Văn bằng/chứng chỉ",
+      "order": 53,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_3_thoi_gian",
+      "field_type": "text",
+      "label": "Đào tạo 3 - Thời gian",
+      "order": 54,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_3_truong",
+      "field_type": "text",
+      "label": "Đào tạo 3 - Trường/cơ sở",
+      "order": 55,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_3_nganh",
+      "field_type": "text",
+      "label": "Đào tạo 3 - Ngành học",
+      "order": 56,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_3_hinh_thuc",
+      "field_type": "text",
+      "label": "Đào tạo 3 - Hình thức",
+      "order": 57,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_3_bang",
+      "field_type": "text",
+      "label": "Đào tạo 3 - Văn bằng/chứng chỉ",
+      "order": 58,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_4_thoi_gian",
+      "field_type": "text",
+      "label": "Đào tạo 4 - Thời gian",
+      "order": 59,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_4_truong",
+      "field_type": "text",
+      "label": "Đào tạo 4 - Trường/cơ sở",
+      "order": 60,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_4_nganh",
+      "field_type": "text",
+      "label": "Đào tạo 4 - Ngành học",
+      "order": 61,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_4_hinh_thuc",
+      "field_type": "text",
+      "label": "Đào tạo 4 - Hình thức",
+      "order": 62,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_4_bang",
+      "field_type": "text",
+      "label": "Đào tạo 4 - Văn bằng/chứng chỉ",
+      "order": 63,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_5_thoi_gian",
+      "field_type": "text",
+      "label": "Đào tạo 5 - Thời gian",
+      "order": 64,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_5_truong",
+      "field_type": "text",
+      "label": "Đào tạo 5 - Trường/cơ sở",
+      "order": 65,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_5_nganh",
+      "field_type": "text",
+      "label": "Đào tạo 5 - Ngành học",
+      "order": 66,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_5_hinh_thuc",
+      "field_type": "text",
+      "label": "Đào tạo 5 - Hình thức",
+      "order": 67,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "dao_tao_5_bang",
+      "field_type": "text",
+      "label": "Đào tạo 5 - Văn bằng/chứng chỉ",
+      "order": 68,
+      "section": "III. TÓM TẮT QUÁ TRÌNH ĐÀO TẠO"
+    },
+    {
+      "name": "cong_tac_1_thoi_gian",
+      "field_type": "text",
+      "label": "Công tác 1 - Thời gian",
+      "order": 69,
+      "section": "IV. TÓM TẮT QUÁ TRÌNH CÔNG TÁC"
+    },
+    {
+      "name": "cong_tac_1_don_vi",
+      "field_type": "text",
+      "label": "Công tác 1 - Đơn vị",
+      "order": 70,
+      "section": "IV. TÓM TẮT QUÁ TRÌNH CÔNG TÁC"
+    },
+    {
+      "name": "cong_tac_1_chuc_vu",
+      "field_type": "text",
+      "label": "Công tác 1 - Chức vụ",
+      "order": 71,
+      "section": "IV. TÓM TẮT QUÁ TRÌNH CÔNG TÁC"
+    },
+    {
+      "name": "cong_tac_2_thoi_gian",
+      "field_type": "text",
+      "label": "Công tác 2 - Thời gian",
+      "order": 72,
+      "section": "IV. TÓM TẮT QUÁ TRÌNH CÔNG TÁC"
+    },
+    {
+      "name": "cong_tac_2_don_vi",
+      "field_type": "text",
+      "label": "Công tác 2 - Đơn vị",
+      "order": 73,
+      "section": "IV. TÓM TẮT QUÁ TRÌNH CÔNG TÁC"
+    },
+    {
+      "name": "cong_tac_2_chuc_vu",
+      "field_type": "text",
+      "label": "Công tác 2 - Chức vụ",
+      "order": 74,
+      "section": "IV. TÓM TẮT QUÁ TRÌNH CÔNG TÁC"
+    },
+    {
+      "name": "cong_tac_3_thoi_gian",
+      "field_type": "text",
+      "label": "Công tác 3 - Thời gian",
+      "order": 75,
+      "section": "IV. TÓM TẮT QUÁ TRÌNH CÔNG TÁC"
+    },
+    {
+      "name": "cong_tac_3_don_vi",
+      "field_type": "text",
+      "label": "Công tác 3 - Đơn vị",
+      "order": 76,
+      "section": "IV. TÓM TẮT QUÁ TRÌNH CÔNG TÁC"
+    },
+    {
+      "name": "cong_tac_3_chuc_vu",
+      "field_type": "text",
+      "label": "Công tác 3 - Chức vụ",
+      "order": 77,
+      "section": "IV. TÓM TẮT QUÁ TRÌNH CÔNG TÁC"
+    },
+    {
+      "name": "cong_tac_4_thoi_gian",
+      "field_type": "text",
+      "label": "Công tác 4 - Thời gian",
+      "order": 78,
+      "section": "IV. TÓM TẮT QUÁ TRÌNH CÔNG TÁC"
+    },
+    {
+      "name": "cong_tac_4_don_vi",
+      "field_type": "text",
+      "label": "Công tác 4 - Đơn vị",
+      "order": 79,
+      "section": "IV. TÓM TẮT QUÁ TRÌNH CÔNG TÁC"
+    },
+    {
+      "name": "cong_tac_4_chuc_vu",
+      "field_type": "text",
+      "label": "Công tác 4 - Chức vụ",
+      "order": 80,
+      "section": "IV. TÓM TẮT QUÁ TRÌNH CÔNG TÁC"
+    },
+    {
+      "name": "ngay_nop_don",
+      "field_type": "date",
+      "label": "Ngày nộp đơn",
+      "order": 81,
+      "section": "KÝ TÊN"
+    },
+    {
+      "name": "họ_và_tên",
+      "field_type": "text",
+      "label": "Họ và tên",
+      "order": 82
+    },
+    {
+      "name": "năm",
+      "field_type": "number",
+      "label": "năm",
+      "order": 83
+    },
+    {
+      "name": "địa_chỉ_hiện_tại",
+      "field_type": "text",
+      "label": "Địa chỉ hiện tại",
+      "order": 84
+    },
+    {
+      "name": "số_điện_thoại_liên_hệ",
+      "field_type": "phone",
+      "label": "Số điện thoại liên hệ",
+      "order": 85
+    },
+    {
+      "name": "nơi_cấp",
+      "field_type": "text",
+      "label": "nơi cấp",
+      "order": 86
+    },
+    {
+      "name": "tại",
+      "field_type": "text",
+      "label": "tại",
+      "order": 87
+    },
+    {
+      "name": "khen_thưởng_kỷ_luật",
+      "field_type": "text",
+      "label": "Khen thưởng/ Kỷ luật",
+      "order": 88
+    },
+    {
+      "name": "trường_tốt_nghiệp",
+      "field_type": "text",
+      "label": "Trường tốt nghiệp",
+      "order": 89
+    },
+    {
+      "name": "nghề_nghiệp_hiện_nay",
+      "field_type": "text",
+      "label": "Nghề nghiệp hiện nay",
+      "order": 90
+    },
+    {
+      "name": "cơ_quan_công_tác",
+      "field_type": "text",
+      "label": "Cơ quan công tác",
+      "order": 91
+    },
+    {
+      "name": "phương_nơi_đăng_ký_hộ_khẩu",
+      "field_type": "text",
+      "label": "phương nơi đăng ký hộ khẩu",
+      "order": 92
+    }
+  ]
+}

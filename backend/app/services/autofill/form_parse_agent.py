@@ -6,7 +6,10 @@ from typing import Any
 from app.core.logger import logger
 from app.services.autofill.contracts import CanonicalFormField, CanonicalFormSchema
 from app.services.autofill.llm_client import LLMClient
+from app.core.config import settings
 from app.services.file_parser import FileParserFactory
+from app.services.autofill.llm_excel_form_service import enhance_excel_template_fields
+from app.services.autofill.llm_word_form_service import enhance_word_template_fields
 
 
 class LLMFormParseAgent:
@@ -30,6 +33,37 @@ class LLMFormParseAgent:
         parsed_fields = parser.parse()
         metadata = parser.get_metadata() or {}
 
+        file_ext = os.path.splitext(file_path or "")[1].lower()
+        if file_ext in (".doc", ".docx") and settings.WORD_LLM_PARSE_ENABLED:
+            try:
+                parsed_fields, parse_meta = await enhance_word_template_fields(
+                    file_path=file_path,
+                    parser_fields=parsed_fields,
+                    original_filename=original_filename,
+                )
+                if isinstance(parse_meta, dict):
+                    metadata["word_parse"] = parse_meta
+                    if parse_meta.get("document_title"):
+                        metadata["title"] = parse_meta["document_title"]
+            except Exception as exc:
+                logger.warning(f"Word LLM enhance in parse agent failed: {exc}")
+
+        if file_ext in (".xlsx", ".xls") and settings.EXCEL_LLM_PARSE_ENABLED:
+            try:
+                excel_meta = metadata if isinstance(metadata, dict) else {}
+                parsed_fields, excel_parse_meta = await enhance_excel_template_fields(
+                    file_path=file_path,
+                    parser_fields=parsed_fields,
+                    original_filename=original_filename,
+                    parse_meta=excel_meta,
+                )
+                if isinstance(excel_parse_meta, dict):
+                    metadata["excel_parse"] = excel_parse_meta
+                    if excel_parse_meta.get("document_title"):
+                        metadata["title"] = excel_parse_meta["document_title"]
+            except Exception as exc:
+                logger.warning(f"Excel LLM enhance in parse agent failed: {exc}")
+
         fields: list[CanonicalFormField] = []
         for idx, parsed in enumerate(parsed_fields):
             try:
@@ -39,16 +73,22 @@ class LLMFormParseAgent:
             name = str(payload.get("name") or f"field_{idx + 1}").strip().lower().replace(" ", "_")
             label = str(payload.get("label") or name).strip()
             field_type = str(payload.get("field_type") or "text").strip() or "text"
+            section = str(payload.get("section") or payload.get("group") or "general").strip() or "general"
+            options = payload.get("options") if isinstance(payload.get("options"), list) else []
             fields.append(
                 CanonicalFormField(
                     field_key=name,
                     label=label,
                     field_type=field_type,
                     required=bool(payload.get("required", False)),
-                    group=str(payload.get("group") or "general"),
+                    group=section,
                     aliases=[],
-                    constraints={},
-                    raw_context={"order": payload.get("order", idx)},
+                    constraints={"options": options} if options else {},
+                    raw_context={
+                        "order": payload.get("order", idx),
+                        "section": section,
+                        "options": options,
+                    },
                 )
             )
 

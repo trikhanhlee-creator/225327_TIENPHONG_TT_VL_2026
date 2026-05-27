@@ -125,8 +125,9 @@
                             <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.191-5.238C29.144 35.091 26.683 36 24 36c-5.19 0-9.625-3.328-11.284-7.946l-6.522 5.024C9.485 39.556 16.227 44 24 44z"/>
                             <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.046 12.046 0 0 1-4.085 5.571l.003-.002 6.191 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.651-.389-3.917z"/>
                         </svg>
-                        <span>Đăng nhập với Google</span>
+                        <span id="googleLoginBtnLabel">Đăng nhập với Google</span>
                     </button>
+                    <p id="googleLoginHint" class="hidden mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 leading-relaxed"></p>
                 </form>
 
                 <div class="mt-8">
@@ -158,6 +159,7 @@
         const loginForm = document.getElementById("loginForm");
         const loginBtn = document.getElementById("loginBtn");
         const googleLoginBtn = document.getElementById("googleLoginBtn");
+        const googleLoginHint = document.getElementById("googleLoginHint");
         const registerLink = document.getElementById("registerLink");
         let lastLoginIdentifier = "";
 
@@ -275,6 +277,19 @@
             return "/api/auth/google/start?next=" + encodeURIComponent(next);
         }
 
+        function setGoogleLoginEnabled(enabled) {
+            googleLoginBtn.disabled = !enabled;
+            googleLoginBtn.classList.toggle("opacity-60", !enabled);
+            googleLoginBtn.classList.toggle("cursor-not-allowed", !enabled);
+            googleLoginBtn.classList.toggle("hover:border-primary", enabled);
+            googleLoginBtn.classList.toggle("hover:bg-surface-container-low", enabled);
+            if (enabled) {
+                googleLoginBtn.title = "";
+                googleLoginHint.classList.add("hidden");
+                googleLoginHint.textContent = "";
+            }
+        }
+
         async function refreshGoogleButtonState() {
             try {
                 const response = await fetch("/api/auth/google/config", {
@@ -286,13 +301,26 @@
                     return;
                 }
                 const data = await response.json();
-                if (!data || !data.enabled) {
-                    googleLoginBtn.disabled = true;
-                    googleLoginBtn.classList.add("opacity-60", "cursor-not-allowed");
-                    googleLoginBtn.title = "Google OAuth chưa được cấu hình trên server";
+                if (data && data.enabled) {
+                    setGoogleLoginEnabled(true);
+                    return;
                 }
+                setGoogleLoginEnabled(false);
+                googleLoginBtn.title = "Google OAuth chưa được cấu hình trên server";
+                const missing = Array.isArray(data && data.missing) ? data.missing : [];
+                if (missing.includes("GOOGLE_OAUTH_CLIENT_SECRET")) {
+                    googleLoginHint.textContent =
+                        "Chưa cấu hình Client Secret: mở backend/.env, điền GOOGLE_OAUTH_CLIENT_SECRET (lấy từ Google Cloud Console → Credentials), rồi khởi động lại server.";
+                } else if (missing.includes("GOOGLE_OAUTH_CLIENT_ID")) {
+                    googleLoginHint.textContent =
+                        "Chưa cấu hình Client ID: điền GOOGLE_OAUTH_CLIENT_ID trong backend/.env rồi khởi động lại server.";
+                } else {
+                    googleLoginHint.textContent =
+                        "Đăng nhập Google chưa sẵn sàng trên server. Kiểm tra GOOGLE_OAUTH_CLIENT_ID và GOOGLE_OAUTH_CLIENT_SECRET trong backend/.env.";
+                }
+                googleLoginHint.classList.remove("hidden");
             } catch (_error) {
-                // Keep silent: button still works when endpoint unavailable.
+                // Endpoint unavailable: keep button clickable; server will respond on /google/start.
             }
         }
 
@@ -379,13 +407,30 @@
 
         loginForm.addEventListener("submit", handleLoginSubmit);
         googleLoginBtn.addEventListener("click", () => {
+            if (googleLoginBtn.disabled) {
+                setMessage(
+                    loginMessage,
+                    googleLoginHint.textContent || "Đăng nhập Google chưa được cấu hình trên server.",
+                    "error"
+                );
+                return;
+            }
             googleLoginBtn.disabled = true;
-            const originalText = googleLoginBtn.textContent;
-            googleLoginBtn.textContent = "Đang chuyển tới Google...";
+            const labelEl = document.getElementById("googleLoginBtnLabel");
+            const originalText = labelEl ? labelEl.textContent : "Đăng nhập với Google";
+            if (labelEl) {
+                labelEl.textContent = "Đang chuyển tới Google...";
+            }
             window.location.assign(getGoogleStartUrl());
             setTimeout(() => {
-                googleLoginBtn.disabled = false;
-                googleLoginBtn.textContent = originalText;
+                if (!googleLoginHint.classList.contains("hidden")) {
+                    googleLoginBtn.disabled = true;
+                } else {
+                    googleLoginBtn.disabled = false;
+                }
+                if (labelEl) {
+                    labelEl.textContent = originalText;
+                }
             }, 2000);
         });
 
@@ -418,7 +463,11 @@
                 appendResendVerificationAction();
             } else if (googleState === "account_disabled") {
                 setMessage(loginMessage, "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.", "error");
-            } else if (googleState === "invalid_state" || googleState === "missing_code" || googleState === "token_error" || googleState === "invalid_email" || googleState === "oauth_error") {
+            } else if (googleState === "db_unavailable") {
+                setMessage(loginMessage, "Không kết nối được MySQL. Hãy bật MySQL (XAMPP/WAMP hoặc dịch vụ MySQL) rồi thử đăng nhập Google lại.", "error");
+            } else if (googleState === "invalid_state") {
+                setMessage(loginMessage, "Phiên đăng nhập Google đã hết hạn (thường do khởi động lại server). Vui lòng bấm Đăng nhập với Google lại.", "error");
+            } else if (googleState === "missing_code" || googleState === "token_error" || googleState === "invalid_email" || googleState === "oauth_error") {
                 setMessage(loginMessage, "Đăng nhập Google thất bại. Vui lòng thử lại.", "error");
             }
         });

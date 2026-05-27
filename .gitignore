@@ -1,0 +1,26 @@
+# Environment / secrets (never commit)
+.env
+.env.*
+!.env.example
+backend/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# Logs
+backend/logs/
+*.log
+
+# Flutter / Dart build artifacts
+app_web_view/build/
+app_web_view/.dart_tool/
+app_web_view/.flutter-plugins
+app_web_view/.flutter-plugins-dependencies
+
+# OS
+.DS_Store
+Thumbs.db

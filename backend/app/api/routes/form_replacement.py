@@ -23,8 +23,16 @@ from app.services.form_replacement import (
 )
 from app.core.logger import logger
 from app.core.auth import get_current_user
+from app.core.config import settings
 from app.core.file_utils import extract_clean_filename
+from app.services.autofill.contracts import CanonicalFormField
+from app.services.autofill.memory_service import UserMemoryService
+from app.services.autofill.rag_form_service import RagFormService
 from docx import Document
+
+from app.services.doc_converter import DocConversionError, ensure_docx_for_processing
+
+rag_form_service = RagFormService()
 
 router = APIRouter(prefix="/api/form-replacement", tags=["form_replacement"])
 
@@ -62,10 +70,10 @@ async def upload_form_with_intelligent_detection(
     
     # Kiểm tra định dạng file
     file_ext = os.path.splitext(file.filename)[1].lower()
-    if file_ext != '.docx':
+    if file_ext not in ('.docx', '.doc'):
         raise HTTPException(
             status_code=400,
-            detail=f"Hiện tại chỉ hỗ trợ file .docx. Bạn upload: {file_ext}"
+            detail=f"Chỉ hỗ trợ file Word .docx hoặc .doc. Bạn upload: {file_ext}"
         )
     
     try:
@@ -76,6 +84,12 @@ async def upload_form_with_intelligent_detection(
         with open(file_path, "wb") as f:
             content = await file.read()
             f.write(content)
+
+        if file_ext == ".doc":
+            try:
+                file_path = ensure_docx_for_processing(file_path)
+            except DocConversionError as conv_error:
+                raise HTTPException(status_code=400, detail=str(conv_error))
         
         # Intelligent detection
         doc = Document(file_path)
@@ -115,6 +129,33 @@ async def upload_form_with_intelligent_detection(
         db.add(template)
         db.commit()
         db.refresh(template)
+
+        rag_hints: dict = {}
+        if settings.RAG_ENABLED and settings.RAG_INDEX_ON_UPLOAD:
+            rag_form_service.index_uploaded_file(
+                db,
+                user_id=effective_user_id,
+                file_path=file_path,
+                source_ref=str(template.id),
+            )
+            canonical_fields = [
+                CanonicalFormField(
+                    field_key=str(item.get("name") or "").strip().lower().replace(" ", "_"),
+                    label=str(item.get("label") or item.get("name") or "").strip(),
+                    field_type=str(item.get("field_type") or "text").strip() or "text",
+                )
+                for item in fields
+                if item.get("name")
+            ]
+            rag_hints = rag_form_service.build_field_hints(
+                db,
+                user_id=effective_user_id,
+                fields=canonical_fields,
+            )
+            if rag_hints:
+                fields = rag_form_service.merge_hints_into_template_fields(fields, rag_hints)
+                template.fields_json = json.dumps(fields, ensure_ascii=False)
+                db.commit()
         
         return {
             "status": "success",
@@ -124,6 +165,7 @@ async def upload_form_with_intelligent_detection(
             "fields_count": len(parsed_form.fields),
             "sections_count": len(parsed_form.sections),
             "fields": fields,
+            "rag_hints": rag_hints,
             "sections": template_metadata["sections"],
             "message": f"Upload thành công! Phát hiện {len(parsed_form.sections)} sections và {len(parsed_form.fields)} trường"
         }
@@ -362,10 +404,10 @@ async def upload_form_with_dotlines(
     
     # Kiểm tra định dạng file
     file_ext = os.path.splitext(file.filename)[1].lower()
-    if file_ext != '.docx':
+    if file_ext not in ('.docx', '.doc'):
         raise HTTPException(
             status_code=400,
-            detail=f"Hiện tại chỉ hỗ trợ file .docx. Bạn upload: {file_ext}"
+            detail=f"Chỉ hỗ trợ file Word .docx hoặc .doc. Bạn upload: {file_ext}"
         )
     
     try:
@@ -376,6 +418,12 @@ async def upload_form_with_dotlines(
         with open(file_path, "wb") as f:
             content = await file.read()
             f.write(content)
+
+        if file_ext == ".doc":
+            try:
+                file_path = ensure_docx_for_processing(file_path)
+            except DocConversionError as conv_error:
+                raise HTTPException(status_code=400, detail=str(conv_error))
         
         # Detect dot-line placeholders
         doc = Document(file_path)
@@ -573,6 +621,11 @@ async def submit_dotline_form(
         # Just with dot-line specific handling
         
         from app.db.models import WordSubmission, Entry, Field, Form
+        from app.api.routes.word import (
+            ensure_template_fields_exist,
+            get_or_create_word_form_id,
+            parse_template_fields,
+        )
         
         # Get template
         template = db.query(WordTemplate).filter(
@@ -585,28 +638,61 @@ async def submit_dotline_form(
         if template.user_id != effective_user_id and not current_user.is_admin:
             raise HTTPException(status_code=403, detail="Không có quyền sử dụng template này")
         
-        # Get or create form
-        form = db.query(Form).filter(Form.id == 1).first()
-        if not form:
-            form = Form(id=1, user_id=effective_user_id, form_name="Dot-Line Form", description="Form from dot-lines")
-            db.add(form)
-            db.commit()
-            db.refresh(form)
+        form_id = get_or_create_word_form_id(db, effective_user_id)
+        fields_json = parse_template_fields(template.fields_json)
+        field_by_name = ensure_template_fields_exist(db, form_id, fields_json)
         
         # Create submission
         submission = WordSubmission(
             template_id=template_id,
             user_id=effective_user_id,
-            form_id=form.id,
-            submission_data=json.dumps(form_data)
+            form_id=form_id,
+            submission_data=json.dumps(form_data, ensure_ascii=False)
         )
         db.add(submission)
         db.commit()
         db.refresh(submission)
+
+        entries_saved = 0
+        for field_data in fields_json:
+            field_name = str(field_data.get("name") or "").strip()
+            if not field_name:
+                continue
+            value = str((form_data or {}).get(field_name) or "").strip()
+            if not value:
+                continue
+            field_id = field_by_name.get(field_name)
+            if not field_id:
+                continue
+            db.add(
+                Entry(
+                    user_id=effective_user_id,
+                    field_id=field_id,
+                    form_id=form_id,
+                    value=value,
+                )
+            )
+            entries_saved += 1
+            try:
+                UserMemoryService.upsert_memory_value(
+                    db=db,
+                    user_id=effective_user_id,
+                    field_key=field_name,
+                    value_text=value,
+                    memory_type="entry",
+                    source_ref=f"form_replacement:{submission.id}",
+                    confidence=0.7,
+                    is_confirmed=False,
+                )
+            except Exception as memory_error:
+                logger.warning(f"Unable to sync dot-line submission to memory: {memory_error}")
+        if entries_saved:
+            db.commit()
         
         return {
             "status": "success",
             "submission_id": submission.id,
+            "entries_saved": entries_saved,
             "message": "Submit thành công"
         }
     

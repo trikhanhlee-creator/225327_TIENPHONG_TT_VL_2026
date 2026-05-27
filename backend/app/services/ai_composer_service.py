@@ -44,7 +44,7 @@ class AIComposerService:
         if provider_name == "openai":
             return settings.OPENAI_MODEL or settings.AI_MODEL or "gpt-4o-mini"
         if provider_name == "gemini":
-            return "gemini-pro"
+            return getattr(settings, "GEMINI_MODEL", None) or settings.AI_MODEL or "gemini-2.0-flash"
         return settings.AI_MODEL or "gpt-4o-mini"
 
     def _parse_model_csv(self, raw: Optional[str]) -> List[str]:
@@ -221,10 +221,15 @@ class AIComposerService:
             if self.profile == "gemini" or settings.AI_PROVIDER == "gemini":
                 try:
                     import google.generativeai as genai
-                    gemini_key = (settings.AI_API_KEY or "").strip()
+                    gemini_key = (
+                        getattr(settings, "GEMINI_API_KEY", "") or settings.AI_API_KEY or ""
+                    ).strip()
+                    gemini_model = (
+                        getattr(settings, "GEMINI_MODEL", "") or settings.AI_MODEL or "gemini-2.0-flash"
+                    ).strip()
                     if gemini_key:
                         genai.configure(api_key=gemini_key)
-                        self.gemini_client = genai.GenerativeModel('gemini-pro')
+                        self.gemini_client = genai.GenerativeModel(gemini_model)
                         logger.info("Gemini client initialized")
                     else:
                         logger.warning("Gemini API key is missing")
@@ -1452,3 +1457,63 @@ Yêu cầu bắt buộc:
             logger.error(f"Error deleting document: {e}")
             db.rollback()
             return False
+
+    async def complete_json_response(self, prompt: str, *, max_tokens: int = 8192) -> str:
+        """Return raw model text for JSON extraction tasks (higher token budget)."""
+        provider_order = self._get_provider_attempt_order()
+        if not provider_order:
+            return ""
+
+        last_error: Optional[Exception] = None
+        for provider in provider_order:
+            try:
+                if provider == "gemini" and self.gemini_client:
+                    loop = asyncio.get_event_loop()
+
+                    def _run_gemini_json() -> str:
+                        generation_config = None
+                        try:
+                            import google.generativeai as genai
+
+                            generation_config = genai.GenerationConfig(
+                                temperature=0.15,
+                                max_output_tokens=max_tokens,
+                            )
+                        except Exception:
+                            generation_config = None
+
+                        if generation_config is not None:
+                            response = self.gemini_client.generate_content(
+                                prompt,
+                                generation_config=generation_config,
+                            )
+                        else:
+                            response = self.gemini_client.generate_content(prompt)
+                        return str(getattr(response, "text", "") or "").strip()
+
+                    return await loop.run_in_executor(None, _run_gemini_json)
+
+                client = None
+                model_name = ""
+                if provider == "openrouter" and self.openrouter_client:
+                    client = self.openrouter_client
+                    model_name = settings.OPENROUTER_MODEL
+                elif provider == "openai" and self.openai_client:
+                    client = self.openai_client
+                    model_name = self._get_active_model_for_provider("openai")
+
+                if client and model_name:
+                    response = await client.chat.completions.create(
+                        model=model_name,
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.15,
+                        max_tokens=max_tokens,
+                    )
+                    return str(response.choices[0].message.content or "").strip()
+            except Exception as exc:
+                last_error = exc
+                logger.warning(f"complete_json_response failed on {provider}: {exc}")
+
+        if last_error:
+            logger.warning(f"complete_json_response exhausted providers: {last_error}")
+        return ""

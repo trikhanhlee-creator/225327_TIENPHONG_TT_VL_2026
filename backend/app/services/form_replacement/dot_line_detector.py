@@ -40,7 +40,8 @@ class DotLineDetector:
         r'\.{2,}',  # ..... (2 hoặc nhiều dấu chấm)
         r'_{2,}',   # _____ (2 hoặc nhiều underscores)
         r'-{2,}',   # ----- (2 hoặc nhiều dashes)
-        r'─{2,}',   # ───── 
+        r'─{2,}',   # ─────
+        r'={2,}',   # ===== (form fill lines, e.g. "Họ và tên =====")
     ]
 
     # Field type keywords
@@ -72,18 +73,18 @@ class DotLineDetector:
         """
         text = text.strip()
         
-        # Pattern 1: "Label: ........"
-        match = re.match(r'^([^._{}\-─]+?)[:：]\s*[._{}\-─]+', text)
+        # Pattern 1: "Label: ........" or "Label ========"
+        match = re.match(r'^([^._{}\-─=]+?)[:：]\s*[._{}\-─=]+', text)
         if match:
             return match.group(1).strip()
         
         # Pattern 2: "Text ....... more text"
-        match = re.match(r'^(.+?)\s+[._{}\-─]+(?:\s+|$)', text)
+        match = re.match(r'^(.+?)\s+[._{}\-─=]+(?:\s+|$)', text)
         if match:
             return match.group(1).strip()
         
         # Fallback: lấy text trước pattern
-        pattern_match = re.search(r'[._{}\-─]+', text)
+        pattern_match = re.search(r'[._{}\-─=]+', text)
         if pattern_match:
             before_text = text[:pattern_match.start()].strip()
             if before_text:

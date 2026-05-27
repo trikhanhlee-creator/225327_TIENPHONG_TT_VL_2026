@@ -140,8 +140,59 @@
             color: #64748b;
         }
 
-        body.light-mode .form-group label {
+        body.light-mode .form-group label,
+        body.light-mode .form-field-label {
             color: #1e293b;
+        }
+
+        body.light-mode .form-group {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        body.light-mode .form-row-compact .form-group {
+            background: #f8fafc;
+        }
+
+        body.light-mode .form-group input:not([type="radio"]):not([type="checkbox"]),
+        body.light-mode .form-group textarea,
+        body.light-mode .form-group select {
+            background: #ffffff;
+            border-color: #cbd5e1;
+            color: #0f172a;
+        }
+
+        body.light-mode .form-group input::placeholder,
+        body.light-mode .form-group textarea::placeholder {
+            color: #94a3b8;
+        }
+
+        body.light-mode .choice-option {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #334155;
+        }
+
+        body.light-mode .choice-option:has(input:checked) {
+            border-color: #6366f1;
+            background: #eef2ff;
+            color: #3730a3;
+        }
+
+        body.light-mode .form-section-page-title {
+            color: #1e3a8a;
+            background: linear-gradient(135deg, #eff6ff, #f8fafc);
+            border-color: #bfdbfe;
+        }
+
+        body.light-mode .field-label-edit-btn {
+            color: #64748b;
+        }
+
+        body.light-mode .field-label-edit-btn:hover:not(:disabled) {
+            color: #4338ca;
+            background: #eef2ff;
         }
 
         body.dark-mode .upload-area {
@@ -837,26 +888,153 @@
             font-size: 13px;
         }
 
+        #formFields {
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        .form-loading {
+            padding: 32px 16px;
+            text-align: center;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        body.light-mode .form-loading {
+            color: #64748b;
+        }
+
         .form-group {
-            margin-bottom: 28px;
+            margin-bottom: 12px;
             position: relative;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: rgba(30, 35, 58, 0.35);
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 0;
             color: #cbd5e0;
             font-weight: 600;
             font-size: 14px;
             text-transform: none;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
+        }
+
+        .form-field-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: #e2e8f0;
+            font-weight: 600;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .form-row-compact {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .form-row-compact .form-group {
+            margin-bottom: 0;
+            padding: 10px 12px;
+        }
+
+        .form-group.field-choice {
+            padding-bottom: 14px;
+        }
+
+        .form-group.field-choice .form-field-wrapper {
+            display: block;
+        }
+
+        .form-group.field-compact input,
+        .form-group.field-date input.field-date-input {
+            text-align: center;
+            letter-spacing: 0.02em;
+        }
+
+        .form-group.field-date .field-date-input::placeholder {
+            color: #94a3b8;
+            opacity: 1;
+        }
+
+        .choice-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 2px 0 0;
+        }
+
+        .choice-option {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 9px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            background: rgba(42, 47, 74, 0.5);
+            color: #e2e8f0;
+            transition: border-color 0.15s ease, background 0.15s ease;
+            user-select: none;
+        }
+
+        .choice-option:hover {
+            border-color: rgba(99, 102, 241, 0.45);
+        }
+
+        .choice-option input {
+            margin: 0;
+            width: 16px !important;
+            height: 16px !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            accent-color: #6366f1;
+            flex-shrink: 0;
+        }
+
+        .choice-option:has(input:checked) {
+            border-color: rgba(99, 102, 241, 0.75);
+            background: rgba(99, 102, 241, 0.22);
+        }
+
+        .form-section-page-title {
+            margin: 0 0 20px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(99, 102, 241, 0.35);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(99, 102, 241, 0.06));
+            font-size: 16px;
+            font-weight: 700;
+            color: #e8eaf6;
+            letter-spacing: 0.02em;
+        }
+
+        .form-section-heading {
+            margin: 18px 0 8px;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary, #1e293b);
         }
 
         .editable-field-label {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
+            gap: 8px;
+            margin-bottom: 8px;
         }
 
         .field-label-text {
@@ -866,20 +1044,25 @@
         }
 
         .field-label-edit-btn {
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
-            border: 1px solid color-mix(in srgb, var(--wu-brand) 48%, var(--wu-border));
-            background: color-mix(in srgb, var(--wu-brand-soft) 16%, var(--wu-surface-elevated));
-            color: var(--wu-brand);
-            font-size: 14px;
-            line-height: 1;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            font-size: 0;
+            line-height: 0;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            transition: all 0.2s ease;
+            opacity: 0.55;
+            transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
+        }
+
+        .form-group:hover .field-label-edit-btn {
+            opacity: 1;
         }
 
         .field-label-edit-icon {
@@ -893,9 +1076,8 @@
         }
 
         .field-label-edit-btn:hover:not(:disabled) {
-            border-color: color-mix(in srgb, var(--wu-brand) 64%, var(--wu-border));
-            background: color-mix(in srgb, var(--wu-brand-soft) 22%, var(--wu-surface-elevated));
-            transform: translateY(-1px);
+            color: #a5b4fc;
+            background: rgba(99, 102, 241, 0.15);
         }
 
         .field-label-edit-btn:disabled {
@@ -904,20 +1086,21 @@
             transform: none;
         }
 
-        .form-group input,
+        .form-group input:not([type="radio"]):not([type="checkbox"]),
         .form-group textarea,
         .form-group select {
             width: 100%;
-            padding: 12px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 8px;
             font-size: 14px;
             font-family: inherit;
-            transition: all 0.3s ease;
-            background: rgba(42, 47, 74, 0.6);
-            color: #e8e8e8;
-            letter-spacing: 0.3px;
-            height: 48px;
+            transition: border-color 0.15s ease, box-shadow 0.15s ease;
+            background: rgba(15, 18, 32, 0.55);
+            color: #f1f5f9;
+            letter-spacing: 0.2px;
+            height: 42px;
+            box-sizing: border-box;
         }
         
         .form-group input::placeholder,
@@ -925,13 +1108,13 @@
             color: #7a8194;
         }
 
-        .form-group input:focus,
+        .form-group input:not([type="radio"]):not([type="checkbox"]):focus,
         .form-group textarea:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #5a67d8;
-            background: rgba(42, 47, 74, 0.9);
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), inset 0 0 0 1px rgba(102, 126, 234, 0.3);
+            border-color: #6366f1;
+            background: rgba(15, 18, 32, 0.85);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
         }
 
         .form-group textarea {
@@ -948,12 +1131,80 @@
             position: relative;
         }
 
+        .form-field-input-cell {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+            display: flex;
+            align-items: stretch;
+        }
+
+        .form-field-input-cell input,
+        .form-field-input-cell textarea {
+            flex: 1;
+            width: auto !important;
+            min-width: 0;
+            padding-right: 44px;
+        }
+
         .form-field-wrapper input,
         .form-field-wrapper textarea {
             flex: 1;
             width: auto !important;
             min-width: 0;
             padding-right: 44px;
+        }
+
+        /* Nút chỉnh sửa từng ô bằng AI — chỉ hiện khi bật chế độ */
+        body:not(.wu-ai-field-edit-mode) .wu-ai-field-edit-per-field-btn {
+            display: none !important;
+        }
+
+        .wu-ai-field-edit-per-field-btn {
+            flex-shrink: 0;
+            align-self: stretch;
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            border: none;
+            color: #fff;
+        }
+
+        .wu-ai-field-edit-per-field-btn:hover:not(:disabled) {
+            filter: brightness(1.08);
+        }
+
+        .wu-ai-field-edit-per-field-btn:disabled {
+            opacity: 0.65;
+            cursor: wait;
+        }
+
+        .ai-field-rewrite-toolbar {
+            margin-top: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ai-field-rewrite-hint {
+            font-size: 12px;
+            color: var(--wu-text-muted, #a8a8a8);
+            max-width: 420px;
+            line-height: 1.45;
+        }
+
+        body:not(.wu-ai-field-edit-mode) .ai-field-rewrite-hint {
+            display: none !important;
+        }
+
+        .form-group > .suggestions-list .suggestion-item.ai-rewrite-suggestion .ai-rewrite-reason {
+            font-size: 11px;
+            opacity: 0.85;
+            margin-top: 4px;
+            color: var(--wu-text-muted, #a8a8a8);
         }
 
         .excel-reference-inline {
@@ -2943,6 +3194,10 @@
                             <input id="wordReferenceUploadInput" type="file" accept=".xlsx,.xls" style="display: none;" />
                             <span id="wordReferenceStatus" class="reference-upload-status">Chưa có file tham chiếu cho dropdown.</span>
                         </div>
+                        <div class="ai-field-rewrite-toolbar">
+                            <button type="button" id="toggleAiFieldRewriteBtn" class="btn btn-secondary" onclick="toggleAiFieldRewriteMode()" aria-pressed="false">✨ Chỉnh sửa bằng AI</button>
+                            <span id="aiFieldRewriteToolbarHint" class="ai-field-rewrite-hint">Sau khi bật, mỗi ô nhập có nút ✨ AI — bấm để nhận 2–3 cách viết mới, giữ nguyên ý nghĩa.</span>
+                        </div>
                     </div>
 
                     <form id="dynamicForm" onsubmit="submitForm(event)">
@@ -2999,6 +3254,10 @@
                             <input id="wordReferenceUploadInputSubmission" type="file" accept=".xlsx,.xls" style="display: none;" />
                             <span id="wordReferenceStatusSubmission" class="reference-upload-status">Chưa có file tham chiếu cho dropdown.</span>
                         </div>
+                        <div class="ai-field-rewrite-toolbar">
+                            <button type="button" id="toggleAiFieldRewriteBtnSubmission" class="btn btn-secondary" onclick="toggleAiFieldRewriteMode()" aria-pressed="false">✨ Chỉnh sửa bằng AI</button>
+                            <span id="aiFieldRewriteToolbarHintSubmission" class="ai-field-rewrite-hint">Sau khi bật, mỗi ô nhập có nút ✨ AI — bấm để nhận 2–3 cách viết mới, giữ nguyên ý nghĩa.</span>
+                        </div>
                     </div>
 
                     <form id="editForm" onsubmit="saveSubmissionChanges(event)">
@@ -3044,8 +3303,10 @@
         let exportMode = 'single';
         let bulkExportSubmissionIds = [];
         let submissionDetailCache = {};
-        let formPages = [{ data: {}, submissionId: null, historyGroupId: null }];
+        let formPages = [{ data: {}, submissionId: null, historyGroupId: null, sectionTitle: '' }];
         let currentFormPageIndex = 0;
+        let useSectionBasedPages = false;
+        let wordFormSections = [];
         let submissionHistoryOrder = [];
         let currentSubmissionNavIndex = -1;
         let excelReferenceOptions = {};
@@ -3145,34 +3406,728 @@
         }
 
         function collectCurrentFormValues() {
-            const form = document.getElementById('dynamicForm');
-            if (!form) return {};
+            return collectFormValuesFromContainer(document.getElementById('dynamicForm'));
+        }
+
+        function collectFormValuesFromContainer(container) {
+            if (!container) return {};
 
             const values = {};
-            form.querySelectorAll('[name]').forEach((input) => {
-                if (!input.name) return;
+            const handledNames = new Set();
+
+            container.querySelectorAll('[name]').forEach((input) => {
+                if (!input.name || handledNames.has(input.name)) return;
+
+                if (input.type === 'radio') {
+                    if (input.checked) values[input.name] = input.value || '';
+                    return;
+                }
+                if (input.type === 'checkbox' && input.classList.contains('choice-option-input')) {
+                    return;
+                }
                 if (input.type === 'checkbox') {
                     values[input.name] = input.checked;
+                    handledNames.add(input.name);
+                    return;
+                }
+
+                if (input.getAttribute('data-birth-date-merge') === '1') {
+                    const dayKey = input.getAttribute('data-merge-day') || 'ngay_sinh';
+                    const monthKey = input.getAttribute('data-merge-month') || 'thang_sinh';
+                    const yearKey = input.getAttribute('data-merge-year') || 'nam_sinh';
+                    const yearBounds = resolveDateYearBounds(input);
+                    const parts = parseFormattedDateParts(input.value, yearBounds);
+                    values[dayKey] = parts.day;
+                    values[monthKey] = parts.month;
+                    values[yearKey] = parts.year;
+                    handledNames.add(dayKey);
+                    handledNames.add(monthKey);
+                    handledNames.add(yearKey);
+                    return;
+                }
+
+                const datePart = input.getAttribute('data-date-part');
+                if (datePart === 'full') {
+                    values[input.name] = formatDdMmYyyyFromDigits(input.value, {
+                        finalize: true,
+                        yearBounds: resolveDateYearBounds(input),
+                    });
                 } else {
                     values[input.name] = input.value || '';
                 }
+                handledNames.add(input.name);
             });
 
             return values;
         }
 
-        function applyFormValues(values = {}) {
-            const form = document.getElementById('dynamicForm');
+        function getActiveFormContainer() {
+            return document.getElementById('dynamicForm')
+                || document.getElementById('submissionFields')
+                || null;
+        }
+
+        function applyFormValues(values = {}, container) {
+            const form = container || getActiveFormContainer();
             if (!form) return;
 
             form.querySelectorAll('[name]').forEach((input) => {
                 const value = values[input.name];
+                if (input.type === 'radio') {
+                    input.checked = String(input.value) === String(value ?? '');
+                    return;
+                }
+                if (input.type === 'checkbox' && input.classList.contains('choice-option-input')) {
+                    return;
+                }
                 if (input.type === 'checkbox') {
                     input.checked = Boolean(value);
+                } else if (input.getAttribute('data-birth-date-merge') === '1') {
+                    const dayKey = input.getAttribute('data-merge-day') || 'ngay_sinh';
+                    const monthKey = input.getAttribute('data-merge-month') || 'thang_sinh';
+                    const yearKey = input.getAttribute('data-merge-year') || 'nam_sinh';
+                    input.value = mergeBirthDateValues(
+                        values[dayKey],
+                        values[monthKey],
+                        values[yearKey]
+                    );
+                    input.value = normalizeDdMmYyyyValue(input.value, resolveDateYearBounds(input));
                 } else {
-                    input.value = value ?? '';
+                    const datePart = input.getAttribute('data-date-part');
+                    if (datePart === 'full') {
+                        input.value = normalizeDdMmYyyyValue(value ?? '', resolveDateYearBounds(input));
+                    } else if (datePart === 'day' || datePart === 'month' || datePart === 'year') {
+                        const maxLen = datePart === 'year' ? 4 : 2;
+                        input.value = extractDateDigits(value).slice(0, maxLen);
+                    } else {
+                        input.value = value ?? '';
+                    }
                 }
             });
+        }
+
+        const FIELD_EDIT_ICON_SVG = '<svg class="field-label-edit-icon" viewBox="0 0 24 24" aria-hidden="true">'
+            + '<path d="M12 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5"/>'
+            + '<path d="M14 6l4 4"/><path d="M16 4l4 4"/>'
+            + '<path d="M10 14l8-8a1.5 1.5 0 0 1 2 2l-8 8-3 1z"/></svg>';
+
+        /** day | month | year | full — thống nhất style trường ngày tháng năm giữa các form */
+        function getDateFieldRole(field) {
+            const name = String(field?.name || '').toLowerCase();
+            const label = String(field?.label || field?.field_label || '').toLowerCase();
+            const fieldType = String(field?.field_type || '').toLowerCase();
+
+            if (name === 'thang_sinh' || label === 'tháng sinh') return 'month';
+            if (name === 'nam_sinh' || label === 'năm sinh') return 'year';
+            if (
+                name.includes('nam_sinh')
+                || (label.includes('năm sinh') && !label.includes('tháng'))
+            ) {
+                return 'year';
+            }
+
+            if (
+                name === 'ngay_sinh'
+                || label === 'ngày sinh'
+                || (label.includes('ngày') && label.includes('sinh'))
+                || fieldType === 'date'
+            ) {
+                return 'full';
+            }
+
+            if (name.includes('thang_sinh') || label.includes('tháng sinh')) {
+                return 'month';
+            }
+
+            return null;
+        }
+
+        function isDatePartField(field) {
+            return getDateFieldRole(field) !== null;
+        }
+
+        function isCompactBirthField(field) {
+            return isDatePartField(field);
+        }
+
+        function isBirthDateTriplet(f1, f2, f3) {
+            if (!f1 || !f2 || !f3) return false;
+            const n1 = String(f1.name || '').toLowerCase();
+            const n2 = String(f2.name || '').toLowerCase();
+            const n3 = String(f3.name || '').toLowerCase();
+            return (n1.includes('ngay') && n1.includes('sinh'))
+                && (n2.includes('thang') && n2.includes('sinh'))
+                && (n3.includes('nam') && n3.includes('sinh'));
+        }
+
+        function dateFieldInputAttrs(dateRole) {
+            if (dateRole === 'day') {
+                return ' inputmode="numeric" maxlength="2" class="field-date-input" data-date-part="day"';
+            }
+            if (dateRole === 'month') {
+                return ' inputmode="numeric" maxlength="2" class="field-date-input" data-date-part="month"';
+            }
+            if (dateRole === 'year') {
+                return ' inputmode="numeric" maxlength="4" class="field-date-input" data-date-part="year"';
+            }
+            if (dateRole === 'full') {
+                return ' inputmode="numeric" maxlength="10" class="field-date-input field-date-full" data-date-part="full"';
+            }
+            return '';
+        }
+
+        function extractDateDigits(value) {
+            return String(value || '').replace(/\D/g, '').slice(0, 8);
+        }
+
+        function getDefaultDateYearBounds() {
+            const currentYear = new Date().getFullYear();
+            return { min: 1900, max: currentYear };
+        }
+
+        function resolveDateYearBounds(input) {
+            const currentYear = new Date().getFullYear();
+            const bounds = { min: 1900, max: currentYear };
+            if (!input) return bounds;
+
+            if (input.getAttribute('data-birth-date-merge') === '1') {
+                return bounds;
+            }
+
+            const name = String(input.getAttribute('data-field-name') || '').toLowerCase();
+            if (name.includes('sinh') || name.includes('birth')) {
+                return bounds;
+            }
+
+            const label = String(input.getAttribute('data-field-label') || '').toLowerCase();
+            if (label.includes('sinh') || label.includes('birth')) {
+                return bounds;
+            }
+
+            // Ngày cấp / hạn: cho phép tối đa +5 năm so với hiện tại
+            if (label.includes('cấp') || label.includes('hạn') || label.includes('het han')) {
+                return { min: 1900, max: currentYear + 5 };
+            }
+
+            return bounds;
+        }
+
+        function daysInMonth(month, year) {
+            const m = parseInt(month, 10);
+            if (!m || m < 1 || m > 12) return 31;
+            const y = parseInt(year, 10);
+            const safeYear = (!y || y < 1) ? new Date().getFullYear() : y;
+            return new Date(safeYear, m, 0).getDate();
+        }
+
+        function capYearDigits(yearDigits, bounds) {
+            const raw = String(yearDigits || '').replace(/\D/g, '').slice(0, 4);
+            if (!raw) return '';
+
+            const minY = bounds.min;
+            const maxY = bounds.max;
+
+            if (raw.length < 4) {
+                const minComplete = parseInt(raw.padEnd(4, '0'), 10);
+                const maxComplete = parseInt(raw.padEnd(4, '9'), 10);
+                if (minComplete > maxY) {
+                    return String(maxY).slice(0, raw.length);
+                }
+                if (maxComplete < minY) {
+                    return String(minY).slice(0, raw.length);
+                }
+                return raw;
+            }
+
+            let y = parseInt(raw, 10);
+            if (isNaN(y) || y < minY) return String(minY);
+            if (y > maxY) return String(maxY);
+            return String(y);
+        }
+
+        function sanitizeDateSegments(segments, bounds) {
+            const safeBounds = bounds || getDefaultDateYearBounds();
+            let day = String(segments.day || '');
+            let month = String(segments.month || '');
+            let year = String(segments.year || '');
+
+            if (month) {
+                const m = parseInt(month, 10);
+                if (!isNaN(m)) {
+                    if (m > 12) month = '12';
+                    else if (m < 1 && month.length >= 2) month = '01';
+                    else if (month.length === 2 && m >= 1 && m <= 12) {
+                        month = String(m).padStart(2, '0');
+                    }
+                }
+            }
+
+            year = capYearDigits(year, safeBounds);
+
+            if (day) {
+                const d = parseInt(day, 10);
+                if (!isNaN(d)) {
+                    const maxDay = month ? daysInMonth(month, year || String(safeBounds.max)) : 31;
+                    if (d > maxDay) day = String(maxDay).padStart(2, '0');
+                    else if (d < 1 && day.length >= 2) day = '01';
+                    else if (day.length === 2 && d >= 1) day = String(d).padStart(2, '0');
+                }
+            }
+
+            return { day, month, year };
+        }
+
+        function segmentsFromDigits(digits, options = {}) {
+            const finalize = Boolean(options.finalize);
+            const d = extractDateDigits(digits);
+            let day = '';
+            let month = '';
+            let year = '';
+
+            if (!d) return { day, month, year };
+
+            let idx = 0;
+            if (d.length === 1) {
+                day = d[0];
+                idx = 1;
+            } else {
+                const twoDay = parseInt(d.slice(0, 2), 10);
+                if (twoDay > 31) {
+                    day = d[0];
+                    idx = 1;
+                } else if (d.length === 2) {
+                    day = d.slice(0, 2);
+                    idx = 2;
+                } else if (twoDay >= 1 && twoDay <= 31) {
+                    day = d.slice(0, 2);
+                    idx = 2;
+                } else {
+                    day = d[0];
+                    idx = 1;
+                }
+            }
+
+            if (idx < d.length && day.length === 1) {
+                day = day.padStart(2, '0');
+            }
+
+            const rest = d.slice(idx);
+            if (rest.length === 1) {
+                month = rest[0];
+            } else if (rest.length === 2) {
+                const twoMonth = parseInt(rest.slice(0, 2), 10);
+                if (twoMonth > 12) {
+                    month = rest[0];
+                } else {
+                    month = rest.slice(0, 2);
+                }
+            } else if (rest.length > 2) {
+                const twoMonth = parseInt(rest.slice(0, 2), 10);
+                if (twoMonth > 12) {
+                    month = rest[0];
+                    year = rest.slice(1);
+                } else {
+                    month = rest.slice(0, 2);
+                    year = rest.slice(2);
+                }
+            }
+
+            if (year.length > 0 && month.length === 1) {
+                month = month.padStart(2, '0');
+            }
+
+            if (finalize) {
+                if (day.length === 1) day = day.padStart(2, '0');
+                if (month.length === 1) month = month.padStart(2, '0');
+            }
+
+            return { day, month, year };
+        }
+
+        function formatDdMmYyyyFromSegments(segments) {
+            const day = String(segments.day || '');
+            const month = String(segments.month || '');
+            const year = String(segments.year || '');
+            if (!day && !month && !year) return '';
+            if (day && !month && !year) return day;
+            if (day && month && !year) return day + '/' + month;
+            return day + '/' + month + '/' + year;
+        }
+
+        function formatDdMmYyyyFromDigits(digits, options = {}) {
+            const segments = segmentsFromDigits(digits, options);
+            const sanitized = sanitizeDateSegments(segments, options.yearBounds || getDefaultDateYearBounds());
+            return formatDdMmYyyyFromSegments(sanitized);
+        }
+
+        function parseFormattedDateParts(formatted, yearBounds) {
+            const normalized = formatDdMmYyyyFromDigits(formatted, {
+                finalize: true,
+                yearBounds: yearBounds || getDefaultDateYearBounds(),
+            });
+            const parts = normalized.split('/');
+            return {
+                day: parts[0] || '',
+                month: parts[1] || '',
+                year: parts[2] || '',
+            };
+        }
+
+        function mergeBirthDateValues(day, month, year) {
+            const d = extractDateDigits(day);
+            const m = extractDateDigits(month);
+            const y = extractDateDigits(year);
+            if (!d && !m && !y) return '';
+            return formatDdMmYyyyFromDigits(d + m + y, {
+                finalize: true,
+                yearBounds: getDefaultDateYearBounds(),
+            });
+        }
+
+        function normalizeDdMmYyyyValue(value, yearBounds) {
+            return formatDdMmYyyyFromDigits(value, {
+                finalize: true,
+                yearBounds: yearBounds || getDefaultDateYearBounds(),
+            });
+        }
+
+        function countDigitsBeforeCursor(text, cursorPos) {
+            let count = 0;
+            const limit = Math.min(cursorPos, text.length);
+            for (let i = 0; i < limit; i += 1) {
+                if (/\d/.test(text[i])) count += 1;
+            }
+            return count;
+        }
+
+        function cursorPosAfterDigitIndex(formatted, digitIndex) {
+            if (digitIndex <= 0) return 0;
+            let seen = 0;
+            for (let i = 0; i < formatted.length; i += 1) {
+                if (/\d/.test(formatted[i])) {
+                    seen += 1;
+                    if (seen >= digitIndex) return i + 1;
+                }
+            }
+            return formatted.length;
+        }
+
+        function setDateInputCaret(input, digitIndex) {
+            const pos = cursorPosAfterDigitIndex(input.value, digitIndex);
+            try {
+                input.setSelectionRange(pos, pos);
+            } catch (_) {
+                /* ignore when input not focused */
+            }
+        }
+
+        function handleDdMmYyyyInput(event) {
+            const input = event.target;
+            if (!input || input.getAttribute('data-date-part') !== 'full') return;
+
+            const previous = String(input.value || '');
+            const selStart = typeof input.selectionStart === 'number' ? input.selectionStart : previous.length;
+            const digitsBefore = countDigitsBeforeCursor(previous, selStart);
+            const yearBounds = resolveDateYearBounds(input);
+            const formatted = formatDdMmYyyyFromDigits(previous, { yearBounds });
+
+            if (input.value !== formatted) {
+                input.value = formatted;
+            }
+            setDateInputCaret(input, digitsBefore);
+
+            if (typeof filterSuggestions === 'function') {
+                filterSuggestions(event);
+            }
+        }
+
+        function handleDdMmYyyyBlur(event) {
+            const input = event.target;
+            if (!input || input.getAttribute('data-date-part') !== 'full') return;
+
+            const yearBounds = resolveDateYearBounds(input);
+            const formatted = formatDdMmYyyyFromDigits(input.value, { finalize: true, yearBounds });
+            if (input.value !== formatted) {
+                input.value = formatted;
+            }
+            hideSuggestionsOnBlur(event);
+        }
+
+        function handleDdMmYyyyPaste(event) {
+            const input = event.target;
+            if (!input || input.getAttribute('data-date-part') !== 'full') return;
+
+            event.preventDefault();
+            const pasted = (event.clipboardData || window.clipboardData).getData('text') || '';
+            const merged = previousDigitsFromInput(input, pasted);
+            const yearBounds = resolveDateYearBounds(input);
+            input.value = formatDdMmYyyyFromDigits(merged, { yearBounds });
+            setDateInputCaret(input, extractDateDigits(input.value).length);
+
+            if (typeof filterSuggestions === 'function') {
+                filterSuggestions(event);
+            }
+        }
+
+        function previousDigitsFromInput(input, extra) {
+            const start = typeof input.selectionStart === 'number' ? input.selectionStart : 0;
+            const end = typeof input.selectionEnd === 'number' ? input.selectionEnd : start;
+            const before = String(input.value || '').slice(0, start);
+            const after = String(input.value || '').slice(end);
+            return extractDateDigits(before + extra + after);
+        }
+
+        function handleDatePartInput(event) {
+            const input = event.target;
+            const part = input ? input.getAttribute('data-date-part') : '';
+            if (!part || part === 'full') return;
+
+            const maxLen = part === 'year' ? 4 : 2;
+            let digits = extractDateDigits(input.value).slice(0, maxLen);
+
+            if (part === 'month') {
+                const m = parseInt(digits, 10);
+                if (!isNaN(m) && m > 12) digits = '12';
+            } else if (part === 'day') {
+                const d = parseInt(digits, 10);
+                if (!isNaN(d) && d > 31) digits = '31';
+            } else if (part === 'year') {
+                digits = capYearDigits(digits, resolveDateYearBounds(input));
+            }
+
+            if (input.value !== digits) {
+                input.value = digits;
+            }
+
+            if (digits.length === maxLen) {
+                const row = input.closest('.form-row-compact, .form-row-date');
+                if (row) {
+                    const parts = Array.from(row.querySelectorAll('[data-date-part]'));
+                    const idx = parts.indexOf(input);
+                    const next = idx >= 0 ? parts[idx + 1] : null;
+                    if (next && typeof next.focus === 'function') {
+                        next.focus();
+                    }
+                }
+            }
+
+            if (typeof filterSuggestions === 'function') {
+                filterSuggestions(event);
+            }
+        }
+
+        function getDateInputHandler(dateRole) {
+            if (dateRole === 'full') return 'handleDdMmYyyyInput(event)';
+            if (dateRole === 'day' || dateRole === 'month' || dateRole === 'year') return 'handleDatePartInput(event)';
+            return 'filterSuggestions(event)';
+        }
+
+        function fieldPlaceholder(label, fieldType, dateRole) {
+            if (dateRole === 'day') return 'Ngày';
+            if (dateRole === 'month') return 'Tháng';
+            if (dateRole === 'year') return 'Năm';
+            if (dateRole === 'full') return 'dd/mm/yyyy';
+
+            const l = String(label || '').toLowerCase();
+            if (fieldType === 'email') return 'email@example.com';
+            if (fieldType === 'phone' || l.includes('điện thoại')) return 'Số điện thoại';
+            return 'Nhập ' + String(label || 'thông tin').toLowerCase();
+        }
+
+        function buildAiFieldRewriteButton(fieldLabel, fieldType) {
+            const encLabel = encodeURIComponent(String(fieldLabel || ''));
+            const encType = encodeURIComponent(String(fieldType || 'text'));
+            return '<button type="button" class="wu-ai-field-edit-per-field-btn" '
+                + 'title="Gợi ý viết lại bằng AI (giữ nguyên ý nghĩa)" '
+                + 'data-ai-field-label="' + encLabel + '" '
+                + 'data-ai-field-type="' + encType + '" '
+                + 'onclick="rewriteWordFieldWithAi(event, this)">✨ AI</button>';
+        }
+
+        function buildMergedBirthDateFieldMarkup(fDay, fMonth, fYear, idx) {
+            const synthetic = {
+                name: fDay.name || 'ngay_sinh',
+                label: 'Ngày sinh',
+                field_type: 'date',
+                field_id: fDay.field_id,
+            };
+            return buildWordFieldInputMarkup(synthetic, idx, {
+                mergedBirth: true,
+                mergeKeys: {
+                    day: fDay.name || 'ngay_sinh',
+                    month: fMonth.name || 'thang_sinh',
+                    year: fYear.name || 'nam_sinh',
+                },
+            });
+        }
+
+        function buildWordFieldInputMarkup(field, idx, options = {}) {
+            const mergedBirth = Boolean(options.mergedBirth);
+            const mergeKeys = options.mergeKeys || {};
+            const fieldId = field.field_id;
+            const fieldLabel = mergedBirth
+                ? 'Ngày sinh'
+                : (String(field.label || '').trim()
+                    || formatExportFieldName(field.name || '')
+                    || String(field.name || ''));
+            const fieldType = String(field.field_type || 'text').toLowerCase();
+            const dateRole = mergedBirth ? 'full' : getDateFieldRole(field);
+            const isDateField = dateRole !== null;
+            const fieldOptions = Array.isArray(field.options) ? field.options : [];
+            const encodedName = escapeHtml(encodeURIComponent(String(field.name || '')));
+            const encodedLabel = escapeHtml(encodeURIComponent(fieldLabel));
+            const inputType = fieldType === 'email' ? 'email'
+                : fieldType === 'phone' ? 'tel'
+                : (isDateField || fieldType === 'number') ? 'text'
+                : 'text';
+            const isChoice = (fieldType === 'choice' || fieldType === 'radio') && fieldOptions.length > 0;
+            const groupClass = 'form-group'
+                + (isDateField ? ' field-compact field-date' : '')
+                + (isChoice ? ' field-choice' : '');
+
+            const labelBlock = '<div class="form-field-label editable-field-label">'
+                + '<span class="field-label-text">' + escapeHtml(fieldLabel) + '</span>'
+                + '<button type="button" class="field-label-edit-btn" title="Chỉnh sửa tên trường"'
+                + ' aria-label="Chỉnh sửa ' + escapeHtml(fieldLabel) + '"'
+                + ' data-field-name-encoded="' + encodedName + '" data-field-label-encoded="' + encodedLabel + '"'
+                + ' onclick="promptRenameWordFieldFromButton(this)">' + FIELD_EDIT_ICON_SVG + '</button></div>';
+
+            let inputBlock;
+            if (isChoice) {
+                inputBlock = '<div class="choice-group" role="radiogroup" aria-label="' + escapeHtml(fieldLabel) + '">'
+                    + fieldOptions.map(function(opt, optIdx) {
+                        const safeOpt = escapeHtml(String(opt));
+                        const optId = 'field_' + idx + '_opt_' + optIdx;
+                        return '<label class="choice-option" for="' + optId + '">'
+                            + '<input type="radio" class="choice-option-input" id="' + optId + '" name="' + field.name + '"'
+                            + ' value="' + safeOpt + '" data-field-name="' + field.name + '" data-field-id="' + fieldId + '" />'
+                            + '<span>' + safeOpt + '</span></label>';
+                    }).join('')
+                    + '</div>';
+            } else {
+                const placeholder = escapeHtml(fieldPlaceholder(fieldLabel, fieldType, dateRole));
+                const dateAttrs = isDateField ? dateFieldInputAttrs(dateRole) : '';
+                const inputHandler = getDateInputHandler(dateRole);
+                const pasteHandler = dateRole === 'full' ? ' onPaste="handleDdMmYyyyPaste(event)"' : '';
+                const blurHandler = dateRole === 'full'
+                    ? 'handleDdMmYyyyBlur(event)'
+                    : 'hideSuggestionsOnBlur(event)';
+                const mergeAttrs = mergedBirth
+                    ? ' data-birth-date-merge="1"'
+                    + ' data-merge-day="' + escapeHtml(mergeKeys.day || 'ngay_sinh') + '"'
+                    + ' data-merge-month="' + escapeHtml(mergeKeys.month || 'thang_sinh') + '"'
+                    + ' data-merge-year="' + escapeHtml(mergeKeys.year || 'nam_sinh') + '"'
+                    : '';
+                inputBlock = '<input type="' + inputType + '" id="field_' + idx + '" name="' + field.name + '"'
+                    + ' data-field-name="' + field.name + '" data-field-id="' + fieldId + '"'
+                    + ' placeholder="' + placeholder + '" autocomplete="off"'
+                    + dateAttrs + mergeAttrs
+                    + ' onFocus="loadSuggestions(event)" onInput="' + inputHandler + '"'
+                    + pasteHandler
+                    + ' onBlur="' + blurHandler + '" />';
+            }
+
+            const excelRefInner = '<div class="excel-reference-inline" data-field-id="' + fieldId + '">'
+                + '<select class="excel-reference-select" data-field-id="' + fieldId + '" onchange="applyWordReferenceSelection(event)">'
+                + '<option value=""></option></select></div>';
+
+            if (isChoice) {
+                return '<div class="' + groupClass + '">' + labelBlock
+                    + '<div class="form-field-wrapper">' + inputBlock + excelRefInner + '</div>'
+                    + '<div class="suggestions-list" id="suggestions_' + fieldId + '"></div></div>';
+            }
+
+            const aiBtn = buildAiFieldRewriteButton(fieldLabel, fieldType);
+            return '<div class="' + groupClass + '">' + labelBlock
+                + '<div class="form-field-wrapper">'
+                + '<div class="form-field-input-cell">' + inputBlock + excelRefInner + '</div>'
+                + aiBtn
+                + '</div>'
+                + '<div class="suggestions-list" id="suggestions_' + fieldId + '"></div></div>';
+        }
+
+        function buildSectionFieldsHtml(fields) {
+            const list = fields || [];
+            const parts = [];
+            let i = 0;
+            while (i < list.length) {
+                const f = list[i];
+                const f2 = list[i + 1];
+                const f3 = list[i + 2];
+                if (isBirthDateTriplet(f, f2, f3)) {
+                    parts.push(buildMergedBirthDateFieldMarkup(f, f2, f3, i));
+                    i += 3;
+                    continue;
+                }
+                parts.push(buildWordFieldInputMarkup(f, i));
+                i += 1;
+            }
+            return parts.join('');
+        }
+
+
+        const SECTION_PAGE_MIN_FIELDS = 12;
+
+        function groupFieldsBySection(fields) {
+            const order = [];
+            const map = new Map();
+            (fields || []).forEach((field) => {
+                const title = String(field.section || '').trim() || 'Thông tin chung';
+                if (!map.has(title)) {
+                    map.set(title, []);
+                    order.push(title);
+                }
+                map.get(title).push(field);
+            });
+            return order.map((title) => ({ title, fields: map.get(title) || [] }));
+        }
+
+        function shouldUseSectionPages(fields, apiFlag) {
+            if (apiFlag === true) return groupFieldsBySection(fields).length >= 2;
+            const sections = groupFieldsBySection(fields);
+            const validCount = (fields || []).filter((f) => f.field_id > 0).length;
+            return sections.length >= 2 && validCount >= SECTION_PAGE_MIN_FIELDS;
+        }
+
+        function toggleMultiPageSubmissionActions(show) {
+            const addPageBtn = document.querySelector('button[onclick*="submitFormAndAddPage"]');
+            const deletePageBtn = document.querySelector('button[onclick*="deleteCurrentWordFormPage"]');
+            if (addPageBtn) addPageBtn.style.display = show ? '' : 'none';
+            if (deletePageBtn) deletePageBtn.style.display = show ? '' : 'none';
+        }
+
+        function initSectionFormPages(sections) {
+            wordFormSections = sections;
+            useSectionBasedPages = true;
+            formPages = sections.map((sec) => ({
+                sectionTitle: sec.title,
+                data: {},
+                submissionId: null,
+                historyGroupId: null,
+            }));
+            currentFormPageIndex = 0;
+            toggleMultiPageSubmissionActions(false);
+        }
+
+        function renderFormFieldsForSection(sectionIndex) {
+            const formFields = document.getElementById('formFields');
+            const section = wordFormSections[sectionIndex];
+            if (!formFields || !section) return;
+
+            const titleHtml = '<h2 class="form-section-page-title">' + escapeHtml(section.title) + '</h2>';
+            const fieldsHtml = buildSectionFieldsHtml(section.fields);
+            formFields.innerHTML = titleHtml + fieldsHtml;
+            applyFormValues(formPages[sectionIndex]?.data || {});
+            refreshWordReferenceDropdowns();
+            resetAutofillPanelState('form');
+        }
+
+        function mergeAllFormPagesData() {
+            const merged = {};
+            formPages.forEach((page) => {
+                Object.assign(merged, page.data || {});
+            });
+            return merged;
         }
 
         function saveCurrentFormPageDraft() {
@@ -3188,7 +4143,12 @@
             if (!indicator) return;
 
             const totalPages = Math.max(formPages.length, 1);
-            indicator.textContent = `Trang nhập liệu: ${currentFormPageIndex + 1}/${totalPages}`;
+            if (useSectionBasedPages && formPages[currentFormPageIndex]?.sectionTitle) {
+                const title = formPages[currentFormPageIndex].sectionTitle;
+                indicator.textContent = `Mục ${currentFormPageIndex + 1}/${totalPages}: ${title}`;
+            } else {
+                indicator.textContent = `Trang nhập liệu: ${currentFormPageIndex + 1}/${totalPages}`;
+            }
         }
 
         function updateFormPageNavigation() {
@@ -3197,16 +4157,21 @@
 
             if (prevBtn) {
                 prevBtn.disabled = currentFormPageIndex <= 0;
+                prevBtn.textContent = useSectionBasedPages ? '◀ Mục trước' : '◀ Trang trước';
             }
 
             if (nextBtn) {
                 nextBtn.disabled = currentFormPageIndex >= formPages.length - 1;
+                nextBtn.textContent = useSectionBasedPages ? 'Mục tiếp ▶' : 'Trang tiếp ▶';
             }
         }
 
         function resetFormPageCounter() {
-            formPages = [{ data: {}, submissionId: null, historyGroupId: null }];
+            formPages = [{ data: {}, submissionId: null, historyGroupId: null, sectionTitle: '' }];
             currentFormPageIndex = 0;
+            useSectionBasedPages = false;
+            wordFormSections = [];
+            toggleMultiPageSubmissionActions(true);
             updateFormPageIndicator();
             updateFormPageNavigation();
         }
@@ -3218,9 +4183,13 @@
 
             saveCurrentFormPageDraft();
             currentFormPageIndex = index;
-            applyFormValues(formPages[currentFormPageIndex]?.data || {});
-            refreshWordReferenceDropdowns();
-            resetAutofillPanelState('form');
+            if (useSectionBasedPages) {
+                renderFormFieldsForSection(index);
+            } else {
+                applyFormValues(formPages[currentFormPageIndex]?.data || {});
+                refreshWordReferenceDropdowns();
+                resetAutofillPanelState('form');
+            }
             updateFormPageIndicator();
             updateFormPageNavigation();
         }
@@ -3234,11 +4203,16 @@
         }
 
         function goToNextFormPage() {
+            if (useSectionBasedPages) {
+                goToNextWordFormPage();
+                return;
+            }
+
             saveCurrentFormPageDraft();
 
             const nextIndex = currentFormPageIndex + 1;
             if (!formPages[nextIndex]) {
-                formPages.push({ data: {}, submissionId: null, historyGroupId: formPages[currentFormPageIndex]?.historyGroupId || null });
+                formPages.push({ data: {}, submissionId: null, historyGroupId: formPages[currentFormPageIndex]?.historyGroupId || null, sectionTitle: '' });
             }
 
             currentFormPageIndex = nextIndex;
@@ -3484,6 +4458,7 @@
             const formData = new FormData();
             formData.append('file', file);
 
+            showMessage('uploadMessage', '⏳ Đang tải và phân tích file...', 'info');
             try {
                 const response = await fetch(`${API_BASE}/api/word/upload`, {
                     method: 'POST',
@@ -3491,12 +4466,42 @@
                 });
 
                 const data = await parseApiResponse(response);
-                showMessage('uploadMessage', `✅ Upload thành công! Tìm thấy ${data.fields_count} trường`, 'success');
+                showMessage('uploadMessage', `✅ Upload thành công! ${data.fields_count} trường`, 'success');
                 uploadInput.value = '';
-                await loadTemplates();
-                await loadSubmissions();
+                await Promise.all([loadTemplates(), loadSubmissions()]);
             } catch (error) {
                 showMessage('uploadMessage', `❌ Lỗi: ${error.message}`, 'error');
+            }
+        }
+
+        function renderWordFormFields(formFields, validFieldList, apiData) {
+            if (validFieldList.length === 0) {
+                formFields.innerHTML = `
+                    <div class="form-loading">
+                        <p>❌ Không tìm thấy trường hợp lệ. Vui lòng thử tải lại trang.</p>
+                        <button type="button" onclick="backToMain()" class="btn btn-secondary" style="margin-top: 10px;">← Quay lại</button>
+                    </div>`;
+                showMessage('formMessage', '⚠️ Lỗi: Không tất cả các trường được tạo thành công.', 'error');
+                return;
+            }
+            if (shouldUseSectionPages(validFieldList, apiData.use_section_pages)) {
+                const sections = groupFieldsBySection(validFieldList);
+                initSectionFormPages(sections);
+                document.getElementById('formDescription').textContent =
+                    `${validFieldList.length} trường · ${sections.length} mục`;
+                renderFormFieldsForSection(0);
+                updateFormPageIndicator();
+                updateFormPageNavigation();
+            } else {
+                useSectionBasedPages = false;
+                wordFormSections = [];
+                toggleMultiPageSubmissionActions(true);
+                formFields.innerHTML = buildSectionFieldsHtml(validFieldList);
+                refreshWordReferenceDropdowns();
+                applyFormValues(formPages[currentFormPageIndex]?.data || {});
+                resetAutofillPanelState('form');
+                updateFormPageIndicator();
+                updateFormPageNavigation();
             }
         }
 
@@ -3548,8 +4553,8 @@
                             </div>
                         </div>
                         <div class="template-actions">
-                            <button class="btn btn-danger btn-small template-delete-btn" onclick="event.stopPropagation(); deleteTemplate(${t.id})">
-                                Xóa
+<button class="btn btn-danger btn-small template-delete-btn" onclick="event.stopPropagation(); deleteTemplate(${t.id})">
+                                Xoa
                             </button>
                         </div>
                     </div>
@@ -3663,104 +4668,38 @@
         }
 
         async function openForm(templateId) {
+            const formFields = document.getElementById('formFields');
+            document.getElementById('mainView').style.display = 'none';
+            document.getElementById('formView').classList.add('active');
+            if (formFields) {
+                formFields.innerHTML = '<div class="form-loading">Đang tải form...</div>';
+            }
+
             try {
                 const response = await fetch(`${API_BASE}/api/word/template/${templateId}`);
                 const data = await parseApiResponse(response);
-                
+
                 currentTemplate = data;
-                currentFormId = data.form_id || 1; // Lưu form_id từ template
-                
-                // Hiển thị form
-                document.getElementById('mainView').style.display = 'none';
-                document.getElementById('formView').classList.add('active');
-                
+                currentFormId = data.form_id || 1;
+
                 document.getElementById('formTitle').textContent = data.name;
                 document.getElementById('formDescription').textContent = `${data.fields.length} trường`;
                 resetFormPageCounter();
                 resetWordReferenceOptions();
 
-                // Render form fields with suggestions
-                const formFields = document.getElementById('formFields');
-                const validFields = [];
-                
-                data.fields.forEach((field, idx) => {
-                    // Always use field_id from backend - never use index!
-                    // If field_id is invalid (null, -1, etc), skip field for now
-                    const fieldId = field.field_id;
-                    
-                    if (!fieldId || fieldId < 0) {
-                        console.warn(`Field ${field.name} has invalid field_id: ${fieldId}, will retry...`);
-                        return;  // Skip this field for now
-                    }
-                    
-                    const fieldLabel = String(field.label || '').trim()
-                        || formatExportFieldName(field.name || '')
-                        || String(field.name || '');
+                const validFieldList = (data.fields || []).filter((field) => field.field_id > 0);
+                const payload = { data, validFieldList };
 
-                    validFields.push(`
-                    <div class="form-group">
-                        <label for="field_${idx}" class="editable-field-label">
-                            <span class="field-label-text">${escapeHtml(fieldLabel)}</span>
-                            <button
-                                type="button"
-                                class="field-label-edit-btn"
-                                title="Chỉnh sửa tên trường"
-                                aria-label="Chỉnh sửa tên trường ${escapeHtml(fieldLabel)}"
-                                data-field-name-encoded="${escapeHtml(encodeURIComponent(String(field.name || '')))}"
-                                data-field-label-encoded="${escapeHtml(encodeURIComponent(fieldLabel))}"
-                                onclick="promptRenameWordFieldFromButton(this)"
-                            >
-                                <svg class="field-label-edit-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M12 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5" />
-                                    <path d="M14 6l4 4" />
-                                    <path d="M16 4l4 4" />
-                                    <path d="M10 14l8-8a1.5 1.5 0 0 1 2 2l-8 8-3 1z" />
-                                </svg>
-                            </button>
-                        </label>
-                        <div class="form-field-wrapper">
-                            <input 
-                                type="${field.field_type === 'email' ? 'email' : field.field_type === 'date' ? 'date' : field.field_type === 'number' ? 'number' : 'text'}"
-                                id="field_${idx}"
-                                name="${field.name}"
-                                data-field-name="${field.name}"
-                                data-field-id="${fieldId}"
-                                placeholder="Nhập ${fieldLabel.toLocaleLowerCase('vi-VN')}"
-                                autocomplete="off"
-                                onFocus="loadSuggestions(event)"
-                                onInput="filterSuggestions(event)"
-                                onBlur="hideSuggestionsOnBlur(event)"
-                            />
-                            <div class="excel-reference-inline" data-field-id="${fieldId}">
-                                <select class="excel-reference-select" data-field-id="${fieldId}" onchange="applyWordReferenceSelection(event)">
-                                    <option value="">▼</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="suggestions-list" id="suggestions_${fieldId}"></div>
-                    </div>
-                `);
+                requestAnimationFrame(() => {
+                    if (!formFields) return;
+                    renderWordFormFields(formFields, payload.validFieldList, payload.data);
                 });
-                
-                if (validFields.length === 0) {
-                    formFields.innerHTML = `
-                        <div style="padding: 20px; text-align: center; color: #999;">
-                            <p>❌ Không tìm thấy trường hợp lệ. Vui lòng thử tải lại trang.</p>
-                            <button onclick="backToMain()" class="btn btn-secondary" style="margin-top: 10px;">
-                                ← Quay lại
-                            </button>
-                        </div>
-                    `;
-                    showMessage('formMessage', '⚠️ Lỗi: Không tất cả các trường được tạo thành công. Vui lòng kiểm tra server logs.', 'error');
-                } else {
-                    formFields.innerHTML = validFields.join('');
-                    refreshWordReferenceDropdowns();
-                    applyFormValues(formPages[currentFormPageIndex]?.data || {});
-                    refreshWordReferenceDropdowns();
-                    resetAutofillPanelState('form');
-                    updateFormPageNavigation();
-                }
             } catch (error) {
+                if (formFields) {
+                    formFields.innerHTML = '';
+                }
+                document.getElementById('formView').classList.remove('active');
+                document.getElementById('mainView').style.display = '';
                 showMessage('formMessage', `❌ Lỗi: ${error.message}`, 'error');
             }
         }
@@ -3770,25 +4709,36 @@
                 event.preventDefault();
             }
 
+            saveCurrentFormPageDraft();
+
             const keepFormOpen = Boolean(options.keepFormOpen);
-            const currentPage = formPages[currentFormPageIndex] || { data: {}, submissionId: null, historyGroupId: null };
-            const existingSubmissionId = currentPage.submissionId;
+            const sharedPage = formPages[0] || { data: {}, submissionId: null, historyGroupId: null };
+            const existingSubmissionId = useSectionBasedPages
+                ? sharedPage.submissionId
+                : (formPages[currentFormPageIndex] || {}).submissionId;
             const successText = options.successText || (existingSubmissionId
-                ? '✅ Đã cập nhật trang hiện tại.'
+                ? '✅ Đã cập nhật dữ liệu.'
                 : '✅ Submit thành công!');
 
-            const formData = new FormData(document.getElementById('dynamicForm'));
-            const data = Object.fromEntries(formData);
-            let historyGroupId = String(currentPage.historyGroupId || '').trim();
+            let data;
+            if (useSectionBasedPages) {
+                data = mergeAllFormPagesData();
+            } else {
+                data = collectCurrentFormValues();
+            }
+            let historyGroupId = String((useSectionBasedPages ? sharedPage : (formPages[currentFormPageIndex] || {})).historyGroupId || '').trim();
             if (keepFormOpen && !historyGroupId) {
                 historyGroupId = createWordHistoryGroupId();
             }
             const payload = { ...data };
             if (historyGroupId) {
-                payload[SUBMISSION_META_KEY] = {
-                    group_id: historyGroupId,
-                    page_index: currentFormPageIndex + 1
-                };
+                const meta = { group_id: historyGroupId };
+                if (useSectionBasedPages && formPages[currentFormPageIndex]?.sectionTitle) {
+                    meta.section_title = formPages[currentFormPageIndex].sectionTitle;
+                } else {
+                    meta.page_index = currentFormPageIndex + 1;
+                }
+                payload[SUBMISSION_META_KEY] = meta;
             }
 
             try {
@@ -3819,9 +4769,19 @@
                 if (!formPages[currentFormPageIndex]) {
                     formPages[currentFormPageIndex] = { data: {}, submissionId: null, historyGroupId: null };
                 }
-                formPages[currentFormPageIndex].data = { ...data };
-                formPages[currentFormPageIndex].submissionId = existingSubmissionId || result.submission_id || result.id || null;
-                formPages[currentFormPageIndex].historyGroupId = historyGroupId || String(result.history_group_id || '').trim() || null;
+                const submissionId = existingSubmissionId || result.submission_id || result.id || null;
+                const groupId = historyGroupId || String(result.history_group_id || '').trim() || null;
+                if (useSectionBasedPages) {
+                    saveCurrentFormPageDraft();
+                    formPages.forEach((page) => {
+                        page.submissionId = submissionId;
+                        page.historyGroupId = groupId;
+                    });
+                } else {
+                    formPages[currentFormPageIndex].data = { ...data };
+                    formPages[currentFormPageIndex].submissionId = submissionId;
+                    formPages[currentFormPageIndex].historyGroupId = groupId;
+                }
 
                 showMessage('formMessage', successText, 'success');
                 
@@ -4202,6 +5162,7 @@
             }
         }
 
+
         async function deleteTemplate(templateId) {
             if (!confirm('Bạn chắc chắn muốn xóa template này?')) return;
 
@@ -4257,73 +5218,42 @@
                 document.getElementById('submissionTitle').textContent = `Chi tiết: ${escapeHtml(getCleanFilename(data.template_name))}`;
                 document.getElementById('submissionDate').textContent = new Date(data.created_at).toLocaleString('vi-VN');
                 
-                // Render submission fields
                 const submissionFields = document.getElementById('submissionFields');
                 const fields = data.data || {};
-                
-                const fieldElements = Object.entries(fields).map(([key, value], idx) => {
-                    const templateMeta = (data.template_fields && data.template_fields[key]) ? data.template_fields[key] : null;
-                    const formattedFieldName = String(templateMeta?.field_label || '').trim()
-                        || formatExportFieldName(key)
-                        || String(key || '');
-                    const fieldName = escapeHtml(formattedFieldName);
-                    const fieldValue = escapeHtml(String(value || ''));
-                    const fieldId = `sub_field_${idx}`;
-                    const suggestionFieldId = Number(templateMeta?.field_id || `${data.id}${idx + 1}`);
-                    return `
-                    <div class="form-group">
-                        <label for="${fieldId}" class="editable-field-label">
-                            <span class="field-label-text">${fieldName}</span>
-                            <button
-                                type="button"
-                                class="field-label-edit-btn"
-                                title="Chỉnh sửa tên trường"
-                                aria-label="Chỉnh sửa tên trường ${fieldName}"
-                                data-field-name-encoded="${escapeHtml(encodeURIComponent(String(key || '')))}"
-                                data-field-label-encoded="${escapeHtml(encodeURIComponent(String(formattedFieldName || key)))}"
-                                onclick="promptRenameWordFieldFromButton(this)"
-                            >
-                                <svg class="field-label-edit-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M12 4H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-5" />
-                                    <path d="M14 6l4 4" />
-                                    <path d="M16 4l4 4" />
-                                    <path d="M10 14l8-8a1.5 1.5 0 0 1 2 2l-8 8-3 1z" />
-                                </svg>
-                            </button>
-                        </label>
-                        <div class="form-field-wrapper">
-                            <input 
-                                type="text"
-                                id="${fieldId}"
-                                name="${key}"
-                                value="${fieldValue}"
-                                data-field-name="${key}"
-                                data-field-id="${suggestionFieldId}"
-                                placeholder="Nhập dữ liệu"
-                                autocomplete="off"
-                                onFocus="loadSuggestions(event)"
-                                onInput="filterSuggestions(event)"
-                                onBlur="hideSuggestionsOnBlur(event)"
-                            />
-                            <div class="excel-reference-inline" data-field-id="${suggestionFieldId}">
-                                <select class="excel-reference-select" data-field-id="${suggestionFieldId}" onchange="applyWordReferenceSelection(event)">
-                                    <option value="">▼</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="suggestions-list" id="suggestions_${suggestionFieldId}"></div>
-                    </div>
-                    `;
-                }).join('');
-                
-                if (Object.keys(fields).length === 0) {
+                let orderedFieldList = [];
+
+                if (data.template_id) {
+                    try {
+                        const templateResp = await fetch(`${API_BASE}/api/word/template/${data.template_id}`);
+                        const templateData = await parseApiResponse(templateResp);
+                        orderedFieldList = (templateData.fields || [])
+                            .filter((field) => field.field_id > 0 && Object.prototype.hasOwnProperty.call(fields, field.name));
+                    } catch (templateError) {
+                        console.warn('Unable to load template field order for submission view:', templateError);
+                    }
+                }
+
+                if (!orderedFieldList.length) {
+                    orderedFieldList = Object.keys(fields).map((key, idx) => {
+                        const templateMeta = (data.template_fields && data.template_fields[key]) ? data.template_fields[key] : null;
+                        return {
+                            name: key,
+                            label: String(templateMeta?.field_label || '').trim() || formatExportFieldName(key) || key,
+                            field_type: String(templateMeta?.field_type || 'text'),
+                            field_id: Number(templateMeta?.field_id || `${data.id}${idx + 1}`),
+                        };
+                    });
+                }
+
+                if (!orderedFieldList.length) {
                     submissionFields.innerHTML = `
                         <div style="padding: 20px; text-align: center; color: #999;">
                             <p>❌ Không có dữ liệu nào</p>
                         </div>
                     `;
                 } else {
-                    submissionFields.innerHTML = fieldElements;
+                    submissionFields.innerHTML = buildSectionFieldsHtml(orderedFieldList);
+                    applyFormValues(fields, submissionFields);
                     refreshWordReferenceDropdowns();
                     resetAutofillPanelState('submission');
                 }
@@ -4370,9 +5300,7 @@
         }
 
         function collectSubmissionEditValues() {
-            const form = document.getElementById('editForm');
-            const formData = new FormData(form);
-            return Object.fromEntries(formData);
+            return collectFormValuesFromContainer(document.getElementById('editForm'));
         }
 
         async function updateSubmissionRecord(submissionId, data, historyGroupId = null) {
@@ -6060,7 +6988,8 @@
                     }
 
                     const response = await fetch(
-                        `${API_BASE}/api/suggestions/cross-field?${queryParams.toString()}`
+                        `${API_BASE}/api/suggestions/cross-field?${queryParams.toString()}`,
+                        { credentials: 'include' }
                     );
 
                     if (!response.ok) {
@@ -6200,6 +7129,203 @@
             }
         }
 
+        const AI_FIELD_REWRITE_STORAGE_KEY = 'wu_ai_field_rewrite_mode';
+
+        function getActiveWordFormMessageEl() {
+            const submissionPanel = document.getElementById('submissionView');
+            if (submissionPanel && submissionPanel.classList.contains('active')) {
+                return document.getElementById('submissionMessage');
+            }
+            return document.getElementById('formMessage');
+        }
+
+        function syncAiFieldRewriteToolbar() {
+            const on = document.body.classList.contains('wu-ai-field-edit-mode');
+            ['toggleAiFieldRewriteBtn', 'toggleAiFieldRewriteBtnSubmission'].forEach((id) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.setAttribute('aria-pressed', on ? 'true' : 'false');
+                el.classList.toggle('btn-primary', on);
+                el.classList.toggle('btn-secondary', !on);
+            });
+        }
+
+        function restoreAiFieldRewriteMode() {
+            try {
+                if (sessionStorage.getItem(AI_FIELD_REWRITE_STORAGE_KEY) === '1') {
+                    document.body.classList.add('wu-ai-field-edit-mode');
+                }
+            } catch (e) {
+                /* ignore private mode */
+            }
+            syncAiFieldRewriteToolbar();
+        }
+
+        function toggleAiFieldRewriteMode() {
+            document.body.classList.toggle('wu-ai-field-edit-mode');
+            try {
+                sessionStorage.setItem(
+                    AI_FIELD_REWRITE_STORAGE_KEY,
+                    document.body.classList.contains('wu-ai-field-edit-mode') ? '1' : '0'
+                );
+            } catch (e) {
+                /* ignore */
+            }
+            syncAiFieldRewriteToolbar();
+            document.querySelectorAll('.suggestions-list').forEach((list) => {
+                list.classList.remove('show');
+            });
+        }
+
+        function displayAiRewriteSuggestions(fieldId, suggestions, originalValue, fieldLabel, fieldKey, templateId) {
+            const suggestionsList = document.getElementById(`suggestions_${fieldId}`);
+            if (!suggestionsList) return;
+
+            suggestionsList.innerHTML = '';
+            suggestions.forEach((s) => {
+                const row = document.createElement('div');
+                row.className = 'suggestion-item ai-rewrite-suggestion';
+                const main = document.createElement('div');
+                main.textContent = String(s.text || '');
+                row.appendChild(main);
+                const reason = String(s.reason || '').trim();
+                if (reason) {
+                    const meta = document.createElement('div');
+                    meta.className = 'suggestion-meta ai-rewrite-reason';
+                    meta.textContent = reason;
+                    row.appendChild(meta);
+                }
+                row.addEventListener('click', () => {
+                    applyAiRewriteSuggestion(fieldId, String(s.text || ''), originalValue, fieldLabel, fieldKey, templateId);
+                });
+                suggestionsList.appendChild(row);
+            });
+
+            suggestionsList.classList.add('show');
+        }
+
+        async function applyAiRewriteSuggestion(fieldId, text, originalValue, fieldLabel, fieldKey, templateId) {
+            const input = document.querySelector(`input[data-field-id="${fieldId}"], textarea[data-field-id="${fieldId}"]`);
+            if (input) {
+                input.value = text;
+                const suggestionsList = document.getElementById(`suggestions_${fieldId}`);
+                if (suggestionsList) {
+                    suggestionsList.classList.remove('show');
+                    suggestionsList.innerHTML = '';
+                }
+                const sourceFieldId = String(fieldId || '');
+                if (sourceFieldId) {
+                    tryWordAutoFillFromUniqueInput(sourceFieldId);
+                }
+                refreshWordReferenceDropdowns();
+                input.focus();
+            }
+
+            try {
+                const tid = Number(templateId || 0);
+                const fk = String(fieldKey || '').trim();
+                await fetch(`${API_BASE}/api/form-edit/apply-suggestion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        field_name: fieldLabel || fk || 'Trường',
+                        field_key: fk || null,
+                        template_id: tid > 0 ? tid : null,
+                        original_value: originalValue,
+                        suggested_value: text,
+                        applied: true,
+                        confidence: 1,
+                    }),
+                });
+            } catch (e) {
+                /* optional tracking */
+            }
+        }
+
+        async function rewriteWordFieldWithAi(ev, btn) {
+            if (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+            }
+            const wrap = btn && btn.closest('.form-field-wrapper');
+            const input = wrap && wrap.querySelector('input:not([type="radio"]):not([type="checkbox"]), textarea');
+            const msgEl = getActiveWordFormMessageEl();
+
+            if (!input || !input.getAttribute('data-field-id')) {
+                if (msgEl) showMessage(msgEl.id, '❌ Không tìm thấy ô nhập để sửa.', 'error');
+                return;
+            }
+
+            const raw = String(input.value || '').trim();
+            if (!raw) {
+                if (msgEl) showMessage(msgEl.id, 'ℹ️ Hãy nhập nội dung vào ô trước khi gọi AI gợi ý.', 'info');
+                input.focus();
+                return;
+            }
+
+            let fieldName = '';
+            let fieldType = 'text';
+            try {
+                fieldName = decodeURIComponent(btn.getAttribute('data-ai-field-label') || '');
+            } catch (e) {
+                fieldName = btn.getAttribute('data-ai-field-label') || '';
+            }
+            try {
+                fieldType = decodeURIComponent(btn.getAttribute('data-ai-field-type') || '') || 'text';
+            } catch (e) {
+                fieldType = btn.getAttribute('data-ai-field-type') || 'text';
+            }
+
+            const fieldId = parseInt(input.getAttribute('data-field-id'), 10);
+            const fieldKey = String(input.getAttribute('data-field-name') || '').trim();
+            const templateId = Number(currentTemplate?.id || currentSubmission?.template_id || 0) || null;
+            const contextParts = [];
+            const formTitle = document.getElementById('formTitle');
+            const submissionTitle = document.getElementById('submissionTitle');
+            if (document.getElementById('formView') && document.getElementById('formView').classList.contains('active') && formTitle) {
+                contextParts.push('Biểu mẫu: ' + String(formTitle.textContent || '').trim());
+            } else if (document.getElementById('submissionView') && document.getElementById('submissionView').classList.contains('active') && submissionTitle) {
+                contextParts.push(String(submissionTitle.textContent || '').trim());
+            }
+
+            const prevHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '⏳…';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/form-edit/suggestions`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                        field_name: fieldName || input.getAttribute('data-field-name') || 'Trường',
+                        field_type: fieldType || 'text',
+                        current_value: raw,
+                        max_suggestions: 3,
+                        context: contextParts.length ? contextParts.join(' · ') : null,
+                    }),
+                });
+
+                const data = await parseApiResponse(response);
+                const items = (data && data.suggestions) ? data.suggestions : [];
+                const usable = items.filter((s) => String(s.text || '').trim());
+
+                if (usable.length === 0) {
+                    if (msgEl) showMessage(msgEl.id, '⚠️ AI không trả về gợi ý nào. Thử lại sau.', 'info');
+                    return;
+                }
+
+                displayAiRewriteSuggestions(fieldId, usable, raw, fieldName || fieldKey || 'Trường', fieldKey, templateId);
+            } catch (error) {
+                console.error('AI field rewrite error:', error);
+                if (msgEl) showMessage(msgEl.id, `❌ Lỗi AI: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = prevHtml;
+            }
+        }
+
         // Hide suggestions when clicking outside
         document.addEventListener('click', (e) => {
             if (!e.target.closest('.form-group')) {
@@ -6221,6 +7347,8 @@
                 closeExportModal();
             }
         });
+
+        restoreAiFieldRewriteMode();
     </script>
     
     <!-- Export Format Modal -->

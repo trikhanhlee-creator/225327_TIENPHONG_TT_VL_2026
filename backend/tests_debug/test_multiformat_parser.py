@@ -31,6 +31,7 @@ def test_parser_creation():
     
     # This is a mock test - we just verify the factory works
     test_cases = [
+        'test.doc',
         'test.docx',
         'test.pdf', 
         'test.xlsx',

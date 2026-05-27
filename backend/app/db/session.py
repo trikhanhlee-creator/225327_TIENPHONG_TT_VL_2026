@@ -7,7 +7,7 @@ from app.core.config import settings
 # Tạo engine
 engine = create_engine(
     settings.DATABASE_URL,
-    echo=True,  # Log SQL queries
+    echo=settings.SQL_ECHO,
     pool_size=10,
     max_overflow=20,
     pool_pre_ping=True,  # Kiểm tra kết nối trước khi dùng

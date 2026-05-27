@@ -18,7 +18,9 @@ from app.services.autofill.contracts import AutofillDecision, CanonicalFormSchem
 from app.services.autofill.feedback_learning_agent import LLMFeedbackLearningAgent
 from app.services.autofill.field_understanding_agent import LLMFieldUnderstandingAgent
 from app.services.autofill.form_parse_agent import LLMFormParseAgent
+from app.core.config import settings
 from app.services.autofill.memory_retrieval_agent import LLMMemoryRetrievalAgent
+from app.services.autofill.rag_form_service import RagFormService
 
 
 class AutofillOrchestrator:
@@ -28,6 +30,7 @@ class AutofillOrchestrator:
         self.parse_agent = LLMFormParseAgent()
         self.field_agent = LLMFieldUnderstandingAgent()
         self.retrieval_agent = LLMMemoryRetrievalAgent()
+        self.rag_form_service = RagFormService(self.retrieval_agent)
         self.decision_agent = LLMAutofillDecisionAgent()
         self.learning_agent = LLMFeedbackLearningAgent()
 
@@ -48,6 +51,18 @@ class AutofillOrchestrator:
             original_filename=original_filename,
         )
         schema = await self.field_agent.understand(schema)
+
+        if settings.RAG_ENABLED and settings.RAG_INDEX_ON_UPLOAD:
+            self.rag_form_service.index_uploaded_file(
+                db,
+                user_id=user_id,
+                file_path=file_path,
+                source_ref=source_ref or original_filename,
+            )
+            hints = self.rag_form_service.build_field_hints(db, user_id=user_id, fields=schema.fields)
+            if hints:
+                schema.metadata["rag_hints"] = hints
+
         form_instance_id = self._persist_form_instance(db=db, user_id=user_id, schema=schema)
         return schema, form_instance_id
 
